@@ -11,6 +11,8 @@ A user story rarely survives contact with reality unchanged — assumptions get 
 
 This skill runs the work through four gates (Understand → Plan → Implement → PR), confirming with the user at each gate, and keeps everything in one persistent, resumable file so the next session can pick up mid-story like nothing was lost.
 
+**Why the extra writes are worth it:** capturing a decision's reasoning at the moment it's made costs a little now; reconstructing it later — when a reviewer asks "why is this written this way?" or scope shifts and someone has to figure out what's still true — costs a lot more, and often can't be done accurately at all once the reasoning has faded from anyone's memory. The overhead buys point-in-time traceability, not just resumability: the Task Log's "Why" is the original reasoning, not a retrofit, and the Scope Changes log means a mid-flight pivot only has to state what changed, not re-derive the current state from scratch.
+
 ## The context file
 
 **Location:** `.claude/context/<story-slug>.md` in the repo root, where `<story-slug>` is a short kebab-case id derived from the ticket ID or title.
@@ -47,7 +49,8 @@ Status: understanding | planning | implementing | pr-ready | done
 <the story's requirements as they stand right now, amended in place as scope changes land — this is the "what's true today" view, kept short and current, never a history log>
 
 ## Plan
-<approach discussion, HLD/LLD notes, agreed on <date>>
+Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
+<approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
 
 ## Task Checklist
 - [x] Task 1 — <short description> — files: <list>
@@ -66,8 +69,8 @@ Status: understanding | planning | implementing | pr-ready | done
 - Affected tasks: <task numbers>
 - Why: <reasoning behind the change>
 
-## PR Summary (draft)
-<generated at Step 4>
+## PR Summary
+Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
 ```
 
 Append, never overwrite — except the `Status` line, Task Checklist checkboxes, and Current Requirements, which are amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) is a running record: add entries, don't rewrite past ones. This split is what lets a resuming session see both "what's true now" (Current Requirements) and "how we got here" (Scope Changes log) without re-deriving one from the other.
@@ -84,10 +87,33 @@ Append, never overwrite — except the `Status` line, Task Checklist checkboxes,
 
 ### Step 2 — Plan
 
-1. With the confirmed understanding, discuss the implementation approach with the user — system design level: what changes, where, and why this approach over alternatives. For anything nontrivial, sketch HLD (components, data flow, integration points) and LLD (key functions/classes, schema changes) enough to break work into tasks — this doesn't need to be a formal document, just enough that both of you agree on the shape before code gets written.
-2. Once the approach is agreed, break it into small tasks. Each task should be scoped tightly enough to implement and explain in one pass — note which files it touches.
-3. Write the Plan and Task Checklist to the context file in one pass.
-4. **Gate:** emit the trip marker, then present the plan and task breakdown — quoted verbatim rather than restated — stop, and wait for explicit confirmation before implementing.
+1. Classify the story from the confirmed Understanding Summary before designing anything. Don't ask the user unless the type is genuinely ambiguous.
+
+   | Type | Signal | Design depth |
+   |---|---|---|
+   | Bug fix | reported defect, "should do Y but does Z" | No HLD/LLD — root cause + fix approach only |
+   | Copy/config/content change | text, labels, flags, env values, constants | No design — straight to task list |
+   | Small feature addition | new behavior in existing architecture, touches 1-3 files | LLD only (functions/schema touched) — skip HLD |
+   | Refactor/tech debt | no behavior change, restructuring | LLD only, scoped to what's being restructured |
+   | New feature/subsystem | new capability spanning multiple components | Full HLD + LLD |
+   | New service/integration | new external dependency, new cross-system data flow | Full HLD + LLD, mandatory |
+   | Performance/optimization | latency, resource usage, scaling | No design doc — profiling findings + targeted fix approach |
+
+2. Discuss the implementation approach with the user at the design depth the classification calls for: system design level (components, data flow, integration points) only for types that need HLD; key functions/classes/schema changes for types that need LLD; for "no design" types, skip straight to naming the fix approach in a sentence or two. This doesn't need to be a formal document, just enough that both of you agree on the shape before code gets written.
+3. Once the approach is agreed, break it into small tasks along natural seams — dependency order first (foundational pieces before consumers), then by component/layer for multi-part work or by file/module boundary for refactors. A task is scoped right when it can be described as one Task Log entry (one What + one Why, no "and also") and touches at most 3 files; if it can't, split it further.
+4. Cap the total task count by story type — this is a ceiling, not a target:
+
+   | Type | Max tasks | If exceeded |
+   |---|---|---|
+   | Bug fix / copy-config | 2 | flag — likely misclassified |
+   | Small feature | 5 | reconsider — may actually be a "new feature/subsystem" |
+   | Refactor | 8 | acceptable as upper bound |
+   | New feature/subsystem | 10 | **stop and flag to the user** — propose splitting into multiple stories before Step 3 |
+   | New service/integration | 10 | same — flag before implementing |
+   | Performance | 5 | more than that usually means multiple distinct bottlenecks — treat as separate stories |
+
+5. Write the story type, chosen design depth, and Task Checklist to the context file in one pass (include the HLD/LLD notes only if that depth was actually used).
+6. **Gate:** emit the trip marker, then present the plan and task breakdown — quoted verbatim rather than restated — stop, and wait for explicit confirmation before implementing.
 
 ### Step 3 — Implement
 
@@ -101,13 +127,50 @@ Append, never overwrite — except the `Status` line, Task Checklist checkboxes,
 ### Step 4 — PR
 
 1. Tell the user the work is ready for a PR.
-2. Draft a PR summary written for the *reviewer*, pulled from the context file — not a diff description:
-   - What the story asked for and what was built
-   - Key decisions and why (from Task Log "Why" entries — this is what saves a reviewer from having to ask)
-   - Assumptions made, and their confirmation status
-   - If this is a later PR update on the same story: what changed since the last PR and the trigger for it
-3. Write it into the PR Summary section of the context file.
-4. **Gate:** emit the trip marker, then show the draft — quoted verbatim rather than restated — stop, and let the user confirm or adjust before treating it as final.
+2. Derive the title from the context file, don't compose it fresh: `<Ticket ID/slug>: <imperative summary>`, taken from the file header and Understanding Summary.
+3. Include only the sections the story type calls for — don't carry a design section a bug fix never had:
+
+   | Type | Sections included |
+   |---|---|
+   | Bug fix | Root cause, Fix, Test coverage |
+   | Copy/config | What changed, Why |
+   | Small feature | What was built, Key decisions, Assumptions (if any) |
+   | Refactor | What changed structurally, Why, behavior-preservation note |
+   | New feature/subsystem | What/Why, HLD summary, Key decisions, Assumptions, Testing |
+   | New service/integration | Full set above + integration points, rollback/failure mode notes |
+   | Performance | Before/after metric, root cause, fix approach |
+
+4. Pull each section's content from the context file instead of re-summarizing it:
+   - What was built ← Task Log "What" entries, concatenated
+   - Key decisions ← Task Log "Why" entries
+   - Assumptions ← Assumptions section, filtered to ones relevant to what shipped
+   - Design context ← Plan section, only if that story type used HLD/LLD
+   - What changed since last PR ← Scope Changes entries dated after the last PR Summary write (later-PR-update case only — diff against the last PR Summary, not the full history)
+5. **Cap every section at 2 lines.** Pulled content (concatenated Task Log entries, multiple assumptions) is almost always longer than that — compress to the most essential point(s) rather than truncating mid-sentence. If a section genuinely can't fit in 2 lines without losing something a reviewer needs, that's a signal the underlying task/decision was too broad, not a reason to break the cap.
+
+   Template:
+   ```markdown
+   ## <Ticket ID/slug>: <imperative summary>
+
+   **<Section 1>:** <line 1>
+   <line 2, only if needed>
+
+   **<Section 2>:** <line 1>
+   <line 2, only if needed>
+   ```
+   Example (bug fix):
+   ```markdown
+   ## PARK-482: Fix duplicate charge on payment retry
+
+   **Root cause:** Retries omitted an idempotency key, so the provider treated each retry as a new charge.
+
+   **Fix:** Generate one key per order at first attempt; persist and forward it on every retry.
+
+   **Test coverage:** Regression test simulates a retried request and asserts a single charge.
+   ```
+6. **Show the draft directly in chat and stop there.** This isn't a file draft awaiting a later write — it's the deliverable itself. Claude has no way to actually open a PR on GitHub/GitLab/Bitbucket, so the chat message *is* the final artifact: the user copies it straight into the platform's PR description field. Nothing about this step gets written to the context file — there's no later gate that reads a stored PR summary back out the way Plan reads Understanding or Implement reads the Task Checklist.
+7. **Gate:** let the user confirm or request changes, iterating in chat only, until they're happy with what they'll paste.
+8. Once confirmed, write a single line to the PR Summary section: `Last drafted: <date>`. This is not a copy of the text — it exists only so a later PR update on the same story knows what date to diff Scope Changes against. Update Status to `pr-ready` in the same pass. Emit the trip marker.
 
 ## What NOT to do
 
