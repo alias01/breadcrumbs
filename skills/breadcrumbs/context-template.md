@@ -1,6 +1,15 @@
 # breadcrumbs context file — template & guardrails
 
-Read this file once per story: the first time you create `.claude/context/<story-slug>.md` (Step 1, first write, full mode only). Not needed again on resume — the context file itself has everything by then — and not needed at all for lite-mode stories, which skip the file entirely.
+Read once per story, at file creation — whichever trigger fires it (see "The context file" in `Skill.md`). Not needed again on resume — the file itself has everything by then — nor if no trigger ever fires.
+
+## Content style
+
+Read by AI only (this session, a resumed session, another platform) — never the user. `Skill.md`'s "Communication style" governs chat, not this. Every section: fragments, not sentences. Drop articles/connective words where meaning stays unambiguous. Abbreviate freely. Optimize for a resuming model re-deriving state fast, not human readability.
+
+- Prose: `Why: We added a mutex because there was a race condition between the two writers.`
+- Telegraphic: `Why: race condition (two writers) — added mutex.`
+
+Markdown structure (headers, lists, checkboxes) stays as-is — parsing scaffolding, not prose. Cutting it costs more to re-derive than it saves.
 
 ## File structure
 
@@ -51,15 +60,15 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
 ```
 
-Append, never overwrite — except the `Status` line, Task Checklist checkboxes, and Current Requirements, which are amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) is a running record: add entries, don't rewrite past ones. This split is what lets a resuming session see both "what's true now" (Current Requirements) and "how we got here" (Scope Changes log) without re-deriving one from the other.
+Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
-Two Task Log entry forms, per Step 3.3: a full `What`/`Why` block for tasks where a genuine judgment call was made, or a single checklist line for purely mechanical tasks — don't write prose that has no decision behind it.
+Two Task Log forms (Step 3.3): full `What`/`Why` block where a genuine judgment call was made, single checklist line for mechanical tasks. No prose without a decision behind it.
 
 ## What NOT to do
 
-- Don't skip a gate, even if the next step seems obvious. (This applies in lite mode too — lite collapses which gates exist, it doesn't waive confirmation.)
-- Don't ask the user questions during Step 3 task execution — decide, log, move on. Scope-changing issues are the exception: surface those immediately.
-- Don't overwrite past context file entries — this is a running record, not a snapshot.
+- Don't skip a gate, next step "obvious" or not. Applies in lite mode too — lite collapses which gates exist, never waives confirmation.
+- Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface those immediately.
+- Don't overwrite past entries — running record, not a snapshot.
 - Don't commit the context file or reference it in the PR diff.
-- Don't delete the context file unless the user confirms the PR merged.
-- Don't let a lite-mode story silently absorb a scope change or failed test — that's exactly the case the upgrade path (Step 3.6) exists for. Upgrade to full mode rather than trying to track it in chat memory alone.
+- Don't delete it unless the user confirms the PR merged.
+- Don't let a lite-mode story silently absorb a scope change or failed test — that's what the escalation trigger (see "The context file" in `Skill.md`) is for. Escalate to full mode rather than tracking it in chat memory alone.
