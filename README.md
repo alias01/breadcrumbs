@@ -6,9 +6,22 @@ Breadcrumbs is a skill that runs a user story from a pasted ticket to a PR-ready
 
 ## Before / after
 
-**Without breadcrumbs:** you paste a ticket, work through it for twenty minutes, hit a scope change, keep going. Tomorrow's session — or a teammate's, or a different AI tool entirely — has none of that. It re-reads the diff, guesses at intent, and the reviewer who asks "why is this written this way?" three weeks later gets a shrug.
+You paste `PARK-482: fix duplicate charge on payment retry`. Three tasks in, a test fails — retries aren't idempotent for a second, unrelated reason. Scope changes on the spot. You stop for the day with two tasks left.
 
-**With breadcrumbs:** the same session writes its reasoning down at the moment it's made — not a retrofit, not a changelog entry bolted on later. Come back in a week, on a different machine, with a different AI, and it reads the trail and picks up exactly where it left off.
+**Without breadcrumbs**, tomorrow's session (or a teammate's, or a different AI entirely) has none of that history. It re-reads the diff, can't tell the second idempotency issue was deliberate scope, and either re-litigates a decision that was already made or ships past it without knowing why the code looks the way it does. The eventual PR description gets reconstructed from memory of a diff, not from the reasoning that produced it — and the reviewer who asks "why is this written this way?" next month gets a shrug.
+
+**With breadcrumbs**, that session opens with:
+> *Here's where this stood: PARK-482, Step 3 of 4, 3/5 tasks done. Scope changed on 2026-08-11 — retries also needed a second idempotency guard, unrelated to the original bug. Two tasks left: add the guard, add regression coverage.*
+
+Same context, zero re-derivation, on any machine or platform that can read a markdown file.
+
+| | Without | With breadcrumbs |
+|---|---|---|
+| Resuming after a break | Re-read the diff, guess at intent | Reads the trail, states exactly where it stood |
+| Mid-flight scope change | Buried in scrollback, easy to lose | Logged with before/after/why the moment it happens |
+| Switching AI tools or machines | Starts from zero | Any platform reading the file picks up identically |
+| "Why is this written this way?" | Reconstructed from memory of a diff | Task Log's original reasoning, not a retrofit |
+| PR description | Written after the fact from what's left | Pulled straight from the trail — What/Why/Test/Rollback/Dependencies |
 
 ## How it works
 
