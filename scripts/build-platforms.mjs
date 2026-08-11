@@ -6,7 +6,14 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
 const SOURCE = "skills/breadcrumbs/Skill.md";
-const REFERENCE = "skills/breadcrumbs/context-template.md";
+const REFERENCES = [
+  "skills/breadcrumbs/context-file-mechanics.md",
+  "skills/breadcrumbs/step1-understand.md",
+  "skills/breadcrumbs/step2-plan.md",
+  "skills/breadcrumbs/step3-implement.md",
+  "skills/breadcrumbs/step4-pr.md",
+  "skills/breadcrumbs/context-template.md",
+];
 
 function parseSkill(raw) {
   const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
@@ -28,12 +35,13 @@ const raw = readFileSync(SOURCE, "utf8");
 const { name, description, body } = parseSkill(raw);
 const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs — edit the source, then re-run the script. -->\n\n`;
 
-// Skill.md points at context-template.md and expects Claude Code to Read it
-// on demand (first context-file write only). The other platforms below have
-// no such on-demand mechanism — everything they load is loaded every time —
-// so they get the reference content inlined here instead of a dangling
-// pointer to a file they'll never read.
-const reference = readFileSync(REFERENCE, "utf8").trim();
+// Skill.md points at the step files, context-file-mechanics.md, and
+// context-template.md, and expects Claude Code to Read each on demand (only
+// when that gate is reached / first context-file write). The other platforms
+// below have no such on-demand mechanism — everything they load is loaded
+// every time — so all of it gets inlined here instead of dangling pointers
+// to files they'll never read.
+const reference = REFERENCES.map((path) => readFileSync(path, "utf8").trim()).join("\n\n---\n\n");
 const fullBody = `${body}\n\n---\n\n${reference}`;
 
 // AGENTS.md — portable, instruction-only, no frontmatter.

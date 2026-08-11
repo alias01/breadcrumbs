@@ -7,146 +7,199 @@ alwaysApply: false
 
 ## Core Philosophy
 
-A user story rarely survives contact with reality unchanged — assumptions get filled in, owners clarify things later, tests surface edge cases, scope grows. None of that is a problem by itself. The problem is when it happens across many disconnected rounds and nobody — including a future Claude session, or a different AI entirely — can reconstruct what was decided, why, or what's actually left to do.
+A story never survives reality unchanged: assumptions filled in, scope grows, tests surface edge cases. Fine in isolation → breaks down when nobody (future session, different AI) can reconstruct what was decided, why, what's left.
 
-This skill runs the work through four gates (Understand → Plan → Implement → PR), confirming with the user at each gate, and keeps everything in one persistent, resumable file so the next session can pick up mid-story like nothing was lost.
+Four gates (Understand → Plan → Implement → PR), confirmed with the user each time, backed by one persistent file → any session resumes mid-story.
 
-**Why the extra writes are worth it:** capturing a decision's reasoning at the moment it's made costs a little now; reconstructing it later — when a reviewer asks "why is this written this way?" or scope shifts and someone has to figure out what's still true — costs a lot more, and often can't be done accurately at all once the reasoning has faded from anyone's memory. The overhead buys point-in-time traceability, not just resumability: the Task Log's "Why" is the original reasoning, not a retrofit, and the Scope Changes log means a mid-flight pivot only has to state what changed, not re-derive the current state from scratch.
+**Why the writes pay off:** reasoning captured at decision-time = cheap. Reconstructed later (reviewer asks why / scope shifts) = expensive, often inaccurate by then. Task Log "Why" = original reasoning, not a retrofit. Scope Changes = only what changed, not the full history re-derived.
+
+## Communication style
+
+Chat only — context file has its own denser style ("Content style" in `context-template.md`). Don't conflate.
+
+Terse, bullet/fragment, glanceable. Senior/expert audience → jargon freely, no hedging, no restating known context, no multi-paragraph narration. Expand only if asked / confusion signaled, then step down in complexity.
 
 ## The context file
 
-**Location:** `.claude/context/<story-slug>.md` in the repo root, where `<story-slug>` is a short kebab-case id derived from the ticket ID or title.
+**Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
+- **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
+- **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.5) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
+- **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
 
-**Not committed.** On first use, check `.gitignore` for `.claude/context/` (or a broader `.claude/` entry) and add it if missing. This file is working memory for the story, not a project artifact — it has no reason to exist once the PR is merged.
+No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
 
-**Resuming:** at the start of any story-related work, check whether a context file for it already exists before doing anything else. If it does, read it, summarize the current status back to the user ("Here's where this stood: ... currently at Step X"), and resume from there instead of restarting. This is what makes cross-session and cross-platform resume work — any Claude reading this file has everything it needs.
+**Trip marker:** write happens → one line before the gate message naming what was written, e.g. `[context file: wrote Understanding Summary + Assumptions]`. No file yet → no marker, content just shown in chat.
 
-**Cleanup:** once the user confirms the PR is merged, offer to delete the context file. Don't delete it unprompted.
+**Mechanics (location, not committed, resuming, cleanup, efficiency):** see `context-file-mechanics.md`. Read once, the first time a trigger above actually fires — not before.
 
-**Efficiency:** each gate touches the context file with a single write — batch every section update for that gate (including the first-use `.gitignore` check/add) into one pass rather than separate read-then-write round trips. Don't re-read the file afterward to confirm a write landed; trust it. Every round trip to the file has a real cost, so collapsing multiple small writes into one matters more than any single message's wording.
-
-**Trip marker:** immediately before each gate message, emit a one-line marker naming what was just written — e.g. `[context file: wrote Understanding Summary + Assumptions]` — so the user can see exactly when a round trip to the file happened, without needing its full content repeated to show that.
-
-**File structure & full guardrail list:** see `context-template.md` in this skill's directory. Read it once — the first time you create a context file for a story (Step 1, first write) — not on every resume and not for lite-mode stories, which skip the file entirely. The one guardrail worth carrying at all times without needing to open that file: **never skip a gate.**
+**File structure & guardrails:** see `context-template.md`. Read once, first creation only — not on resume, not if no trigger fires. One guardrail without opening that file: **never skip a gate**, file or no file.
 
 ## Lite mode
 
-Auto-detected in Step 1.4: `Bug fix` and `Copy/config/content change` stories run lite; everything else runs full mode, exactly as the four steps below describe. This section is the single source of truth for what lite changes — the steps below aren't separately annotated for it.
+Auto-detected Step 1.4: `Bug fix` / `Copy/config/content change` → lite. Everything else → full mode, per the four steps below. Single source of truth for what lite changes — step files aren't separately annotated.
 
-- No context file, ever.
-- Step 1's gate and all of Step 2 collapse into one: state the approach (always "no design" depth) and task list (max 2), then one message ending "Here's what I understand and how I'd build it — confirm?" Straight to Step 3 once confirmed.
-- Step 3: no per-task writes — one wrap-up message after all tasks instead.
-- Step 4: PR draft as usual (same sections, same 2-line cap), derived from the conversation instead of the file; nothing to write after.
-- Upgrade path: a test failure, broken assumption, or scope change mid-flight ends lite mode — create the file now, backfilling Original Story/Understanding/Plan/Task Checklist from the conversation, log the Scope Change entry (Step 3's usual format), and finish the story in full mode. Say so in one line.
+- Step 1 gate + all of Step 2 collapse into one, unconditionally (lite types are always simple enough, no Material/Cosmetic check needed): state approach ("no design" depth) + task list (max 2), one message ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
+- Step 3: one wrap-up message after all tasks, not per-task.
+- Step 4: PR draft as usual, from the conversation.
+- File creation: same triggers as "The context file" above, no lite exception. Scope change / test failure mid-flight → escalates lite → full too, same moment the file's created. Say so in one line.
 
 ## The four steps
 
-### Step 1 — Understand & Clarify
+Read the step's file when you actually reach that gate — don't preload the others up front, that's the point of splitting them out.
 
-1. Read the story. **State back what you understand first** — in your own words, before asking anything. This surfaces most misunderstandings without needing a question.
-2. Only then ask follow-up questions, and only about what's genuinely vague or ambiguous — not everything that could theoretically be asked.
-3. If the user can't answer something either (owner isn't available, genuinely undecided), don't block — log it under Assumptions with your reasoning and mark it `unconfirmed`. Tell the user it'll need confirming with the story owner before it's final, but proceed.
-4. Classify the story type now, using the table in Step 2.1 — don't wait for Step 2. `Bug fix` and `Copy/config/content change` are **lite** (see "Lite mode" above); everything else is **full**. Say which mode out loud (one line) so the user isn't surprised later.
-5. **Gate:** write the Understanding Summary and Assumptions to the context file in one pass (see Efficiency above — this is also where the first-use `.gitignore` check/add happens). Emit the trip marker, then present the summary — quote it verbatim rather than restating it — and stop. Do not move to Step 2 until the user explicitly confirms it's right.
+| Step | File | Gate |
+|---|---|---|
+| 1 — Understand & Clarify | `step1-understand.md` | Understanding + Assumptions confirmed (or folded into Step 2 if zero Material unknowns) |
+| 2 — Plan | `step2-plan.md` | Plan + task breakdown confirmed (skipped in lite mode) |
+| 3 — Implement | `step3-implement.md` | Every task checked off |
+| 4 — PR | `step4-pr.md` | PR draft confirmed in chat |
 
-### Step 2 — Plan
+## What NOT to do
 
-*Lite-mode stories skip this step* — see "Lite mode" above.
+Never skip a gate, even in lite mode — lite collapses which gates exist, never waives confirmation. Full guardrail list: `context-template.md`, read alongside the template on first write.
 
-1. Classify the story from the confirmed Understanding Summary before designing anything (already done in Step 1.4 for lite-eligible types; do it here for everything else). Don't ask the user unless the type is genuinely ambiguous.
+---
+
+# Context file mechanics
+
+Read once, the first time a file-creation trigger fires (see "The context file" in `Skill.md` for the triggers themselves). Not needed before that.
+
+**Location once created:** `.claude/context/<story-slug>.md` — `<story-slug>` = short kebab-case id from ticket ID/title.
+
+**Not committed.** On creation: check `.gitignore` for `.claude/context/` (or broader `.claude/`), add if missing. Working memory, not a project artifact — no reason to exist past PR merge.
+
+**Resuming:** before any story work, check `.claude/context/` for existing files. One match, name/slug clearly matches what the user's asking about → read it, summarize status back ("Here's where this stood: ... currently at Step X"), resume. Zero matches → nothing to resume; story hasn't started, or it's mid-way/finished in an unbroken conversation with no trigger fired yet. More than one file present and the user's request doesn't unambiguously point to one (generic "let's continue," or a new/vague prompt while other stories sit mid-flight) → don't guess. List the candidates cheaply: filename (slug) + first two lines of each (title, `Status:`) — never a full read at this stage, cost shouldn't scale with how many stories are open or how long they've grown. Present that list, ask which one. Once picked, proceed as the one-match case (full read, then resume).
+
+**Cleanup:** PR merged (user-confirmed) → offer to delete. Never delete unprompted.
+
+**Efficiency:** file exists → one write per gate, every section update batched into one pass, no read-then-write round trips. Don't re-read to confirm a write landed — trust it.
+
+---
+
+# Step 1 — Understand & Clarify
+
+1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions.
+2. Only then: follow-ups, only on what's genuinely vague — not everything askable in theory.
+3. User can't answer either (owner unavailable / genuinely undecided) → don't block. Log under Assumptions w/ reasoning, mark `unconfirmed`. Tell the user it needs owner confirmation before final; proceed anyway.
+4. Classify story type now (table in Step 2.1 of `step2-plan.md`, don't wait for Step 2). `Bug fix` / `Copy/config/content change` = **lite**; everything else = **full**. State the mode, one line.
+5. **Tag every open question/assumption**: Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, API/contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count — **not** step 4's type/size classification — decides the gate below. 10-task "New feature/subsystem," all-Cosmetic → gate merges. "Small feature," one Material unknown → gate stays separate. Task/file count belongs to Step 2.4, not here.
+6. **Gate:** file exists → write Understanding Summary + Assumptions to it in one pass, trip marker. No file → present the same content in chat only.
+   - **Zero Material unknowns** → fold Step 2 in: do Step 2's work silently (read `step2-plan.md`), present Understanding Summary + Plan together, one combined confirmation, both quoted verbatim. Regardless of story type/task count.
+   - **Any Material unknown remains** (even `unconfirmed`) → summary alone, quoted verbatim, stop. No Step 2 until confirmed.
+
+---
+
+# Step 2 — Plan
+
+*Lite mode skips this step.* Full-mode + zero Material unknowns (Step 1) → also skips the separate gate, folded into 1.6 instead. Decided purely by the Material count from 1.5 — never type, never task/file count. Large multi-file story, nothing genuinely unknown → merges just as readily as a small one.
+
+1. Classify from the confirmed Understanding Summary (already done, 1.4, for lite-eligible types; do it here otherwise). Ask the user only if genuinely ambiguous.
 
    | Type | Signal | Design depth |
    |---|---|---|
-   | Bug fix | reported defect, "should do Y but does Z" | No HLD/LLD — root cause + fix approach only |
+   | Bug fix | reported defect, "should do Y but does Z" | No HLD/LLD — root cause + fix approach |
    | Copy/config/content change | text, labels, flags, env values, constants | No design — straight to task list |
-   | Small feature addition | new behavior in existing architecture, touches 1-3 files | LLD only (functions/schema touched) — skip HLD |
-   | Refactor/tech debt | no behavior change, restructuring | LLD only, scoped to what's being restructured |
-   | New feature/subsystem | new capability spanning multiple components | Full HLD + LLD |
+   | Small feature addition | new behavior in existing architecture, 1-3 files | LLD only, skip HLD |
+   | Refactor/tech debt | no behavior change, restructuring | LLD only, scoped to what's restructured |
+   | New feature/subsystem | new capability spanning components | Full HLD + LLD |
    | New service/integration | new external dependency, new cross-system data flow | Full HLD + LLD, mandatory |
-   | Performance/optimization | latency, resource usage, scaling | No design doc — profiling findings + targeted fix approach |
+   | Performance/optimization | latency, resource usage, scaling | No design doc — profiling findings + targeted fix |
 
-2. Discuss the implementation approach with the user at the design depth the classification calls for: system design level (components, data flow, integration points) only for types that need HLD; key functions/classes/schema changes for types that need LLD; for "no design" types, skip straight to naming the fix approach in a sentence or two. This doesn't need to be a formal document, just enough that both of you agree on the shape before code gets written.
-3. Once the approach is agreed, break it into small tasks along natural seams — dependency order first (foundational pieces before consumers), then by component/layer for multi-part work or by file/module boundary for refactors. A task is scoped right when it can be described as one Task Log entry (one What + one Why, no "and also") and touches at most 3 files; if it can't, split it further.
-4. Cap the total task count by story type — this is a ceiling, not a target:
+2. Discuss the approach at the depth classification calls for: HLD → system-design level (components, data flow, integration points). LLD → key functions/classes/schema. "No design" → name the fix approach, one-two sentences. Not a formal doc — enough to agree the shape before code.
+   - **Tripwire:** plan surfaces a Material unknown Step 1 missed → stop, resolve there (ask / log `unconfirmed` per 1.3 in `step1-understand.md`), before continuing. Applies even when 1+2 merged — a bad merge decision surfaces here, doesn't get built around.
+3. Agreed → break into small tasks along natural seams: dependency order first, then component/layer (multi-part work) / file-module boundary (refactors). Scoped right = one Task Log entry (one What + one Why, no "and also"), ≤3 files. Otherwise: split further.
+   - **Flow:** the ordered file/module list across all tasks = the story's **Flow** — the set of files this story is expected to touch, and in what order. Derived directly from the task breakdown, no extra thinking. Decided here, at planning, not revisited unless a Scope Change amends it.
+4. Cap total tasks by type — ceiling, not target:
 
    | Type | Max tasks | If exceeded |
    |---|---|---|
    | Bug fix / copy-config | 2 | flag — likely misclassified |
-   | Small feature | 5 | reconsider — may actually be a "new feature/subsystem" |
-   | Refactor | 8 | acceptable as upper bound |
-   | New feature/subsystem | 10 | **stop and flag to the user** — propose splitting into multiple stories before Step 3 |
+   | Small feature | 5 | reconsider — may be "new feature/subsystem" |
+   | Refactor | 8 | acceptable upper bound |
+   | New feature/subsystem | 10 | **stop, flag** — propose splitting before Step 3 |
    | New service/integration | 10 | same — flag before implementing |
-   | Performance | 5 | more than that usually means multiple distinct bottlenecks — treat as separate stories |
+   | Performance | 5 | more usually means multiple bottlenecks — separate stories |
 
-5. Write the story type, chosen design depth, and Task Checklist to the context file in one pass (include the HLD/LLD notes only if that depth was actually used).
-6. **Gate:** emit the trip marker, then present the plan and task breakdown — quoted verbatim rather than restated — stop, and wait for explicit confirmation before implementing.
+5. File exists → write story type, design depth, Flow, Task Checklist to it, one pass (HLD/LLD notes only if used). No file → stays in chat.
+6. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
 
-### Step 3 — Implement
+---
 
-1. Work through the Task Checklist one task at a time.
-2. **Don't ask the user mid-task.** Make the calls that are needed — use best judgment, and if a call is genuinely a judgment decision (not just mechanical), log it in the Task Log as part of that task's "Why." If something comes up that's not a coding judgment call but changes what was agreed (contradicts the plan, requires a scope decision), that's not a decision to make alone — log it under Scope Changes and flag it to the user immediately rather than pushing through silently.
-3. Apply the `ponytail` skill for how code gets written during this step — simplest thing that works, standard library and existing dependencies before new code, no unrequested abstractions. Its usual exceptions still apply here too: never simplify away input validation, error handling, security, or accessibility.
-4. After each task, append a Task Log entry and check off the task in the same write, emit the trip marker, then tell the user what was done, then move to the next task without waiting for a response, unless the user interjects. Use the full What/Why block only for tasks where a genuine judgment call was made (per 3.2); log purely mechanical tasks as a single checklist line instead — see `context-template.md` for both forms. Quote whichever form you wrote rather than restating it.
-5. If a test fails, the owner clarifies something that invalidates an assumption, or scope changes mid-flight: treat it as a fresh mini-cycle — add a structured entry under Scope Changes (date, trigger, before/after, affected tasks, why), amend Current Requirements in place to reflect the new state, update the relevant Assumptions/Plan sections, adjust the Task Checklist (add/modify tasks) rather than starting a new file, and continue.
-6. **Gate:** once every task is checked off, summarize what was built and stop — wait for confirmation before moving to PR.
+# Step 3 — Implement
 
-### Step 4 — PR
+1. Work the Task Checklist one task at a time.
+2. **Don't ask the user mid-task.** Use best judgment. Genuine judgment call (not mechanical) → log in Task Log's "Why." Changes what was agreed (contradicts plan, needs a scope decision) → not a solo call — log under Scope Changes, flag immediately.
+3. Apply `ponytail` for how code gets written: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Exceptions still apply — never simplify away input validation, error handling, security, accessibility.
+4. After each task — file exists → append Task Log entry, check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too. Edited file isn't on the story's planned Flow (from Step 2.3) → say so explicitly before the correctness verdict ("that file's outside this story's planned Flow — [reason if evident]"), one line, non-blocking; still record the `Check:` verdict either way (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check and any Flow warning.
+5. Test fails / owner invalidates an assumption / scope changes mid-flight → file-creation trigger (see "The context file" in `Skill.md`) if none exists yet: create it, backfill what's happened, escalate lite→full if applicable. Either way: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
+6. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`).
+
+---
+
+# Step 4 — PR
 
 1. Tell the user the work is ready for a PR.
-2. Derive the title from the context file, don't compose it fresh: `<Ticket ID/slug>: <imperative summary>`, taken from the file header and Understanding Summary.
-3. Include only the sections the story type calls for — don't carry a design section a bug fix never had:
+2. Title: file exists → derive from it (`<Ticket ID/slug>: <imperative summary>`, file header + Understanding Summary). No file → compose the same way from the conversation.
+3. Fixed section set, same five names regardless of type — **What, Why, Test, Rollback, Dependencies.** No type-varying sections anymore. Bias toward fewer: include a section only if it earns its place for a reviewer, omit rather than pad.
+   - **What** — always. The change, as plainly as possible.
+   - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it, don't pad.
+   - **Test** — how it's verified: test added, manual repro steps, "none needed" + reason. Skip only when there's genuinely nothing to verify (pure copy/comment change).
+   - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). Omit otherwise — don't state the obvious.
+   - **Dependencies** — only if this PR depends on or blocks something else (another PR, a migration, a config flag, an external service). Omit otherwise.
 
-   | Type | Sections included |
-   |---|---|
-   | Bug fix | Root cause, Fix, Test coverage |
-   | Copy/config | What changed, Why |
-   | Small feature | What was built, Key decisions, Assumptions (if any) |
-   | Refactor | What changed structurally, Why, behavior-preservation note |
-   | New feature/subsystem | What/Why, HLD summary, Key decisions, Assumptions, Testing |
-   | New service/integration | Full set above + integration points, rollback/failure mode notes |
-   | Performance | Before/after metric, root cause, fix approach |
-
-4. Pull each section's content from the context file instead of re-summarizing it:
-   - What was built ← Task Log "What" entries, concatenated
-   - Key decisions ← Task Log "Why" entries
-   - Assumptions ← Assumptions section, filtered to ones relevant to what shipped
-   - Design context ← Plan section, only if that story type used HLD/LLD
-   - What changed since last PR ← Scope Changes entries dated after the last PR Summary write (later-PR-update case only — diff against the last PR Summary, not the full history)
-5. **Cap every section at 2 lines.** Pulled content (concatenated Task Log entries, multiple assumptions) is almost always longer than that — compress to the most essential point(s) rather than truncating mid-sentence. If a section genuinely can't fit in 2 lines without losing something a reviewer needs, that's a signal the underlying task/decision was too broad, not a reason to break the cap.
+4. File exists → pull from it, don't re-summarize. No file → derive the same from the conversation:
+   - What ← Task Log "What" entries, concatenated
+   - Why ← Task Log "Why" entries, only where they add something What didn't already say
+   - Test ← test-related Task Log entries / Plan testing notes; no coverage found → say so plainly, don't invent
+   - Rollback ← Plan/Scope Changes, only where a non-trivial revert path was flagged
+   - Dependencies ← Assumptions/Plan, only where an external or ordering dependency was flagged
+   - What changed since last PR ← Scope Changes dated after the last PR Summary write (later-update case only)
+5. **Cap every included section at 2 lines.** Pulled content runs long — compress to the essential point(s), don't truncate mid-sentence. Can't fit without losing something needed → signal the task/decision was too broad, not a reason to break the cap. **Whole draft should read in 2-5 min.** Runs longer with every section already trimmed and only the earned ones kept → the story was too big for one PR, say so instead of shipping a wall of text.
 
    Template:
    ```markdown
    ## <Ticket ID/slug>: <imperative summary>
 
-   **<Section 1>:** <line 1>
+   **What:** <line 1>
    <line 2, only if needed>
 
-   **<Section 2>:** <line 1>
+   **Why:** <line 1>
    <line 2, only if needed>
+
+   **Test:** <line 1>
+
+   **Rollback:** <only if non-trivial>
+
+   **Dependencies:** <only if any>
    ```
-   Example (bug fix):
+   Example (bug fix — Rollback and Dependencies both omitted, plain revert, none):
    ```markdown
    ## PARK-482: Fix duplicate charge on payment retry
 
-   **Root cause:** Retries omitted an idempotency key, so the provider treated each retry as a new charge.
+   **What:** Payment retries were generating a new charge instead of reusing the original attempt.
 
-   **Fix:** Generate one key per order at first attempt; persist and forward it on every retry.
+   **Why:** Retries omitted an idempotency key, so the provider treated each retry as a new charge. Now one key is generated per order and forwarded on every retry.
 
-   **Test coverage:** Regression test simulates a retried request and asserts a single charge.
+   **Test:** Regression test simulates a retried request and asserts a single charge.
    ```
-6. **Show the draft directly in chat and stop there.** This isn't a file draft awaiting a later write — it's the deliverable itself. Claude has no way to actually open a PR on GitHub/GitLab/Bitbucket, so the chat message *is* the final artifact: the user copies it straight into the platform's PR description field. Nothing about this step gets written to the context file — there's no later gate that reads a stored PR summary back out the way Plan reads Understanding or Implement reads the Task Checklist.
-7. **Gate:** let the user confirm or request changes, iterating in chat only, until they're happy with what they'll paste.
-8. Once confirmed, write a single line to the PR Summary section: `Last drafted: <date>`. This is not a copy of the text — it exists only so a later PR update on the same story knows what date to diff Scope Changes against. Update Status to `pr-ready` in the same pass. Emit the trip marker.
-
-## What NOT to do
-
-Never skip a gate, even in lite mode — lite collapses which gates exist, it doesn't waive confirmation. The full guardrail list lives in `context-template.md`; read it alongside the template on first write.
+6. **Show the draft directly in chat, stop there.** Not a file draft awaiting a later write — the deliverable itself. No way to open a PR on GitHub/GitLab/Bitbucket → the chat message *is* the artifact, user copies it into the platform's PR field. Nothing written to the context file here — no later gate reads a stored PR summary back.
+7. **Gate:** confirm or request changes, iterate in chat, until happy with what they'll paste.
+8. Confirmed + file exists → write one line to PR Summary: `Last drafted: <date>` (anchor for diffing Scope Changes later, not a text copy). Update Status to `pr-ready`, same pass. Trip marker. No file → nothing to write, chat draft was the whole deliverable.
 
 ---
 
 # breadcrumbs context file — template & guardrails
 
-Read this file once per story: the first time you create `.claude/context/<story-slug>.md` (Step 1, first write, full mode only). Not needed again on resume — the context file itself has everything by then — and not needed at all for lite-mode stories, which skip the file entirely.
+Read once per story, at file creation — whichever trigger fires it (see "The context file" in `Skill.md`). Not needed again on resume — the file itself has everything by then — nor if no trigger ever fires.
+
+## Content style
+
+Read by AI only (this session, a resumed session, another platform) — never the user. `Skill.md`'s "Communication style" governs chat, not this. Every section: fragments, not sentences. Drop articles/connective words where meaning stays unambiguous. Abbreviate freely. Optimize for a resuming model re-deriving state fast, not human readability.
+
+- Prose: `Why: We added a mutex because there was a race condition between the two writers.`
+- Telegraphic: `Why: race condition (two writers) — added mutex.`
+
+Markdown structure (headers, lists, checkboxes) stays as-is — parsing scaffolding, not prose. Cutting it costs more to re-derive than it saves.
 
 ## File structure
 
@@ -173,6 +226,9 @@ Status: understanding | planning | implementing | pr-ready | done
 Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
 <approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
 
+## Flow
+<ordered list of files/modules this story is expected to touch, derived from the task breakdown — e.g. "1. src/foo.ts (Task 1)  2. src/bar.ts (Task 2, 3)". Amended only via a Scope Change entry below, never edited in place.>
+
 ## Task Checklist
 - [x] Task 1 — <short description> — files: <list>
 - [ ] Task 2 — ...
@@ -184,6 +240,11 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 
 ### Task 2 — <date> (mechanical, no judgment call)
 - [x] Task 2 — <short description> — files: <list>
+
+### Task 3 — <date> (manual edit, by user)
+- [x] Task 3 — <short description> — files: <list>
+- Check: <correct | issue found — one line, per the manual-edit review>
+- Flow: <on plan | off plan — reason if evident. Only present when the edited file isn't on the story's Flow above.>
 
 ## Scope Changes / Reimplementation
 ### <date> — <short label>
@@ -197,15 +258,17 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
 ```
 
-Append, never overwrite — except the `Status` line, Task Checklist checkboxes, and Current Requirements, which are amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) is a running record: add entries, don't rewrite past ones. This split is what lets a resuming session see both "what's true now" (Current Requirements) and "how we got here" (Scope Changes log) without re-deriving one from the other.
+Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
-Two Task Log entry forms, per Step 3.3: a full `What`/`Why` block for tasks where a genuine judgment call was made, or a single checklist line for purely mechanical tasks — don't write prose that has no decision behind it.
+Three Task Log forms (Step 3.4): full `What`/`Why` block where Claude made a genuine judgment call; single checklist line for mechanical Claude-done tasks; checklist line + one-line `Check:` where the user edited the file by hand — same trigger as the global manual-edit review, just also logged here instead of chat-only. No prose without a decision or a check behind it.
+
+`Flow` (Step 2.3) is decided once, at planning, from the task breakdown — not revisited task-by-task. A manual edit landing outside it gets flagged in chat (Step 3.4) and recorded as a `Flow` line alongside that Task Log entry — non-blocking, just surfaced so an out-of-scope edit isn't silently absorbed.
 
 ## What NOT to do
 
-- Don't skip a gate, even if the next step seems obvious. (This applies in lite mode too — lite collapses which gates exist, it doesn't waive confirmation.)
-- Don't ask the user questions during Step 3 task execution — decide, log, move on. Scope-changing issues are the exception: surface those immediately.
-- Don't overwrite past context file entries — this is a running record, not a snapshot.
+- Don't skip a gate, next step "obvious" or not. Applies in lite mode too — lite collapses which gates exist, never waives confirmation.
+- Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface those immediately.
+- Don't overwrite past entries — running record, not a snapshot.
 - Don't commit the context file or reference it in the PR diff.
-- Don't delete the context file unless the user confirms the PR merged.
-- Don't let a lite-mode story silently absorb a scope change or failed test — that's exactly the case the upgrade path (Step 3.6) exists for. Upgrade to full mode rather than trying to track it in chat memory alone.
+- Don't delete it unless the user confirms the PR merged.
+- Don't let a lite-mode story silently absorb a scope change or failed test — that's what the escalation trigger (see "The context file" in `Skill.md`) is for. Escalate to full mode rather than tracking it in chat memory alone.
