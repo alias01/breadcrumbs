@@ -36,6 +36,9 @@ Status: understanding | planning | implementing | pr-ready | done
 Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
 <approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
 
+## Flow
+<ordered list of files/modules this story is expected to touch, derived from the task breakdown — e.g. "1. src/foo.ts (Task 1)  2. src/bar.ts (Task 2, 3)". Amended only via a Scope Change entry below, never edited in place.>
+
 ## Task Checklist
 - [x] Task 1 — <short description> — files: <list>
 - [ ] Task 2 — ...
@@ -51,6 +54,7 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 ### Task 3 — <date> (manual edit, by user)
 - [x] Task 3 — <short description> — files: <list>
 - Check: <correct | issue found — one line, per the manual-edit review>
+- Flow: <on plan | off plan — reason if evident. Only present when the edited file isn't on the story's Flow above.>
 
 ## Scope Changes / Reimplementation
 ### <date> — <short label>
@@ -67,6 +71,8 @@ Last drafted: <date> — full text was shown in chat for the user to copy into G
 Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
 Three Task Log forms (Step 3.4): full `What`/`Why` block where Claude made a genuine judgment call; single checklist line for mechanical Claude-done tasks; checklist line + one-line `Check:` where the user edited the file by hand — same trigger as the global manual-edit review, just also logged here instead of chat-only. No prose without a decision or a check behind it.
+
+`Flow` (Step 2.3) is decided once, at planning, from the task breakdown — not revisited task-by-task. A manual edit landing outside it gets flagged in chat (Step 3.4) and recorded as a `Flow` line alongside that Task Log entry — non-blocking, just surfaced so an out-of-scope edit isn't silently absorbed.
 
 ## What NOT to do
 
