@@ -31,6 +31,8 @@ No trigger fires, all four gates finish in one sitting → no file, ever. Expect
 
 **Mechanics (location, not committed, resuming, cleanup, efficiency):** see `context-file-mechanics.md`. Read once, the first time a trigger above actually fires — not before.
 
+**Project constitution** — a separate, optional, committed file of standing repo-wide rules (distinct from the per-story file above). See "Project constitution" in `context-file-mechanics.md` for when it's created and how Step 2 checks against it.
+
 **File structure & guardrails:** see `context-template.md`. Read once, first creation only — not on resume, not if no trigger fires. One guardrail without opening that file: **never skip a gate**, file or no file.
 
 ## Lite mode

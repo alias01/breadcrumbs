@@ -41,6 +41,20 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 - Task Checklist adjusted for the new scope.
 - Story continues in the same file — doesn't restart Step 1.
 
+## 4. Project constitution — captured, then enforced
+
+**Prompt A:** mid-story (any full-mode story), state a repo-wide rule: "by the way, every API endpoint in this repo needs a rate limiter, not just this one."
+
+**Expect:**
+- Recognized as repo-wide, not story-specific → asks once to save it as a standing rule.
+- Confirmed → creates `.claude/constitution.md` if missing, appends the rule with rationale + date. **Not** added to `.gitignore` (this file is meant to be committed, unlike per-story context files).
+
+**Prompt B (new story, same repo):** paste an unrelated feature story that adds a new endpoint.
+
+**Expect:**
+- Step 2 reads `.claude/constitution.md`, checks the plan against it before presenting.
+- Plan doesn't already include a rate limiter → surfaced as a conflict, resolved before the plan is presented for confirmation (same handling as the Step 2.2 tripwire).
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.

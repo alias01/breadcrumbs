@@ -32,6 +32,8 @@ No trigger fires, all four gates finish in one sitting → no file, ever. Expect
 
 **Mechanics (location, not committed, resuming, cleanup, efficiency):** see `context-file-mechanics.md`. Read once, the first time a trigger above actually fires — not before.
 
+**Project constitution** — a separate, optional, committed file of standing repo-wide rules (distinct from the per-story file above). See "Project constitution" in `context-file-mechanics.md` for when it's created and how Step 2 checks against it.
+
 **File structure & guardrails:** see `context-template.md`. Read once, first creation only — not on resume, not if no trigger fires. One guardrail without opening that file: **never skip a gate**, file or no file.
 
 ## Lite mode
@@ -68,13 +70,25 @@ Read once, the first time a file-creation trigger fires (see "The context file" 
 
 **Not committed.** On creation: check `.gitignore` for `.claude/context/` (or broader `.claude/`), add if missing. Working memory, not a project artifact — no reason to exist past PR merge.
 
-**Scale note:** Task Log/Scope Changes are append-only by design (see "What NOT to do") — fine at typical story size (2-10 tasks). A story running unusually long (many Scope Changes, dozens of tasks) means a full resume-read scales with it. Not worth optimizing pre-emptively — if it becomes a real cost, revisit then rather than adding compression now.
-
 **Resuming:** before any story work, check `.claude/context/` for existing files. One match, name/slug clearly matches what the user's asking about → read it, summarize status back ("Here's where this stood: ... currently at Step X"), resume. Zero matches → nothing to resume; story hasn't started, or it's mid-way/finished in an unbroken conversation with no trigger fired yet. More than one file present and the user's request doesn't unambiguously point to one (generic "let's continue," or a new/vague prompt while other stories sit mid-flight) → don't guess. List the candidates cheaply: filename (slug) + first two lines of each (title, `Status:`) — never a full read at this stage, cost shouldn't scale with how many stories are open or how long they've grown. Present that list, ask which one. Once picked, proceed as the one-match case (full read, then resume).
+
+**Compaction on resume:** the file itself stays append-only — full detail, never compressed, that's the audit trail Core Philosophy depends on. What compacts is the *chat summary* read back to the user. Task Log/Scope Changes past 3 entries → summarize the older ones in one line each (date + What, no Why detail), give full What/Why detail only for the most recent 2-3 entries and anything still open (unconfirmed Assumptions, unresolved Scope Changes). If the user then asks about an older decision specifically, read that entry's full detail on demand — the file has it, the summary just didn't restate it. Keeps resume cost flat regardless of story length instead of scaling with it.
 
 **Cleanup:** PR merged (user-confirmed) → offer to delete. Never delete unprompted.
 
 **Efficiency:** file exists → one write per gate, every section update batched into one pass, no read-then-write round trips. Don't re-read to confirm a write landed — trust it.
+
+## Project constitution (optional, separate from per-story files)
+
+Standing, project-wide non-negotiables — not this story's decisions, decisions that apply to *every* story in this repo (e.g. "payment retries always carry an idempotency key," "no PII in logs"). Different lifecycle from a per-story context file: not deleted after PR merge, meant to be committed (it's a project artifact, not working memory) — don't add it to `.gitignore`.
+
+**Location:** `.claude/constitution.md`. **Format:** flat list, `- <rule> — rationale: <why> — added <date>`. No status field, no sections — it only ever grows by append.
+
+**Created only when earned, never scaffolded speculatively:** a user states a rule mid-story that's clearly repo-wide, not story-specific ("we always do X across this whole project," not "for this story, do X") → ask once, "want me to save that as a standing project rule so future stories check against it too?" Confirmed → create if missing, append the rule. Declined → log it under this story's Assumptions instead, don't ask again for the same rule.
+
+**Read:** once per story, at Step 2 (Plan) — see `step2-plan.md` — if the file exists. Not re-read every gate.
+
+**Checked, not just read:** Step 2's plan gets checked against it before presenting to the user. Conflict → same handling as the Step 2.2 tripwire (a missed Material unknown): surface it, resolve before continuing, don't build around it.
 
 **Validation:** after a gate write (Understanding Summary, Plan, Task Checklist, or any structural change — not every Task Log append), run `node ~/.claude/skills/breadcrumbs/scripts/validate-context-file.mjs <path>` — catches a missing/malformed `Status` line, missing required sections, or a broken checkbox before it compounds across later gates. Script missing → skip, don't block on it. A failure here doesn't override "don't re-read to confirm a write landed" above — it's a structure check, not a content re-verification.
 
@@ -83,7 +97,7 @@ Read once, the first time a file-creation trigger fires (see "The context file" 
 # Step 1 — Understand & Clarify
 
 1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions.
-2. Only then: follow-ups, only on what's genuinely vague — not everything askable in theory.
+2. Only then: follow-ups, only on what's genuinely vague — not everything askable in theory. Scan against a fixed taxonomy rather than open-ended guessing, so a Material gap doesn't slip through because nobody thought to ask: data model/schema changes, API/contract boundaries, auth/permissions, error handling & edge cases, performance/scale, i18n/locale, backward compatibility. Not every category applies to every story — skip the ones that obviously don't, ask only where the story leaves one genuinely open. This is a scan checklist, not a script — one combined question beats seven separate ones when several categories are actually the same unknown.
 3. User can't answer either (owner unavailable / genuinely undecided) → don't block. Log under Assumptions w/ reasoning, mark `unconfirmed`. Tell the user it needs owner confirmation before final; proceed anyway.
 4. Classify story type now (table in Step 2.1 of `step2-plan.md`, don't wait for Step 2). `Bug fix` / `Copy/config/content change` = **lite**; everything else = **full**. State the mode, one line.
 5. **Tag every open question/assumption**: Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, API/contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count — **not** step 4's type/size classification — decides the gate below. 10-task "New feature/subsystem," all-Cosmetic → gate merges. "Small feature," one Material unknown → gate stays separate. Task/file count belongs to Step 2.4, not here.
@@ -111,6 +125,7 @@ Read once, the first time a file-creation trigger fires (see "The context file" 
 
 2. Discuss the approach at the depth classification calls for: HLD → system-design level (components, data flow, integration points). LLD → key functions/classes/schema. "No design" → name the fix approach, one-two sentences. Not a formal doc — enough to agree the shape before code.
    - **Tripwire:** plan surfaces a Material unknown Step 1 missed → stop, resolve there (ask / log `unconfirmed` per 1.3 in `step1-understand.md`), before continuing. Applies even when 1+2 merged — a bad merge decision surfaces here, doesn't get built around.
+   - **Constitution check:** `.claude/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here, check the plan against it before presenting. Conflict → same handling as the tripwire above, resolve before continuing. No file → nothing to check, skip silently.
 3. Agreed → break into small tasks along natural seams: dependency order first, then component/layer (multi-part work) / file-module boundary (refactors). Scoped right = one Task Log entry (one What + one Why, no "and also"), ≤3 files. Otherwise: split further.
    - **Flow:** the ordered file/module list across all tasks = the story's **Flow** — the set of files this story is expected to touch, and in what order. Derived directly from the task breakdown, no extra thinking. Decided here, at planning, not revisited unless a Scope Change amends it.
 4. Cap total tasks by type — ceiling, not target:
