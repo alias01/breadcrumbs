@@ -1,8 +1,10 @@
-# Breadcrumbs
+<h1 align="center">Breadcrumbs</h1>
 
-**A user story rarely survives contact with reality unchanged — and neither does the reasoning behind it, once the session that produced it is gone.**
+<p align="center"><em>Sessions end. Context windows fill up. The trail doesn't.</em></p>
 
-Breadcrumbs is a skill that runs a user story from a pasted ticket to a PR-ready implementation through four gated steps, while keeping a persistent trail of what was decided, why, and what's left — so the work can resume in a different session, or even a different AI platform, without losing any of it.
+Hansel and Gretel had it right: don't trust the path to remember itself, drop something behind you that will. A user story rarely survives contact with reality unchanged — assumptions get filled in, scope shifts, tests surface edge cases — and none of that reasoning survives the session that produced it either, unless something wrote it down at the time.
+
+Breadcrumbs is a skill that runs a user story from a pasted ticket to a PR-ready implementation through four gated steps, dropping a trail of what was decided and why as it goes — so the work can pick back up in a different session, on a different machine, even on a different AI platform, without anyone having to reconstruct it from a diff.
 
 ## Before / after
 
