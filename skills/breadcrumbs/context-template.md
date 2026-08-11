@@ -48,6 +48,10 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 ### Task 2 — <date> (mechanical, no judgment call)
 - [x] Task 2 — <short description> — files: <list>
 
+### Task 3 — <date> (manual edit, by user)
+- [x] Task 3 — <short description> — files: <list>
+- Check: <correct | issue found — one line, per the manual-edit review>
+
 ## Scope Changes / Reimplementation
 ### <date> — <short label>
 - Trigger: <test failure, owner feedback, scope change, etc.>
@@ -62,7 +66,7 @@ Last drafted: <date> — full text was shown in chat for the user to copy into G
 
 Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
-Two Task Log forms (Step 3.3): full `What`/`Why` block where a genuine judgment call was made, single checklist line for mechanical tasks. No prose without a decision behind it.
+Three Task Log forms (Step 3.4): full `What`/`Why` block where Claude made a genuine judgment call; single checklist line for mechanical Claude-done tasks; checklist line + one-line `Check:` where the user edited the file by hand — same trigger as the global manual-edit review, just also logged here instead of chat-only. No prose without a decision or a check behind it.
 
 ## What NOT to do
 

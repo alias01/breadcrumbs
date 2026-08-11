@@ -20,9 +20,10 @@ Terse, bullet/fragment, glanceable. Senior/expert audience → jargon freely, no
 
 ## The context file
 
-**Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Two triggers create the file:
+**Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
 - **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
 - **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.5) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
+- **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
 
 No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
 
@@ -30,7 +31,7 @@ No trigger fires, all four gates finish in one sitting → no file, ever. Expect
 
 **Not committed.** On creation: check `.gitignore` for `.claude/context/` (or broader `.claude/`), add if missing. Working memory, not a project artifact — no reason to exist past PR merge.
 
-**Resuming:** before any story work, check for an existing file. Exists → read it, summarize status back ("Here's where this stood: ... currently at Step X"), resume. Doesn't exist → nothing to resume; story hasn't started, or it's mid-way/finished in an unbroken conversation with no trigger fired yet.
+**Resuming:** before any story work, check `.claude/context/` for existing files. One match, name/slug clearly matches what the user's asking about → read it, summarize status back ("Here's where this stood: ... currently at Step X"), resume. Zero matches → nothing to resume; story hasn't started, or it's mid-way/finished in an unbroken conversation with no trigger fired yet. More than one file present and the user's request doesn't unambiguously point to one (generic "let's continue," or a new/vague prompt while other stories sit mid-flight) → don't guess — list the in-progress stories (slug + one-line status each) and ask which one. Once picked, proceed as the one-match case.
 
 **Cleanup:** PR merged (user-confirmed) → offer to delete. Never delete unprompted.
 
@@ -100,7 +101,7 @@ Auto-detected Step 1.4: `Bug fix` / `Copy/config/content change` → lite. Every
 1. Work the Task Checklist one task at a time.
 2. **Don't ask the user mid-task.** Use best judgment. Genuine judgment call (not mechanical) → log in Task Log's "Why." Changes what was agreed (contradicts plan, needs a scope decision) → not a solo call — log under Scope Changes, flag immediately.
 3. Apply `ponytail` for how code gets written: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Exceptions still apply — never simplify away input validation, error handling, security, accessibility.
-4. After each task — file exists → append Task Log entry, check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line (`context-template.md` has both forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat.
+4. After each task — file exists → append Task Log entry, check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check.
 5. Test fails / owner invalidates an assumption / scope changes mid-flight → file-creation trigger (see "The context file") if none exists yet: create it, backfill what's happened, escalate lite→full if applicable. Either way: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
 6. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR.
 
