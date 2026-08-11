@@ -28,5 +28,7 @@
    ```
 
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
+
+   Before running `git commit`, check the header against `~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs` (`node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`) — deterministic check, cheaper and more reliable than eyeballing the regex. Script missing (skill not installed via the sync, or running on a platform without it) → fall back to checking by hand against the table above, don't block on it.
 6. Test fails / owner invalidates an assumption / scope changes mid-flight → file-creation trigger (see "The context file" in `Skill.md`) if none exists yet: create it, backfill what's happened, escalate lite→full if applicable. Either way: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
 7. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.

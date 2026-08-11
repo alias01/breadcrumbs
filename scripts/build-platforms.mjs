@@ -3,9 +3,14 @@
 // platform-specific instruction files. Re-run after editing Skill.md.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join, basename } from "node:path";
+import { homedir } from "node:os";
 
 const SOURCE = "skills/breadcrumbs/Skill.md";
+const SCRIPTS = [
+  "skills/breadcrumbs/scripts/validate-context-file.mjs",
+  "skills/breadcrumbs/scripts/validate-commit-message.mjs",
+];
 const REFERENCES = [
   "skills/breadcrumbs/context-file-mechanics.md",
   "skills/breadcrumbs/step1-understand.md",
@@ -22,7 +27,7 @@ function parseSkill(raw) {
   const description = frontmatter.match(/^description:\s*(.+)$/m)?.[1]?.trim();
   const name = frontmatter.match(/^name:\s*(.+)$/m)?.[1]?.trim();
   if (!description || !name) throw new Error("frontmatter missing name/description");
-  return { name, description, body: body.trim() };
+  return { name, description, frontmatter: frontmatter.trim(), body: body.trim() };
 }
 
 function write(path, content) {
@@ -32,7 +37,7 @@ function write(path, content) {
 }
 
 const raw = readFileSync(SOURCE, "utf8");
-const { name, description, body } = parseSkill(raw);
+const { name, description, frontmatter, body } = parseSkill(raw);
 const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs — edit the source, then re-run the script. -->\n\n`;
 
 // Skill.md points at the step files, context-file-mechanics.md, and
@@ -88,5 +93,26 @@ write(
     2
   )
 );
+
+// Claude Code's own local skill install (~/.claude/skills/breadcrumbs) is a
+// SEPARATE copy from this repo's skills/breadcrumbs/ — Claude Code loads
+// skills by name from there, not from this repo, so repo edits are invisible
+// at runtime until this copy is refreshed. Unlike the other platforms above,
+// Claude Code DOES support on-demand reads, so this sync preserves that:
+// SKILL.md stays a lean router, reference files land in references/ verbatim,
+// and pointers in the router body get rewritten to the references/ path.
+const CLAUDE_SKILL_DIR = join(homedir(), ".claude", "skills", "breadcrumbs");
+let routerForInstall = body;
+for (const refPath of REFERENCES) {
+  const file = basename(refPath);
+  routerForInstall = routerForInstall.replaceAll(`\`${file}\``, `\`references/${file}\``);
+}
+write(join(CLAUDE_SKILL_DIR, "SKILL.md"), `---\n${frontmatter}\n---\n\n${routerForInstall}\n`);
+for (const refPath of REFERENCES) {
+  write(join(CLAUDE_SKILL_DIR, "references", basename(refPath)), readFileSync(refPath, "utf8"));
+}
+for (const scriptPath of SCRIPTS) {
+  write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+}
 
 console.log("\nDone. skills/breadcrumbs/Skill.md remains the canonical source.");
