@@ -14,14 +14,34 @@ Breadcrumbs is a skill that runs a user story from a pasted ticket to a PR-ready
 
 Every story runs through four gates, confirmed with you at each one:
 
-```
-1. Understand   → restate the story, surface assumptions, confirm
-2. Plan         → design depth scaled to story size, task breakdown, confirm
-3. Implement    → one task at a time, logged as it happens
-4. PR           → What / Why / Test / Rollback / Dependencies — only what a reviewer needs
+```mermaid
+flowchart LR
+    T([Paste a ticket]) --> S1["1 · Understand<br/>restate, surface assumptions"]
+    S1 -- confirm --> S2["2 · Plan<br/>design depth scaled to size"]
+    S2 -- confirm --> S3["3 · Implement<br/>one task at a time, logged"]
+    S3 -- all tasks checked --> S4["4 · PR<br/>What / Why / Test / Rollback / Dependencies"]
+    S4 -- confirm --> D([PR draft in chat])
+
+    S1 -.-> G
+    S2 -.-> G
+    S3 -.-> G
+    G[(context file<br/>only if a trigger fires)]
 ```
 
-Nothing is written to disk until it needs to be. A story that finishes in one sitting leaves no trace — that's the expected path, not a skipped step. A context file only gets created when the work needs to survive past the current conversation: you say "let's continue tomorrow," a test fails mid-implementation, scope changes, or the conversation drifts to something else entirely (breadcrumbs checkpoints once and asks first, it doesn't assume).
+Nothing is written to disk until it needs to be. A story that finishes in one sitting leaves no trace — that's the expected path, not a skipped step. A context file only gets created when the work needs to survive past the current conversation:
+
+```mermaid
+flowchart TD
+    W[Mid-story] --> Trig{Trigger?}
+    Trig -- "\"let's continue tomorrow\"" --> C[Create context file]
+    Trig -- "test fails / scope changes" --> C
+    Trig -- "conversation drifts elsewhere" --> Ask{"Checkpoint first?<br/>(asked once)"}
+    Ask -- yes --> C
+    Ask -- no --> W
+    Trig -- none, story finishes --> None([No file, ever])
+
+    C --> R["Next session, same or different platform:<br/>read file → resume where it left off"]
+```
 
 Once a file exists, it also tracks the story's **Flow** — the set of files the plan expects to touch, decided once at planning — so a hand-edit that lands somewhere unplanned gets flagged instead of silently absorbed.
 
