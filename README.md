@@ -1,21 +1,21 @@
 <h1 align="center">Breadcrumbs</h1>
 
-<p align="center"><em>Sessions end. Context windows fill up. The trail doesn't.</em></p>
+<p align="center"><em>Sessions end. The trail doesn't.</em></p>
 
-Hansel and Gretel had it right: don't trust the path to remember itself, drop something behind you that will. A user story rarely survives contact with reality unchanged — assumptions get filled in, scope shifts, tests surface edge cases — and none of that reasoning survives the session that produced it either, unless something wrote it down at the time.
+Hansel and Gretel had the right idea: don't trust the path to remember itself, drop something behind you that will. A user story rarely survives contact with reality unchanged — assumptions get filled in, scope shifts, a test turns up an edge case nobody planned for. The reasoning behind those changes doesn't survive either, unless someone writes it down while it's still fresh.
 
-Breadcrumbs is a skill that runs a user story from a pasted ticket to a PR-ready implementation through four gated steps, dropping a trail of what was decided and why as it goes — so the work can pick back up in a different session, on a different machine, even on a different AI platform, without anyone having to reconstruct it from a diff.
+Breadcrumbs runs a user story from a pasted ticket to a PR-ready implementation through four gated steps, and drops a trail of what got decided and why along the way. Pick the work back up in a new session, on a new machine, even on a different AI platform, and it's all still there — nobody has to reconstruct it from a diff.
 
 ## Before / after
 
-You paste `PARK-482: fix duplicate charge on payment retry`. Three tasks in, a test fails — retries aren't idempotent for a second, unrelated reason. Scope changes on the spot. You stop for the day with two tasks left.
+Say you paste `PARK-482: fix duplicate charge on payment retry`. Three tasks in, a test fails: turns out retries need a second idempotency guard too, unrelated to the original bug. Scope changes on the spot. You stop for the day with two tasks left.
 
-**Without breadcrumbs**, tomorrow's session (or a teammate's, or a different AI entirely) has none of that history. It re-reads the diff, can't tell the second idempotency issue was deliberate scope, and either re-litigates a decision that was already made or ships past it without knowing why the code looks the way it does. The eventual PR description gets reconstructed from memory of a diff, not from the reasoning that produced it — and the reviewer who asks "why is this written this way?" next month gets a shrug.
+**Without breadcrumbs**, tomorrow's session — or a teammate's, or a different AI entirely — starts from the diff alone. It can't tell the idempotency guard was a deliberate scope change rather than scope creep, so it either re-litigates a decision that's already settled or ships past it with no idea why the code looks the way it does. Whoever writes the PR description is reconstructing it from what's left on screen, and the reviewer who asks "why is this written this way?" next month gets a shrug.
 
 **With breadcrumbs**, that session opens with:
 > *Here's where this stood: PARK-482, Step 3 of 4, 3/5 tasks done. Scope changed on 2026-08-11 — retries also needed a second idempotency guard, unrelated to the original bug. Two tasks left: add the guard, add regression coverage.*
 
-Same context, zero re-derivation, on any machine or platform that can read a markdown file.
+No re-reading the diff, no guessing at intent — the trail just picks up where it left off, on whatever machine or platform happens to be open.
 
 | | Without | With breadcrumbs |
 |---|---|---|
@@ -43,7 +43,7 @@ flowchart LR
     G[(context file<br/>only if a trigger fires)]
 ```
 
-Nothing is written to disk until it needs to be. A story that finishes in one sitting leaves no trace — that's the expected path, not a skipped step. A context file only gets created when the work needs to survive past the current conversation:
+Nothing hits disk until it has to — a story that wraps up in one sitting never gets a file at all, which is the normal case, not something falling through the cracks. A context file only shows up once the work needs to outlast the current conversation:
 
 ```mermaid
 flowchart TD
@@ -58,7 +58,7 @@ flowchart TD
     C --> R["Next session, same or different platform:<br/>read file → resume where it left off"]
 ```
 
-Once a file exists, it also tracks the story's **Flow** — the set of files the plan expects to touch, decided once at planning — so a hand-edit that lands somewhere unplanned gets flagged instead of silently absorbed.
+Once a file exists, it also tracks the story's **Flow**, the set of files the plan expects to touch, decided once up front at planning. A hand-edit that lands somewhere the plan didn't expect gets flagged rather than quietly folded in.
 
 ## Install
 
@@ -105,7 +105,7 @@ node scripts/build-platforms.mjs
 ## FAQ
 
 **Does every story get a context file?**
-No. If all four gates finish in one sitting, nothing is ever written to disk — that's the common case, not an edge case.
+No — most stories finish in one sitting and never touch disk.
 
 **What if I'm running several stories at once?**
 Resuming checks `.claude/context/` for existing files. More than one candidate and your prompt doesn't clearly point to one → it lists them (filename, title, status — a cheap partial read, not a full one) and asks which.
@@ -114,7 +114,7 @@ Resuming checks `.claude/context/` for existing files. More than one candidate a
 Bug fixes and copy/config changes run in lite mode: no context file, no design step, a two-task ceiling. Full rigor only kicks in if something mid-flight actually needs it.
 
 **Why "breadcrumbs"?**
-The trail is the point — not the story itself, but the ability to follow it back.
+Because what matters isn't the story itself — it's being able to find your way back to it.
 
 ## License
 
