@@ -7,6 +7,7 @@ import { dirname, join, basename } from "node:path";
 import { homedir } from "node:os";
 
 const SOURCE = "skills/breadcrumbs/Skill.md";
+const VERSION = readFileSync("VERSION", "utf8").trim();
 const SCRIPTS = [
   "skills/breadcrumbs/scripts/validate-context-file.mjs",
   "skills/breadcrumbs/scripts/validate-commit-message.mjs",
@@ -85,7 +86,7 @@ write(
     {
       name,
       description,
-      version: "1.0.0",
+      version: VERSION,
       license: "MIT",
       skills: ["./skills/breadcrumbs"],
     },

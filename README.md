@@ -102,6 +102,29 @@ node scripts/build-platforms.mjs
 
 [`skills/breadcrumbs/context-template.md`](skills/breadcrumbs/context-template.md) defines the context file's structure and guardrails; it gets inlined into the generated platform files (they have no on-demand file-loading, unlike Claude Code, which reads it only once per story).
 
+### Releasing
+
+Versioning is manual — [`VERSION`](VERSION) is the single source of truth, read by `build-platforms.mjs` into the generated `plugin.json`.
+
+```bash
+# 1. Bump the version by hand
+echo "1.1.0" > VERSION
+
+# 2. Generate the CHANGELOG.md entry from commits since the last tag
+node scripts/generate-changelog.mjs
+
+# 3. Review/edit the generated section, then rebuild and commit
+node scripts/build-platforms.mjs
+git add VERSION CHANGELOG.md .claude-plugin/plugin.json
+git commit -m "chore(release): v1.1.0"
+
+# 4. Tag and push — this triggers the release workflow
+git tag v1.1.0
+git push origin main v1.1.0
+```
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) creates the GitHub Release automatically on tag push, using the matching `CHANGELOG.md` section as release notes.
+
 ## FAQ
 
 **Does every story get a context file?**

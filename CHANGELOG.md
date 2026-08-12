@@ -1,0 +1,31 @@
+# Changelog
+
+Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
+
+## [1.0.0] - 2026-08-12
+
+### Other
+- Document known limitations, add missing perf commit type
+- Revert "Delegate large Step 3 implementations to sub-agents"
+- Delegate large Step 3 implementations to sub-agents
+- Add project constitution, resume compaction, clarify taxonomy
+- Sync installed skill copy, add deterministic validators, add golden-path scenarios
+- Add per-task Conventional Commits step before PR creation
+- Split Skill.md into per-step files for progressive loading
+- Proofread README, tone down AI-generated feel
+- Give README a stronger title treatment
+- Make README Before/After concrete instead of abstract
+- Add Mermaid diagrams to README for the four-gate flow and triggers
+- Add README and MIT LICENSE
+- Pin multi-story resume listing to a cheap partial read
+- Add planned Flow tracking and simplify PR template to fixed sections
+- Add topic-shift trigger, multi-story resume disambiguation, and manual-edit logging
+- Cut skill-load token cost and defer context-file creation to a trigger
+- Consolidate lite-mode branching into a single section
+- Add lite mode for small stories and trim per-invocation context load
+- Merge pull request #3 from alias01/gate-skill-followups
+- Refine the four-gate skill: type-scoped planning depth, task caps, and a leaner PR step
+- Merge pull request #1 from alias01/compile-platforms-and-token-tuning
+- Compile breadcrumbs skill to multi-platform formats, add passive-activation hook, and trim gate token overhead
+- init
+
