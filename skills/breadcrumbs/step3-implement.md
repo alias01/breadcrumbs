@@ -15,6 +15,7 @@
    | `docs` | Documentation changes |
    | `style` | Code style changes (formatting, no logic change) |
    | `refactor` | Code refactoring, no behavior change |
+   | `perf` | Performance improvement — behavior unchanged, characteristics (speed, memory) improved |
    | `test` | Adding or modifying tests |
    | `chore` | Maintenance tasks, tooling, deps |
 

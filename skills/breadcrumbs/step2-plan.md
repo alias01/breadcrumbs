@@ -30,5 +30,7 @@
    | New service/integration | 10 | same — flag before implementing |
    | Performance | 5 | more usually means multiple bottlenecks — separate stories |
 
+**Known limitation — task cap doesn't bound file count:** the 3-files-per-task ceiling (point 3) and the 10-task ceiling (this table) are independent caps, not multiplicative by design — but nothing stops them compounding. A "new feature/subsystem" story at the 10-task ceiling can touch up to 10 × 3 = 30 distinct files in the worst case (no overlap between tasks' file lists). Realistic stories land lower — tasks routinely share files (a shared module, shared types, a shared test file), so Flow's *distinct* file count is usually well under the multiplicative ceiling — but nothing enforces that, it's incidental to how the tasks happen to split. A story sitting near 30 distinct files in its Flow is a strong signal to split it, even if task count alone (already at 10, already flagged) hasn't said so — treat a large Flow the same way as hitting the task-count ceiling: flag it, propose splitting, before Step 3.
+
 5. File exists → write story type, design depth, Flow, Task Checklist to it, one pass (HLD/LLD notes only if used). No file → stays in chat.
 6. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).

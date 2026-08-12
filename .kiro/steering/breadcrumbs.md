@@ -74,6 +74,8 @@ Read once, the first time a file-creation trigger fires (see "The context file" 
 
 **Compaction on resume:** the file itself stays append-only — full detail, never compressed, that's the audit trail Core Philosophy depends on. What compacts is the *chat summary* read back to the user. Task Log/Scope Changes past 3 entries → summarize the older ones in one line each (date + What, no Why detail), give full What/Why detail only for the most recent 2-3 entries and anything still open (unconfirmed Assumptions, unresolved Scope Changes). If the user then asks about an older decision specifically, read that entry's full detail on demand — the file has it, the summary just didn't restate it. Keeps resume cost flat regardless of story length instead of scaling with it.
 
+**Known limitation — unbounded growth:** Task Log is implicitly capped by Step 2.4's task ceiling (max 10 tasks even for "new feature/subsystem"), so it can't grow past that. Scope Changes and Clarifying Q&A have no such cap — pure append, no limit, no rotation. A story revised many times over its life accumulates a Scope Changes entry every time, indefinitely. Compaction above only shrinks what gets *echoed back in chat* on resume — it doesn't shrink the file on disk, and doesn't reduce the one full read still needed to produce that summary. Not fixed — no cap, no archival mechanism exists yet. If a story's Scope Changes count starts to look like the task-count problem Step 2.4 already flags, treat it the same way (flag it, consider whether the story should've been split) until a real cap gets added.
+
 **Cleanup:** PR merged (user-confirmed) → offer to delete. Never delete unprompted.
 
 **Efficiency:** file exists → one write per gate, every section update batched into one pass, no read-then-write round trips. Don't re-read to confirm a write landed — trust it.
@@ -139,6 +141,8 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
    | New service/integration | 10 | same — flag before implementing |
    | Performance | 5 | more usually means multiple bottlenecks — separate stories |
 
+**Known limitation — task cap doesn't bound file count:** the 3-files-per-task ceiling (point 3) and the 10-task ceiling (this table) are independent caps, not multiplicative by design — but nothing stops them compounding. A "new feature/subsystem" story at the 10-task ceiling can touch up to 10 × 3 = 30 distinct files in the worst case (no overlap between tasks' file lists). Realistic stories land lower — tasks routinely share files (a shared module, shared types, a shared test file), so Flow's *distinct* file count is usually well under the multiplicative ceiling — but nothing enforces that, it's incidental to how the tasks happen to split. A story sitting near 30 distinct files in its Flow is a strong signal to split it, even if task count alone (already at 10, already flagged) hasn't said so — treat a large Flow the same way as hitting the task-count ceiling: flag it, propose splitting, before Step 3.
+
 5. File exists → write story type, design depth, Flow, Task Checklist to it, one pass (HLD/LLD notes only if used). No file → stays in chat.
 6. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
 
@@ -161,6 +165,7 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
    | `docs` | Documentation changes |
    | `style` | Code style changes (formatting, no logic change) |
    | `refactor` | Code refactoring, no behavior change |
+   | `perf` | Performance improvement — behavior unchanged, characteristics (speed, memory) improved |
    | `test` | Adding or modifying tests |
    | `chore` | Maintenance tasks, tooling, deps |
 

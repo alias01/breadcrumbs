@@ -55,6 +55,20 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 - Step 2 reads `.claude/constitution.md`, checks the plan against it before presenting.
 - Plan doesn't already include a rate limiter → surfaced as a conflict, resolved before the plan is presented for confirmation (same handling as the Step 2.2 tripwire).
 
+## 5. Mid-session requirement drop — revert just that task
+
+**Prompt:** mid-story (full mode), after a task implementing some requirement X is already committed, say "actually, requirement X isn't needed — I don't like this implementation, revert it."
+
+**Expect:**
+- Recognized as a Step 3.5 trigger (owner invalidates a requirement/assumption, scope changes mid-flight) — context file created now if it doesn't exist yet.
+- Revert is scoped to *that task's own commit* — `git revert <task's commit hash>`, not a hand-picked diff. Only possible cleanly because Step 3.5 commits one task per commit; a story implemented as one big commit would force picking lines out of a mixed diff instead.
+- Structured Scope Changes entry logged: trigger (owner decided X unnecessary), before (had X), after (X removed), affected tasks, why.
+- Current Requirements amended in place — drops X, doesn't leave it contradicting the Task Log.
+- Task Checklist updated for the dropped task — **not silently deleted**: the Task Log keeps the record that X was built, then explicitly reverted, and why. A later reader (different session, teammate, different AI) sees a deliberate decision, not a gap that looks like something got forgotten.
+- Story continues from the remaining Task Checklist — doesn't restart Step 1/2, doesn't re-touch other tasks' commits.
+
+**Why this matters (not just a mechanical check):** without per-task commits and a Scope Changes log, both halves of this fail silently — the revert boundary is fuzzy (one commit holds several requirements, so reverting requires picking lines by hand and risking scope bleed into unrelated changes), and the reason disappears (a bare `git revert` says *that* something was undone, never *why* — six commits later, "did we forget X or decide against it?" has no answer without re-deriving it from memory).
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.

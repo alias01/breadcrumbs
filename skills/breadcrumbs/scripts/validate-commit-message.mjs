@@ -8,7 +8,7 @@
 
 import { readFileSync } from "node:fs";
 
-const TYPES = ["feat", "fix", "docs", "style", "refactor", "test", "chore"];
+const TYPES = ["feat", "fix", "docs", "style", "refactor", "perf", "test", "chore"];
 const HEADER = new RegExp(`^(${TYPES.join("|")})(\\([\\w./-]+\\))?: .+`);
 
 function readMessage(argv) {
