@@ -55,19 +55,6 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 - Step 2 reads `.claude/constitution.md`, checks the plan against it before presenting.
 - Plan doesn't already include a rate limiter → surfaced as a conflict, resolved before the plan is presented for confirmation (same handling as the Step 2.2 tripwire).
 
-## 5. Sub-agent delegation — above the task threshold
-
-**Prompt:** paste a "new feature/subsystem" story that plans out to 7+ tasks (above the 5-task delegation threshold from Step 3.0).
-
-**Expect:**
-- Step 3 starts by checking the threshold once, states delegation is happening (not silent).
-- Tasks dispatched one at a time, in dependency order — not parallel.
-- Each sub-agent gets only that task's scope (task description, relevant Flow files, relevant Plan notes) — not the full conversation.
-- Sub-agent implements and commits its own task (Conventional Commits header, passes the validator) before returning.
-- This thread writes the Task Log entry from the sub-agent's report, not from re-deriving it — one write, same as the non-delegated path.
-- Force a plan contradiction in one task (e.g. the sub-agent discovers the planned approach doesn't work) → sub-agent stops, doesn't commit, returns the contradiction flagged; this thread applies point 6 (Scope Changes entry, escalation), not the sub-agent.
-- A same-size story at or under 5 tasks run through the same prompt style → confirm it does *not* delegate, runs in-thread as before.
-
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
