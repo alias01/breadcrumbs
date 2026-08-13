@@ -138,7 +138,7 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
    | New service/integration | 10 | same — flag before implementing |
    | Performance | 5 | more usually means multiple bottlenecks — separate stories |
 
-**Known limitation — task cap doesn't bound file count:** the 3-files-per-task ceiling (point 3) and the 10-task ceiling (this table) are independent caps, not multiplicative by design — but nothing stops them compounding. A "new feature/subsystem" story at the 10-task ceiling can touch up to 10 × 3 = 30 distinct files in the worst case (no overlap between tasks' file lists). Realistic stories land lower — tasks routinely share files (a shared module, shared types, a shared test file), so Flow's *distinct* file count is usually well under the multiplicative ceiling — but nothing enforces that, it's incidental to how the tasks happen to split. A story sitting near 30 distinct files in its Flow is a strong signal to split it, even if task count alone (already at 10, already flagged) hasn't said so — treat a large Flow the same way as hitting the task-count ceiling: flag it, propose splitting, before Step 3.
+**Flow size check:** per-task file cap (point 3) × task cap (this table) compounds to 30 files worst case, uncapped independently of the task-count flag. Flow nearing ~30 distinct files → flag, propose splitting, before Step 3 — same treatment as hitting the task ceiling.
 
 5. File exists → write story type, design depth, Flow, Task Checklist to it, one pass (HLD/LLD notes only if used). No file → stays in chat.
 6. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
@@ -178,7 +178,7 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
 
    Before running `git commit`, check the header against `~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs` (`node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`) — deterministic check, cheaper and more reliable than eyeballing the regex. Script missing (skill not installed via the sync, or running on a platform without it) → fall back to checking by hand against the table above, don't block on it.
-6. Test fails / owner invalidates an assumption / scope changes mid-flight → file-creation trigger (see "The context file" in `Skill.md`) if none exists yet: create it, backfill what's happened, escalate lite→full if applicable. Either way: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
+6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
 7. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.
 
 ---
@@ -187,21 +187,14 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
 
 1. Tell the user the work is ready for a PR.
 2. Title: file exists → derive from it (`<Ticket ID/slug>: <imperative summary>`, file header + Understanding Summary). No file → compose the same way from the conversation.
-3. Fixed section set, same five names regardless of type — **What, Why, Test, Rollback, Dependencies.** No type-varying sections anymore. Bias toward fewer: include a section only if it earns its place for a reviewer, omit rather than pad.
-   - **What** — always. The change, as plainly as possible.
-   - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it, don't pad.
-   - **Test** — how it's verified: test added, manual repro steps, "none needed" + reason. Skip only when there's genuinely nothing to verify (pure copy/comment change).
-   - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). Omit otherwise — don't state the obvious.
-   - **Dependencies** — only if this PR depends on or blocks something else (another PR, a migration, a config flag, an external service). Omit otherwise.
-
-4. File exists → pull from it, don't re-summarize. No file → derive the same from the conversation:
-   - What ← Task Log "What" entries, concatenated
-   - Why ← Task Log "Why" entries, only where they add something What didn't already say
-   - Test ← test-related Task Log entries / Plan testing notes; no coverage found → say so plainly, don't invent
-   - Rollback ← Plan/Scope Changes, only where a non-trivial revert path was flagged
-   - Dependencies ← Assumptions/Plan, only where an external or ordering dependency was flagged
-   - What changed since last PR ← Scope Changes dated after the last PR Summary write (later-update case only)
-5. **Cap every included section at 2 lines.** Pulled content runs long — compress to the essential point(s), don't truncate mid-sentence. Can't fit without losing something needed → signal the task/decision was too broad, not a reason to break the cap. **Whole draft should read in 2-5 min.** Runs longer with every section already trimmed and only the earned ones kept → the story was too big for one PR, say so instead of shipping a wall of text.
+3. Fixed section set, same five names regardless of type — **What, Why, Test, Rollback, Dependencies.** No type-varying sections anymore. Bias toward fewer: include a section only if it earns its place for a reviewer, omit rather than pad. File exists → pull content from it, don't re-summarize; no file → derive the same from the conversation.
+   - **What** — always. The change, as plainly as possible. ← Task Log "What" entries, concatenated.
+   - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it. ← Task Log "Why" entries, only where they add something What didn't.
+   - **Test** — how it's verified: test added, manual repro steps, "none needed" + reason. Skip only when genuinely nothing to verify. ← test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent.
+   - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Plan/Scope Changes, only where flagged.
+   - **Dependencies** — only if this PR depends on or blocks something else. ← Assumptions/Plan, only where flagged.
+   - **What changed since last PR** (later-update case only) ← Scope Changes dated after the last PR Summary write.
+4. **Cap every included section at 2 lines.** Pulled content runs long — compress to the essential point(s), don't truncate mid-sentence. Can't fit without losing something needed → signal the task/decision was too broad, not a reason to break the cap. **Whole draft should read in 2-5 min.** Runs longer with every section already trimmed and only the earned ones kept → the story was too big for one PR, say so instead of shipping a wall of text.
 
    Template:
    ```markdown
@@ -229,9 +222,9 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
 
    **Test:** Regression test simulates a retried request and asserts a single charge.
    ```
-6. **Show the draft directly in chat, stop there.** Not a file draft awaiting a later write — the deliverable itself. No way to open a PR on GitHub/GitLab/Bitbucket → the chat message *is* the artifact, user copies it into the platform's PR field. Nothing written to the context file here — no later gate reads a stored PR summary back.
-7. **Gate:** confirm or request changes, iterate in chat, until happy with what they'll paste.
-8. Confirmed + file exists → write one line to PR Summary: `Last drafted: <date>` (anchor for diffing Scope Changes later, not a text copy). Update Status to `pr-ready`, same pass. Trip marker. No file → nothing to write, chat draft was the whole deliverable.
+5. **Show the draft directly in chat, stop there.** Not a file draft awaiting a later write — the deliverable itself. No way to open a PR on GitHub/GitLab/Bitbucket → the chat message *is* the artifact, user copies it into the platform's PR field. Nothing written to the context file here — no later gate reads a stored PR summary back.
+6. **Gate:** confirm or request changes, iterate in chat, until happy with what they'll paste.
+7. Confirmed + file exists → write one line to PR Summary: `Last drafted: <date>` (anchor for diffing Scope Changes later, not a text copy). Update Status to `pr-ready`, same pass. Trip marker. No file → nothing to write, chat draft was the whole deliverable.
 
 ---
 
