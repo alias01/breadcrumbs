@@ -195,7 +195,7 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
    - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it. ← Task Log "Why" entries, only where they add something What didn't.
    - **Test** — how it's verified: test added, manual repro steps, "none needed" + reason. Skip only when genuinely nothing to verify. ← test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent.
    - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Plan/Scope Changes, only where flagged.
-   - **Dependencies** — only if this PR depends on or blocks something else. ← Assumptions/Plan, only where flagged.
+   - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first.
    - **What changed since last PR** (later-update case only) ← Scope Changes dated after the last PR Summary write.
 4. **Cap every included section at 2 lines.** Pulled content runs long — compress to the essential point(s), don't truncate mid-sentence. Can't fit without losing something needed → signal the task/decision was too broad, not a reason to break the cap. **Whole draft should read in 2-5 min.** Runs longer with every section already trimmed and only the earned ones kept → the story was too big for one PR, say so instead of shipping a wall of text.
 

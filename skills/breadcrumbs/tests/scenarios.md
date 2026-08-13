@@ -69,6 +69,17 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Why this matters (not just a mechanical check):** without per-task commits and a Scope Changes log, both halves of this fail silently — the revert boundary is fuzzy (one commit holds several requirements, so reverting requires picking lines by hand and risking scope bleed into unrelated changes), and the reason disappears (a bare `git revert` says *that* something was undone, never *why* — six commits later, "did we forget X or decide against it?" has no answer without re-deriving it from memory).
 
+## 6. PR draft — stacked-branch dependency
+
+**Setup:** in the scratch repo, create and check out a branch off the default branch (e.g. `feature/base`), commit something, then branch again off *that* (e.g. `feature/on-top`) without merging `feature/base` back. Run a small-feature story to completion on `feature/on-top`, reach Step 4.
+
+**Expect:**
+- `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → recognized as stacked.
+- PR draft includes a **Dependencies** section: names the base branch (`feature/base`), states it needs merging first.
+- No other section changes — What/Why/Test/Rollback follow their usual inclusion rules independent of this.
+
+**Contrast check:** re-run a normal story on a branch cut directly from the default branch — **Dependencies** section stays omitted, same as before this change.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
