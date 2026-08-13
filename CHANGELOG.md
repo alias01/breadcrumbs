@@ -2,6 +2,13 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
 
+## [1.1.0] - 2026-08-13
+
+### Other
+- Trim restated content in context-file-mechanics.md and context-template.md
+- Flag stacked-branch dependencies in PR drafts
+- Trim restated content in Step 2-4 instructions
+
 ## [1.0.0] - 2026-08-12
 
 ### Other
@@ -28,4 +35,3 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bu
 - Merge pull request #1 from alias01/compile-platforms-and-token-tuning
 - Compile breadcrumbs skill to multi-platform formats, add passive-activation hook, and trim gate token overhead
 - init
-
