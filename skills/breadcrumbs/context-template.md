@@ -70,9 +70,9 @@ Last drafted: <date> — full text was shown in chat for the user to copy into G
 
 Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
-Three Task Log forms (Step 3.4): full `What`/`Why` block where Claude made a genuine judgment call; single checklist line for mechanical Claude-done tasks; checklist line + one-line `Check:` where the user edited the file by hand — same trigger as the global manual-edit review, just also logged here instead of chat-only. No prose without a decision or a check behind it.
+Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
-`Flow` (Step 2.3) is decided once, at planning, from the task breakdown — not revisited task-by-task. A manual edit landing outside it gets flagged in chat (Step 3.4) and recorded as a `Flow` line alongside that Task Log entry — non-blocking, just surfaced so an out-of-scope edit isn't silently absorbed.
+`Flow` — defined Step 2.3, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
 
 ## What NOT to do
 

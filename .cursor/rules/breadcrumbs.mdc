@@ -74,7 +74,7 @@ Read once, the first time a file-creation trigger fires (see "The context file" 
 
 **Compaction on resume:** the file itself stays append-only — full detail, never compressed, that's the audit trail Core Philosophy depends on. What compacts is the *chat summary* read back to the user. Task Log/Scope Changes past 3 entries → summarize the older ones in one line each (date + What, no Why detail), give full What/Why detail only for the most recent 2-3 entries and anything still open (unconfirmed Assumptions, unresolved Scope Changes). If the user then asks about an older decision specifically, read that entry's full detail on demand — the file has it, the summary just didn't restate it. Keeps resume cost flat regardless of story length instead of scaling with it.
 
-**Known limitation — unbounded growth:** Task Log is implicitly capped by Step 2.4's task ceiling (max 10 tasks even for "new feature/subsystem"), so it can't grow past that. Scope Changes and Clarifying Q&A have no such cap — pure append, no limit, no rotation. A story revised many times over its life accumulates a Scope Changes entry every time, indefinitely. Compaction above only shrinks what gets *echoed back in chat* on resume — it doesn't shrink the file on disk, and doesn't reduce the one full read still needed to produce that summary. Not fixed — no cap, no archival mechanism exists yet. If a story's Scope Changes count starts to look like the task-count problem Step 2.4 already flags, treat it the same way (flag it, consider whether the story should've been split) until a real cap gets added.
+**Known limitation — unbounded growth:** Scope Changes/Clarifying Q&A are uncapped (unlike Task Log, bounded via Step 2.4's task ceiling) — pure append, no rotation, no archival. Count starts looking like the task-count problem → treat it the same way: flag it, consider whether the story should've been split.
 
 **Cleanup:** PR merged (user-confirmed) → offer to delete. Never delete unprompted.
 
@@ -303,9 +303,9 @@ Last drafted: <date> — full text was shown in chat for the user to copy into G
 
 Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
-Three Task Log forms (Step 3.4): full `What`/`Why` block where Claude made a genuine judgment call; single checklist line for mechanical Claude-done tasks; checklist line + one-line `Check:` where the user edited the file by hand — same trigger as the global manual-edit review, just also logged here instead of chat-only. No prose without a decision or a check behind it.
+Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
-`Flow` (Step 2.3) is decided once, at planning, from the task breakdown — not revisited task-by-task. A manual edit landing outside it gets flagged in chat (Step 3.4) and recorded as a `Flow` line alongside that Task Log entry — non-blocking, just surfaced so an out-of-scope edit isn't silently absorbed.
+`Flow` — defined Step 2.3, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
 
 ## What NOT to do
 
