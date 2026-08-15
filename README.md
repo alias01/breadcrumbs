@@ -131,7 +131,7 @@ git push origin main v1.1.0
 No — most stories finish in one sitting and never touch disk.
 
 **What if I'm running several stories at once?**
-Resuming checks `.claude/context/` for existing files. More than one candidate and your prompt doesn't clearly point to one → it lists them (filename, title, status — a cheap partial read, not a full one) and asks which.
+Resuming checks `.breadcrumbs/context/` for existing files. More than one candidate and your prompt doesn't clearly point to one → it lists them (filename, title, status — a cheap partial read, not a full one) and asks which.
 
 **Does it slow down small fixes?**
 Bug fixes and copy/config changes run in lite mode: no context file, no design step, a two-task ceiling. Full rigor only kicks in if something mid-flight actually needs it.

@@ -17,7 +17,7 @@ process.stdin.on("end", () => {
 
   if (TRIGGER.test(prompt)) {
     console.log(
-      "This looks like a user story/ticket. Before proceeding, check for an existing context file under .claude/context/ and follow the breadcrumbs skill (skills/breadcrumbs/Skill.md) — Understand, Plan, Implement, PR, with a gate at each step."
+      "This looks like a user story/ticket. Before proceeding, check for an existing context file under .breadcrumbs/context/ and follow the breadcrumbs skill (skills/breadcrumbs/Skill.md) — Understand, Plan, Implement, PR, with a gate at each step."
     );
   }
   process.exit(0);

@@ -11,7 +11,7 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 - Step 1 + Step 2 collapse into one message: understanding + task list (≤2 tasks) + "confirm?"
 - On confirm: tasks implemented, one commit per task (`fix(...): ...` header), no per-task chat message beyond progress narration.
 - One wrap-up message after all tasks, not per-task.
-- **No `.claude/context/` file created** — no trigger fired (single sitting, no stop/break/topic-shift).
+- **No `.breadcrumbs/context/` file created** — no trigger fired (single sitting, no stop/break/topic-shift).
 - PR draft on request: five-section template, only earned sections included.
 
 ## 2. Full mode, stop signal, resume in a new session
@@ -26,7 +26,7 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 **Prompt B (session 2, fresh context):** "let's continue the CSV export story."
 
 **Expect (session 2):**
-- Finds the single matching file in `.claude/context/`, reads it, summarizes status back ("here's where this stood... currently at Step 3, task 2 of N").
+- Finds the single matching file in `.breadcrumbs/context/`, reads it, summarizes status back ("here's where this stood... currently at Step 3, task 2 of N").
 - Resumes at the next unchecked task — doesn't redo Step 1/2.
 
 ## 3. Mid-flight scope change — lite escalates to full
@@ -47,12 +47,12 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Expect:**
 - Recognized as repo-wide, not story-specific → asks once to save it as a standing rule.
-- Confirmed → creates `.claude/constitution.md` if missing, appends the rule with rationale + date. **Not** added to `.gitignore` (this file is meant to be committed, unlike per-story context files).
+- Confirmed → creates `.breadcrumbs/constitution.md` if missing, appends the rule with rationale + date. **Not** added to `.gitignore` (this file is meant to be committed, unlike per-story context files).
 
 **Prompt B (new story, same repo):** paste an unrelated feature story that adds a new endpoint.
 
 **Expect:**
-- Step 2 reads `.claude/constitution.md`, checks the plan against it before presenting.
+- Step 2 reads `.breadcrumbs/constitution.md`, checks the plan against it before presenting.
 - Plan doesn't already include a rate limiter → surfaced as a conflict, resolved before the plan is presented for confirmation (same handling as the Step 2.2 tripwire).
 
 ## 5. Mid-session requirement drop — revert just that task
@@ -84,5 +84,5 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
 - No gate skipped, even when lite-collapsed — confirmation still required before moving on.
-- `node ~/.claude/skills/breadcrumbs/scripts/validate-context-file.mjs .claude/context/<slug>.md` passes after every gate write.
+- `node ~/.claude/skills/breadcrumbs/scripts/validate-context-file.mjs .breadcrumbs/context/<slug>.md` passes after every gate write.
 - Every commit header passes `node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`.

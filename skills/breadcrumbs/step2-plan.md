@@ -16,7 +16,7 @@
 
 2. Discuss the approach at the depth classification calls for: HLD → system-design level (components, data flow, integration points). LLD → key functions/classes/schema. "No design" → name the fix approach, one-two sentences. Not a formal doc — enough to agree the shape before code.
    - **Tripwire:** plan surfaces a Material unknown Step 1 missed → stop, resolve there (ask / log `unconfirmed` per 1.3 in `step1-understand.md`), before continuing. Applies even when 1+2 merged — a bad merge decision surfaces here, doesn't get built around.
-   - **Constitution check:** `.claude/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here, check the plan against it before presenting. Conflict → same handling as the tripwire above, resolve before continuing. No file → nothing to check, skip silently.
+   - **Constitution check:** `.breadcrumbs/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here, check the plan against it before presenting. Conflict → same handling as the tripwire above, resolve before continuing. No file → nothing to check, skip silently.
 3. Agreed → break into small tasks along natural seams: dependency order first, then component/layer (multi-part work) / file-module boundary (refactors). Scoped right = one Task Log entry (one What + one Why, no "and also"), ≤3 files. Otherwise: split further.
    - **Flow:** the ordered file/module list across all tasks = the story's **Flow** — the set of files this story is expected to touch, and in what order. Derived directly from the task breakdown, no extra thinking. Decided here, at planning, not revisited unless a Scope Change amends it.
 4. Cap total tasks by type — ceiling, not target:

@@ -5,7 +5,7 @@
 // doesn't need a model to run it.
 //
 // Usage: node scripts/validate-context-file.mjs <path> [...more paths]
-//        node scripts/validate-context-file.mjs   (checks everything in .claude/context/)
+//        node scripts/validate-context-file.mjs   (checks everything in .breadcrumbs/context/)
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -16,7 +16,7 @@ const CHECKBOX = /^- \[[ x]\] /;
 
 function findTargets(args) {
   if (args.length > 0) return args;
-  const dir = ".claude/context";
+  const dir = ".breadcrumbs/context";
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((f) => f.endsWith(".md"))
@@ -59,7 +59,7 @@ function validate(path) {
 
 const targets = findTargets(process.argv.slice(2));
 if (targets.length === 0) {
-  console.log("No context files found (.claude/context/ empty or missing) — nothing to validate.");
+  console.log("No context files found (.breadcrumbs/context/ empty or missing) — nothing to validate.");
   process.exit(0);
 }
 

@@ -2,6 +2,12 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
 
+## [1.2.0] - 2026-08-15
+
+### Other
+- Move context/constitution storage from .claude/ to platform-neutral .breadcrumbs/
+- Flag stale pr-ready context files during the resume scan, offer batch cleanup
+
 ## [1.1.0] - 2026-08-13
 
 ### Other
