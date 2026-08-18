@@ -2,6 +2,11 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
 
+## [1.3.0] - 2026-08-18
+
+### Features
+- **gemini:** add Gemini CLI custom slash command
+
 ## [1.2.0] - 2026-08-15
 
 ### Other
