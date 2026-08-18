@@ -18,6 +18,10 @@ Chat only — context file has its own denser style ("Content style" in `context
 
 Terse, bullet/fragment, glanceable. Senior/expert audience → jargon freely, no hedging, no restating known context, no multi-paragraph narration. Expand only if asked / confusion signaled, then step down in complexity.
 
+## Investigation scope
+
+Understanding a story needs enough repo context to ask good questions and plan real tasks — not a full-repo read. Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) rather than surveying the tree. Default to targeted lookups (grep for the term, `Explore` agent at "quick" or "medium" breadth) over broad/"very thorough" exploration. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
+
 ## The context file
 
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:

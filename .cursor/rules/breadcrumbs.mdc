@@ -19,6 +19,10 @@ Chat only — context file has its own denser style ("Content style" in `context
 
 Terse, bullet/fragment, glanceable. Senior/expert audience → jargon freely, no hedging, no restating known context, no multi-paragraph narration. Expand only if asked / confusion signaled, then step down in complexity.
 
+## Investigation scope
+
+Understanding a story needs enough repo context to ask good questions and plan real tasks — not a full-repo read. Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) rather than surveying the tree. Default to targeted lookups (grep for the term, `Explore` agent at "quick" or "medium" breadth) over broad/"very thorough" exploration. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
+
 ## The context file
 
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
@@ -100,7 +104,7 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
 
 # Step 1 — Understand & Clarify
 
-1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions.
+1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions. Any repo look-up needed to do this stays scoped to the story's own terms — see "Investigation scope" in `Skill.md`, not a full-repo read.
 2. Only then: follow-ups, only on what's genuinely vague — not everything askable in theory. Scan against a fixed taxonomy rather than open-ended guessing, so a Material gap doesn't slip through because nobody thought to ask: data model/schema changes, API/contract boundaries, auth/permissions, error handling & edge cases, performance/scale, i18n/locale, backward compatibility. Not every category applies to every story — skip the ones that obviously don't, ask only where the story leaves one genuinely open. This is a scan checklist, not a script — one combined question beats seven separate ones when several categories are actually the same unknown.
 3. User can't answer either (owner unavailable / genuinely undecided) → don't block. Log under Assumptions w/ reasoning, mark `unconfirmed`. Tell the user it needs owner confirmation before final; proceed anyway.
 4. Classify story type now (table in Step 2.1 of `step2-plan.md`, don't wait for Step 2). `Bug fix` / `Copy/config/content change` = **lite**; everything else = **full**. State the mode, one line.
@@ -127,7 +131,7 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
    | New service/integration | new external dependency, new cross-system data flow | Full HLD + LLD, mandatory |
    | Performance/optimization | latency, resource usage, scaling | No design doc — profiling findings + targeted fix |
 
-2. Discuss the approach at the depth classification calls for: HLD → system-design level (components, data flow, integration points). LLD → key functions/classes/schema. "No design" → name the fix approach, one-two sentences. Not a formal doc — enough to agree the shape before code.
+2. Discuss the approach at the depth classification calls for: HLD → system-design level (components, data flow, integration points). LLD → key functions/classes/schema. "No design" → name the fix approach, one-two sentences. Not a formal doc — enough to agree the shape before code. Same scoped-search rule as Step 1 ("Investigation scope" in `Skill.md`) — chase the components the story actually touches, not the whole repo.
    - **Tripwire:** plan surfaces a Material unknown Step 1 missed → stop, resolve there (ask / log `unconfirmed` per 1.3 in `step1-understand.md`), before continuing. Applies even when 1+2 merged — a bad merge decision surfaces here, doesn't get built around.
    - **Constitution check:** `.breadcrumbs/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here, check the plan against it before presenting. Conflict → same handling as the tripwire above, resolve before continuing. No file → nothing to check, skip silently.
 3. Agreed → break into small tasks along natural seams: dependency order first, then component/layer (multi-part work) / file-module boundary (refactors). Scoped right = one Task Log entry (one What + one Why, no "and also"), ≤3 files. Otherwise: split further.

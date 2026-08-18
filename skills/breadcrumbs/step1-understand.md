@@ -1,6 +1,6 @@
 # Step 1 — Understand & Clarify
 
-1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions.
+1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions. Any repo look-up needed to do this stays scoped to the story's own terms — see "Investigation scope" in `Skill.md`, not a full-repo read.
 2. Only then: follow-ups, only on what's genuinely vague — not everything askable in theory. Scan against a fixed taxonomy rather than open-ended guessing, so a Material gap doesn't slip through because nobody thought to ask: data model/schema changes, API/contract boundaries, auth/permissions, error handling & edge cases, performance/scale, i18n/locale, backward compatibility. Not every category applies to every story — skip the ones that obviously don't, ask only where the story leaves one genuinely open. This is a scan checklist, not a script — one combined question beats seven separate ones when several categories are actually the same unknown.
 3. User can't answer either (owner unavailable / genuinely undecided) → don't block. Log under Assumptions w/ reasoning, mark `unconfirmed`. Tell the user it needs owner confirmation before final; proceed anyway.
 4. Classify story type now (table in Step 2.1 of `step2-plan.md`, don't wait for Step 2). `Bug fix` / `Copy/config/content change` = **lite**; everything else = **full**. State the mode, one line.

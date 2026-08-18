@@ -79,6 +79,13 @@ write(
 // per-skill triggering available, so this is intentionally the full text.
 write(".github/copilot-instructions.md", `${banner}# ${name}\n\n${fullBody}\n`);
 
+// Gemini CLI — custom slash command (no description-match auto-trigger like
+// Cursor/Windsurf, so this is invoked explicitly as `/breadcrumbs`).
+write(
+  ".gemini/commands/breadcrumbs.toml",
+  `description = ${JSON.stringify(description)}\n\nprompt = """\n${banner}${fullBody.replaceAll('"""', '\\"\\"\\"')}\n"""\n`
+);
+
 // Claude Code plugin manifest — wraps the existing skill, doesn't duplicate it.
 write(
   ".claude-plugin/plugin.json",
