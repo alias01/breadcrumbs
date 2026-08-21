@@ -2,6 +2,11 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
 
+## [1.4.0] - 2026-08-21
+
+### Features
+- **breadcrumbs:** learn constitution rules from manual edits, prefer graphify for investigation
+
 ## [1.3.0] - 2026-08-18
 
 ### Features

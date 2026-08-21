@@ -19,7 +19,9 @@ Terse, bullet/fragment, glanceable. Senior/expert audience → jargon freely, no
 
 ## Investigation scope
 
-Understanding a story needs enough repo context to ask good questions and plan real tasks — not a full-repo read. Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) rather than surveying the tree. Default to targeted lookups (grep for the term, `Explore` agent at "quick" or "medium" breadth) over broad/"very thorough" exploration. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
+Understanding a story needs enough repo context to ask good questions and plan real tasks — not a full-repo read. Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) rather than surveying the tree.
+
+**`graphify` first.** If a knowledge graph exists for this repo (`graphify-out/` present) or the skill is installed, query it for the story's keywords/entities before touching the filesystem directly — it's cheaper than grep/Explore and answers "what relates to what" questions a raw text search can't. Fall back to targeted lookups (grep for the term, `Explore` agent at "quick" or "medium" breadth) only for what graphify's query/path/explain tools don't resolve, or when graphify isn't present at all. Full-file reads are last resort, for whatever neither graphify nor a targeted lookup settles. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
 
 ## The context file
 
@@ -92,6 +94,8 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
 
 **Created only when earned, never scaffolded speculatively:** a user states a rule mid-story that's clearly repo-wide, not story-specific ("we always do X across this whole project," not "for this story, do X") → ask once, "want me to save that as a standing project rule so future stories check against it too?" Confirmed → create if missing, append the rule. Declined → log it under this story's Assumptions instead, don't ask again for the same rule.
 
+Same trigger also fires implicitly from a hand-edit to AI-written code (see Step 3.4's "Learning from the edit") when the edit looks like a general preference rather than a fix to this task alone — not just from something the user says out loud.
+
 **Read:** once per story, at Step 2 (Plan) — see `step2-plan.md` — if the file exists. Not re-read every gate.
 
 **Checked, not just read:** Step 2's plan gets checked against it before presenting to the user. Conflict → same handling as the Step 2.2 tripwire (a missed Material unknown): surface it, resolve before continuing, don't build around it.
@@ -158,6 +162,8 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
 2. **Don't ask the user mid-task.** Use best judgment. Genuine judgment call (not mechanical) → log in Task Log's "Why." Changes what was agreed (contradicts plan, needs a scope decision) → not a solo call — log under Scope Changes, flag immediately.
 3. Apply `ponytail` for how code gets written: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Exceptions still apply — never simplify away input validation, error handling, security, accessibility.
 4. After each task — file exists → append Task Log entry, check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too. Edited file isn't on the story's planned Flow (from Step 2.3) → say so explicitly before the correctness verdict ("that file's outside this story's planned Flow — [reason if evident]"), one line, non-blocking; still record the `Check:` verdict either way (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check and any Flow warning.
+
+   **Learning from the edit:** if the hand-edit reflects a repo-wide preference rather than a one-off fix to this task (e.g. consistently strips comments a certain way, always adds a specific guard, renames a pattern the same way each time) → treat it like a stated rule (`context-file-mechanics.md`'s Project constitution trigger): ask once, "Noticed you always change X to Y — save that as a standing project rule?" Confirmed → append to `.breadcrumbs/constitution.md`, apply it from the next task onward in this story and every story after. Declined → don't ask again for this same pattern, keep it to the `Check:` verdict only. Story-specific edit (fixes this task's particular bug, not a general preference) → no ask, `Check:` verdict is enough.
 5. **Commit each task**, right after its Task Log write (same moment, before moving to the next task). One commit per completed task — mirrors the Task Log 1:1, keeps `git log` and the Task Log reconstructable from each other.
 
    Conventional Commits format: `<type>(<scope>): <imperative summary>`. Scope = affected module/file area, omit if obvious from a small story. Body = short bullet list, drawn from the task's What/Why — compress, don't paste the Task Log entry verbatim.
