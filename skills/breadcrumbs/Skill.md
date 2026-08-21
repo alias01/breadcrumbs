@@ -20,7 +20,9 @@ Terse, bullet/fragment, glanceable. Senior/expert audience → jargon freely, no
 
 ## Investigation scope
 
-Understanding a story needs enough repo context to ask good questions and plan real tasks — not a full-repo read. Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) rather than surveying the tree. Default to targeted lookups (grep for the term, `Explore` agent at "quick" or "medium" breadth) over broad/"very thorough" exploration. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
+Understanding a story needs enough repo context to ask good questions and plan real tasks — not a full-repo read. Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) rather than surveying the tree.
+
+**`graphify` first.** If a knowledge graph exists for this repo (`graphify-out/` present) or the skill is installed, query it for the story's keywords/entities before touching the filesystem directly — it's cheaper than grep/Explore and answers "what relates to what" questions a raw text search can't. Fall back to targeted lookups (grep for the term, `Explore` agent at "quick" or "medium" breadth) only for what graphify's query/path/explain tools don't resolve, or when graphify isn't present at all. Full-file reads are last resort, for whatever neither graphify nor a targeted lookup settles. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
 
 ## The context file
 

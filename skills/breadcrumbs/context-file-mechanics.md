@@ -26,6 +26,8 @@ Standing, project-wide non-negotiables — not this story's decisions, decisions
 
 **Created only when earned, never scaffolded speculatively:** a user states a rule mid-story that's clearly repo-wide, not story-specific ("we always do X across this whole project," not "for this story, do X") → ask once, "want me to save that as a standing project rule so future stories check against it too?" Confirmed → create if missing, append the rule. Declined → log it under this story's Assumptions instead, don't ask again for the same rule.
 
+Same trigger also fires implicitly from a hand-edit to AI-written code (see Step 3.4's "Learning from the edit") when the edit looks like a general preference rather than a fix to this task alone — not just from something the user says out loud.
+
 **Read:** once per story, at Step 2 (Plan) — see `step2-plan.md` — if the file exists. Not re-read every gate.
 
 **Checked, not just read:** Step 2's plan gets checked against it before presenting to the user. Conflict → same handling as the Step 2.2 tripwire (a missed Material unknown): surface it, resolve before continuing, don't build around it.
