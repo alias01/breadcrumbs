@@ -2,6 +2,11 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
 
+## [1.5.0] - 2026-08-22
+
+### Features
+- **breadcrumbs:** bound question/plan ceremony, portable paths
+
 ## [1.4.0] - 2026-08-21
 
 ### Features
