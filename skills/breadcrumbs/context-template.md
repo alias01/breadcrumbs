@@ -35,6 +35,14 @@ Status: understanding | planning | implementing | pr-ready | done
 ## Plan
 Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
 <approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
+<architecture decision(s): chosen option — why, rejected option(s) — why not. Only where 2+ valid approaches existed.>
+<domain-check outcomes / testing plan / rollout+rollback notes — only the ones that applied, one fragment each.>
+
+### Risks / Unknowns
+- <implementation risk — unfamiliar code, possible breakage, needs a spike> — status: open | resolved: <how>
+
+### Sequencing
+<tasks with no shared dependency (safe to reorder/hand off); smallest independently shippable slice, if one exists. Omit section if neither applies.>
 
 ## Flow
 <ordered list of files/modules this story is expected to touch, derived from the task breakdown — e.g. "1. src/foo.ts (Task 1)  2. src/bar.ts (Task 2, 3)". Amended only via a Scope Change entry below, never edited in place.>
@@ -64,19 +72,22 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 - Affected tasks: <task numbers>
 - Why: <reasoning behind the change>
 
+## Gate Waivers
+- <gate> — waived by user on <date> — not confirmed: <what went unreviewed>
+
 ## PR Summary
 Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
 ```
 
-Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
+Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
 Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
-`Flow` — defined Step 2.3, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
+`Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
 
 ## What NOT to do
 
-- Don't skip a gate, next step "obvious" or not. Applies in lite mode too — lite collapses which gates exist, never waives confirmation.
+- Don't skip a gate on your own initiative, next step "obvious" or not. Applies in lite mode too. Only an explicit user waiver skips one — see "User override" in `Skill.md`, and log it under `Gate Waivers` below.
 - Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface those immediately.
 - Don't overwrite past entries — running record, not a snapshot.
 - Don't commit the context file or reference it in the PR diff.

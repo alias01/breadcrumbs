@@ -63,4 +63,8 @@ Read the step's file when you actually reach that gate — don't preload the oth
 
 ## What NOT to do
 
-Never skip a gate, even in lite mode — lite collapses which gates exist, never waives confirmation. Full guardrail list: `context-template.md`, read alongside the template on first write.
+Never skip a gate on your own initiative, even in lite mode — lite collapses which gates exist, never waives confirmation.
+
+**User override:** the user can waive a gate, but only by saying so explicitly ("skip the confirm," "just build it," "don't ask me between tasks"). Then: proceed without stopping, and say in one line which gate was waived and what wasn't confirmed. File exists → record it under `Gate Waivers` (`context-template.md`) — a resuming session must not read unconfirmed content as agreed. Waiver covers the gate the user meant, for this story only; it doesn't generalize to the remaining gates or carry into the next story. Never infer a waiver from impatience, terseness, or a fast "yes" — only from an explicit ask.
+
+Full guardrail list: `context-template.md`, read alongside the template on first write.

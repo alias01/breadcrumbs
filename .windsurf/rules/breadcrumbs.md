@@ -64,7 +64,11 @@ Read the step's file when you actually reach that gate — don't preload the oth
 
 ## What NOT to do
 
-Never skip a gate, even in lite mode — lite collapses which gates exist, never waives confirmation. Full guardrail list: `context-template.md`, read alongside the template on first write.
+Never skip a gate on your own initiative, even in lite mode — lite collapses which gates exist, never waives confirmation.
+
+**User override:** the user can waive a gate, but only by saying so explicitly ("skip the confirm," "just build it," "don't ask me between tasks"). Then: proceed without stopping, and say in one line which gate was waived and what wasn't confirmed. File exists → record it under `Gate Waivers` (`context-template.md`) — a resuming session must not read unconfirmed content as agreed. Waiver covers the gate the user meant, for this story only; it doesn't generalize to the remaining gates or carry into the next story. Never infer a waiver from impatience, terseness, or a fast "yes" — only from an explicit ask.
+
+Full guardrail list: `context-template.md`, read alongside the template on first write.
 
 ---
 
@@ -74,7 +78,19 @@ Read once, the first time a file-creation trigger fires (see "The context file" 
 
 **Location once created:** `.breadcrumbs/context/<story-slug>.md` — `<story-slug>` = short kebab-case id from ticket ID/title.
 
-**Not committed.** On creation: check `.gitignore` for `.breadcrumbs/context/` (or broader `.breadcrumbs/`), add if missing. Working memory, not a project artifact — no reason to exist past PR merge.
+**Anchored at the repo root, always relative to it** — that's what makes a story resumable on another platform. `.breadcrumbs/` lives next to the repo's own root (find it with `git rev-parse --show-toplevel`; no git → nearest ancestor directory holding the project's root marker, else the working directory, and say which was used). Never resolve it against the current working directory when that's a subdirectory, never against a home directory, never store an absolute path inside the file itself — a path like `/Users/<name>/...` doesn't survive a different machine, a different checkout, or a different tool's sandbox.
+
+Everything the file references — Flow entries, task file lists, Scope Changes — stays repo-relative for the same reason. Cursor, Windsurf, Copilot, Gemini and Claude all open the same checkout and read the same `.breadcrumbs/context/<slug>.md`; the platform-specific rules files (`AGENTS.md`, `.cursor/rules/`, `.windsurf/rules/`, `.clinerules/`, `.kiro/steering/`, `.github/copilot-instructions.md`) are committed and carry the skill itself, so the resuming tool has both halves. The optional validator scripts are the one part that may be absent — that's why nothing blocks on them.
+
+**Not committed.** Working memory, not a project artifact — no reason to exist past PR merge.
+
+On creation, exclude it — but **in `.git/info/exclude`, not `.gitignore`**. Same effect for the user, and it's a local, untracked file: the exclusion never lands in a commit or shows up in someone else's diff. `.gitignore` is tracked; silently editing it puts an unexplained line in the story's own PR.
+
+- Already excluded (either file, `.breadcrumbs/context/` or a broader `.breadcrumbs/`) → nothing to do.
+- Not excluded → append `.breadcrumbs/context/` to `.git/info/exclude`, no announcement needed. Silent because it's local-only and reversible; anything touching a tracked file wouldn't be.
+- No `.git/` (not a repo, or a worktree without one) → skip, don't fall back to `.gitignore`.
+
+User explicitly wants it committed / shared with teammates → that's their call, they'll say so; move the entry to `.gitignore` then, not before.
 
 **Resuming:** before any story work, check `.breadcrumbs/context/` for existing files. One match, name/slug clearly matches what the user's asking about → read it, summarize status back ("Here's where this stood: ... currently at Step X"), resume. Zero matches → nothing to resume; story hasn't started, or it's mid-way/finished in an unbroken conversation with no trigger fired yet. More than one file present and the user's request doesn't unambiguously point to one (generic "let's continue," or a new/vague prompt while other stories sit mid-flight) → don't guess. List the candidates cheaply: filename (slug) + first two lines of each (title, `Status:`) — never a full read at this stage, cost shouldn't scale with how many stories are open or how long they've grown. Present that list, ask which one. Once picked, proceed as the one-match case (full read, then resume).
 
@@ -82,7 +98,7 @@ Read once, the first time a file-creation trigger fires (see "The context file" 
 
 **Compaction on resume:** the file itself stays append-only — full detail, never compressed, that's the audit trail Core Philosophy depends on. What compacts is the *chat summary* read back to the user. Task Log/Scope Changes past 3 entries → summarize the older ones in one line each (date + What, no Why detail), give full What/Why detail only for the most recent 2-3 entries and anything still open (unconfirmed Assumptions, unresolved Scope Changes). If the user then asks about an older decision specifically, read that entry's full detail on demand — the file has it, the summary just didn't restate it. Keeps resume cost flat regardless of story length instead of scaling with it.
 
-**Known limitation — unbounded growth:** Scope Changes/Clarifying Q&A are uncapped (unlike Task Log, bounded via Step 2.4's task ceiling) — pure append, no rotation, no archival. Count starts looking like the task-count problem → treat it the same way: flag it, consider whether the story should've been split.
+**Known limitation — unbounded growth:** Scope Changes/Clarifying Q&A are uncapped (unlike Task Log, bounded via Step 2.7's task ceiling) — pure append, no rotation, no archival. Count starts looking like the task-count problem → treat it the same way: flag it, consider whether the story should've been split.
 
 **Cleanup:** PR merged (user-confirmed) → offer to delete. Never delete unprompted.
 
@@ -90,29 +106,71 @@ Read once, the first time a file-creation trigger fires (see "The context file" 
 
 ## Project constitution (optional, separate from per-story files)
 
-Standing, project-wide non-negotiables — not this story's decisions, decisions that apply to *every* story in this repo (e.g. "payment retries always carry an idempotency key," "no PII in logs"). Different lifecycle from a per-story context file: not deleted after PR merge, meant to be committed (it's a project artifact, not working memory) — don't add it to `.gitignore`.
+Standing, project-wide non-negotiables — not this story's decisions, decisions that apply to *every* story in this repo (e.g. "payment retries always carry an idempotency key," "no PII in logs"). Different lifecycle from a per-story context file: not deleted after PR merge, meant to be committed (it's a project artifact, not working memory) — don't exclude it, in `.gitignore` or `.git/info/exclude`.
 
-**Location:** `.breadcrumbs/constitution.md`. **Format:** flat list, `- <rule> — rationale: <why> — added <date>`. No status field, no sections — it only ever grows by append.
+**Location:** `.breadcrumbs/constitution.md` (repo root, same anchoring rule as the context file above — it's committed, so it must resolve identically on every machine and platform). **Format:** flat list, one rule per line:
+
+```
+- <rule> — rationale: <why> — added <date> — status: active
+- <rule> — rationale: <why> — added <date> — status: superseded by "<replacing rule, short>" on <date>
+- <rule> — rationale: <why> — added <date> — status: retired on <date> — reason: <why it stopped applying>
+```
+
+Still append-only: the file only grows, and `status:` is the one field amended in place — a retired rule's line stays exactly as written, so the audit trail of what the project once required survives. Never delete a line.
+
+**Retiring a rule:** only on an explicit user instruction ("we don't do X anymore," "Y replaces X"). Flip that line's `status:`, and for a replacement, append the new rule as its own `status: active` line in the same pass. Never retire a rule because a plan is inconvenient, and never infer it from one story's exception — a one-off deviation is a Scope Change or an Assumption in that story's context file, not a constitution edit.
+
+**Reading:** point 8's check applies to `status: active` lines only. Superseded/retired lines are history — read past them, don't check against them, don't report them as conflicts.
+
+**Contradiction guard:** appending a rule that contradicts an existing active one → don't just add it. Surface both lines, ask which stands. Answer given → new rule appended active, old one flipped to `superseded by`. Two active contradictory rules is the failure state this format exists to prevent.
 
 **Created only when earned, never scaffolded speculatively:** a user states a rule mid-story that's clearly repo-wide, not story-specific ("we always do X across this whole project," not "for this story, do X") → ask once, "want me to save that as a standing project rule so future stories check against it too?" Confirmed → create if missing, append the rule. Declined → log it under this story's Assumptions instead, don't ask again for the same rule.
 
 Same trigger also fires implicitly from a hand-edit to AI-written code (see Step 3.4's "Learning from the edit") when the edit looks like a general preference rather than a fix to this task alone — not just from something the user says out loud.
 
-**Read:** once per story, at Step 2 (Plan) — see `step2-plan.md` — if the file exists. Not re-read every gate.
+**Read:** once per story, at Step 2 (Plan), point 8 — last, after the plan is complete — see `step2-plan.md` — if the file exists. Not re-read every gate.
 
-**Checked, not just read:** Step 2's plan gets checked against it before presenting to the user. Conflict → same handling as the Step 2.2 tripwire (a missed Material unknown): surface it, resolve before continuing, don't build around it.
+**Checked, not just read:** Step 2's plan gets checked against its active rules before presenting to the user. Conflict → same handling as the Step 2.2 tripwire (a missed Material unknown): surface it, resolve before continuing, don't build around it.
 
-**Validation:** after a gate write (Understanding Summary, Plan, Task Checklist, or any structural change — not every Task Log append), run `node ~/.claude/skills/breadcrumbs/scripts/validate-context-file.mjs <path>` — catches a missing/malformed `Status` line, missing required sections, or a broken checkbox before it compounds across later gates. Script missing → skip, don't block on it. A failure here doesn't override "don't re-read to confirm a write landed" above — it's a structure check, not a content re-verification.
+**Validation:** after a gate write (Understanding Summary, Plan, Task Checklist, or any structural change — not every Task Log append), run `validate-context-file.mjs <path>` — catches a missing/malformed `Status` line, missing required sections, or a broken checkbox before it compounds across later gates. Not found → skip, don't block on it. A failure here doesn't override "don't re-read to confirm a write landed" above — it's a structure check, not a content re-verification.
+
+## Validator scripts
+
+Two optional scripts ship with the skill: `validate-context-file.mjs` and `validate-commit-message.mjs` (used by Step 3.5). They live in a `scripts/` directory alongside the skill's own files, so the path depends on how the skill was loaded — never hard-code one platform's layout.
+
+Resolve by trying, in order, `scripts/<name>.mjs` relative to: the directory this file was loaded from → `skills/breadcrumbs/` under the repo root → `.claude/skills/breadcrumbs/` under the repo root → `~/.claude/skills/breadcrumbs/`. First hit wins; run it as `node <resolved-path> [args]`. Resolve once per session, reuse the hit.
+
+None of them resolve — the skill was pasted in as rules text, or the platform has no filesystem/shell — → skip the check, fall back to the by-hand equivalent named at the call site, never block a gate on a missing script. Same for a platform with no way to run `node`.
 
 ---
 
 # Step 1 — Understand & Clarify
 
 1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions. Any repo look-up needed to do this stays scoped to the story's own terms — see "Investigation scope" in `Skill.md`, not a full-repo read.
-2. Only then: follow-ups, only on what's genuinely vague — not everything askable in theory. Scan against a fixed taxonomy rather than open-ended guessing, so a Material gap doesn't slip through because nobody thought to ask: data model/schema changes, API/contract boundaries, auth/permissions, error handling & edge cases, performance/scale, i18n/locale, backward compatibility. Not every category applies to every story — skip the ones that obviously don't, ask only where the story leaves one genuinely open. This is a scan checklist, not a script — one combined question beats seven separate ones when several categories are actually the same unknown.
+2. Only then: follow-ups, only on what's genuinely vague — not everything askable in theory. Scan against a fixed taxonomy rather than open-ended guessing, so a Material gap doesn't slip through because nobody thought to ask:
+   - Who/what/why: specific persona (not just "user"), what they're trying to accomplish, why it matters to them
+   - Scope: what's explicitly in, what's explicitly out, whether this is one story or several bundled together
+   - Acceptance criteria: concrete testable "done," happy path step by step, demo scenario QA/PO will test against
+   - Dependencies & context: what this depends on (other stories/APIs/systems), design mockups/specs if they exist, what this blocks or unblocks
+   - Data model/schema changes, source of truth, what happens to existing data if behavior changes
+   - API/contract boundaries
+   - Auth/permissions
+   - Error handling & edge cases: error states/messages, loading/empty/success states, empty input/network failure/permission denied
+   - Performance/scale, security/compliance requirements, device/browser/platform requirements
+   - i18n/locale
+   - Backward compatibility
+   - Existing pattern to follow, or net-new
+
+   Not every category applies to every story — skip the ones that obviously don't, ask only where the story leaves one genuinely open. Ask every genuinely vague item as its own question, one at a time — wait for the answer before asking the next. Never batch or combine, even when several categories look like the same unknown.
+
+   **Ask order + stop rule** — one-at-a-time keeps answer quality; these keep the count bounded:
+   - Order by tag (Material vs Cosmetic, per point 5 below — classify before asking, not after): Material first. Cosmetic gaps are "wrong guess costs nothing" by definition → assume and log per 1.3, don't spend a turn on them unless the user's still volunteering detail.
+   - Stop as soon as the story is buildable and every remaining gap is Cosmetic or safely assumable — remaining items go to Assumptions as `unconfirmed`, not to another question.
+   - Soft ceiling ~5 questions in one sitting. Hit it with Material items still open → stop asking anyway, log the rest as `unconfirmed` assumptions.
+   - **Say it out loud when either stops the questions**, one line, before the gate: what you're assuming instead of asking, and that it needs owner confirmation — e.g. `Stopping questions here — assuming <X>, <Y> (logged unconfirmed). Flag if either's wrong.` Silent assumption is the failure mode this guards against, not the assumption itself.
 3. User can't answer either (owner unavailable / genuinely undecided) → don't block. Log under Assumptions w/ reasoning, mark `unconfirmed`. Tell the user it needs owner confirmation before final; proceed anyway.
 4. Classify story type now (table in Step 2.1 of `step2-plan.md`, don't wait for Step 2). `Bug fix` / `Copy/config/content change` = **lite**; everything else = **full**. State the mode, one line.
-5. **Tag every open question/assumption**: Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, API/contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count — **not** step 4's type/size classification — decides the gate below. 10-task "New feature/subsystem," all-Cosmetic → gate merges. "Small feature," one Material unknown → gate stays separate. Task/file count belongs to Step 2.4, not here.
+5. **Tag every open question/assumption**: Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, API/contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count — **not** step 4's type/size classification — decides the gate below. 10-task "New feature/subsystem," all-Cosmetic → gate merges. "Small feature," one Material unknown → gate stays separate. Task/file count belongs to Step 2.7, not here.
 6. **Gate:** file exists → write Understanding Summary + Assumptions to it in one pass, trip marker. No file → present the same content in chat only.
    - **Zero Material unknowns** → fold Step 2 in: do Step 2's work silently (read `step2-plan.md`), present Understanding Summary + Plan together, one combined confirmation, both quoted verbatim. Regardless of story type/task count.
    - **Any Material unknown remains** (even `unconfirmed`) → summary alone, quoted verbatim, stop. No Step 2 until confirmed.
@@ -123,24 +181,61 @@ Same trigger also fires implicitly from a hand-edit to AI-written code (see Step
 
 *Lite mode skips this step.* Full-mode + zero Material unknowns (Step 1) → also skips the separate gate, folded into 1.6 instead. Decided purely by the Material count from 1.5 — never type, never task/file count. Large multi-file story, nothing genuinely unknown → merges just as readily as a small one.
 
+Order matters here: everything that can *add* work (points 3-5) runs before the task breakdown (point 6), so tasks are cut once and the cap in point 7 is applied to the real list.
+
 1. Classify from the confirmed Understanding Summary (already done, 1.4, for lite-eligible types; do it here otherwise). Ask the user only if genuinely ambiguous.
 
    | Type | Signal | Design depth |
    |---|---|---|
    | Bug fix | reported defect, "should do Y but does Z" | No HLD/LLD — root cause + fix approach |
    | Copy/config/content change | text, labels, flags, env values, constants | No design — straight to task list |
-   | Small feature addition | new behavior in existing architecture, 1-3 files | LLD only, skip HLD |
+   | Small feature addition | new behavior in existing architecture, no new component | LLD only, skip HLD |
    | Refactor/tech debt | no behavior change, restructuring | LLD only, scoped to what's restructured |
    | New feature/subsystem | new capability spanning components | Full HLD + LLD |
    | New service/integration | new external dependency, new cross-system data flow | Full HLD + LLD, mandatory |
    | Performance/optimization | latency, resource usage, scaling | No design doc — profiling findings + targeted fix |
 
+   Size doesn't classify — the Flow does. Type is about *what kind of change*; the file/task ceilings in point 7 catch a story that outgrew its type.
+
 2. Discuss the approach at the depth classification calls for: HLD → system-design level (components, data flow, integration points). LLD → key functions/classes/schema. "No design" → name the fix approach, one-two sentences. Not a formal doc — enough to agree the shape before code. Same scoped-search rule as Step 1 ("Investigation scope" in `Skill.md`) — chase the components the story actually touches, not the whole repo.
    - **Tripwire:** plan surfaces a Material unknown Step 1 missed → stop, resolve there (ask / log `unconfirmed` per 1.3 in `step1-understand.md`), before continuing. Applies even when 1+2 merged — a bad merge decision surfaces here, doesn't get built around.
-   - **Constitution check:** `.breadcrumbs/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here, check the plan against it before presenting. Conflict → same handling as the tripwire above, resolve before continuing. No file → nothing to check, skip silently.
-3. Agreed → break into small tasks along natural seams: dependency order first, then component/layer (multi-part work) / file-module boundary (refactors). Scoped right = one Task Log entry (one What + one Why, no "and also"), ≤3 files. Otherwise: split further.
+   - **Architecture decisions:** 2+ valid approaches exist → pick one, state why, write it down (Plan section of the context file, or the chat message if no file yet) — not left as an unstated call in your head. Cross-team surface (FE/BE split) → agree the contract (API shape, request/response, error codes) before either side's tasks start.
+   - **Risks/unknowns:** distinct from Step 1's Material/Cosmetic tags (those are about the story's *requirements*; this is about *implementation* risk) — flag parts you're unsure how to implement, parts touching unfamiliar code, anything needing a spike/research before real work starts, anything that could break existing functionality. Genuinely open → same tripwire handling as a Material unknown (ask, or log `unconfirmed` and proceed). Recorded, not just said — see point 9.
+
+**Depth gate for points 3-5** — single source of truth for how much of the next three points runs. Points 3-5 don't restate it.
+
+| Design depth | Points 3-5 |
+|---|---|
+| No design (copy/config, performance, bug fix reaching here via escalation) | Skip 3 and 4 — the one regression case that proves the fix is enough. Point 5 only if the story itself touches prod data/payments/migration. |
+| LLD only (small feature, refactor) | Point 3: the single domain the story touches, folded into point 2's discussion — no table walk. Point 4: one line. Point 5: only if schema/prod-data/payments involved. |
+| Full HLD + LLD (new feature/subsystem, new service/integration) | All three explicitly, as written below. |
+
+Story sits at a lighter depth but genuinely carries the risk (a "small feature" writing a migration) → the risk decides, not the label. That's a judgment call, not a reason to run the whole table.
+
+3. **Domain-specific checks** — orthogonal to the Type table in point 1 (Type drives design depth/task caps; a story can span 0, 1, or multiple domains below). Identify which domain(s) the story touches; anything they surface goes into the approach (point 2) and, if it's work, into the task breakdown (point 6). Skip domains the story doesn't touch.
+
+   **No re-asking.** Auth/permissions, error handling, backward compatibility and performance/scale were already scanned in Step 1's taxonomy. Here they're checked against the *plan*, silently — a question only goes back to the user if the plan surfaces something Step 1's answer doesn't cover, and then it's a point-2 tripwire, not a fresh round of questions.
+
+   | Domain | Checks |
+   |---|---|
+   | API/backend | Request/response contract defined (fields, types, status codes) — feeds point 2's cross-team contract; auth/permission requirements clear; rate limiting/throttling considered; idempotency needed (safe to retry without side effects); versioning impact on existing consumers; expected load/concurrency where it changes the design |
+   | Mobile app | Offline behavior defined; platform differences (iOS vs Android behavior/UI); app store review implications if UI/permissions change; battery/data usage impact if polling or background work involved |
+   | Database/schema | Migration is backward-compatible during deploy, reversible or rollback plan exists — feeds point 5; impact on existing queries/indexes considered; backfill needed for existing records; data volume at expected scale |
+   | Bug fix (only reachable via a lite→full escalation — plain bug fixes are lite and skip Step 2 entirely) | Root cause understood, not just the symptom; repro steps confirmed; checked whether the same defect exists elsewhere before patching one spot; regression test added — feeds point 4 |
+   | Infra/DevOps | Uptime/downtime impact known; monitoring/alerting updated if new failure modes introduced; cost impact considered (new resources, scaling); change is scriptable/repeatable, not a manual one-off |
+   | Data pipeline/ETL | Source data reliability/format assumptions validated; failure handling defined for a batch failing midway; reprocessing/backfill strategy exists; downstream consumers identified |
+   | Third-party integration | Rate limits and pricing of the third-party API known; failure/downtime handling for when the third party is unavailable; auth/credential management approach clear; webhook vs polling decision made |
+   | UI-only/design (no backend change) | Responsive behavior across breakpoints confirmed; accessibility (contrast, keyboard nav, screen reader) considered; design system components reused, not one-offs |
+
+4. **Testing plan:** identify which logic needs unit test coverage, list the manual/integration test cases (including the edge cases already surfaced in Step 1's error-handling taxonomy item and any domain-specific regression case from point 3), and confirm there's a clear way to verify the result against Step 1's acceptance criteria. Test work that's substantial enough to stand alone becomes its own task in point 6.
+
+5. **Rollout & rollback** — only for stories that touch production data, payments, or require a migration/backward-compat path (New service/integration is where this is most often mandatory; the Database/schema domain always needs it; other types only if the story itself says so): decide whether a feature flag is needed, address migration/backward-compatibility concerns, and confirm a rollback plan exists. Flag/migration/backfill work is real work — it becomes tasks in point 6, not a footnote.
+
+6. Agreed → break into small tasks along natural seams: dependency order first, then component/layer (multi-part work) / file-module boundary (refactors). For multi-layer stories, make the layers explicit — frontend (components, state, routing), backend (endpoints, business logic), data layer (schema changes, migrations), integration points (third-party APIs, other services) — only the layers the story actually touches. Scoped right = one Task Log entry (one What + one Why, no "and also"), ≤3 files. Otherwise: split further. Everything points 3-5 surfaced is already on the table by now — nothing gets appended after the cap check below.
    - **Flow:** the ordered file/module list across all tasks = the story's **Flow** — the set of files this story is expected to touch, and in what order. Derived directly from the task breakdown, no extra thinking. Decided here, at planning, not revisited unless a Scope Change amends it.
-4. Cap total tasks by type — ceiling, not target:
+   - **Sequencing:** note which tasks have no shared dependency (safe to reorder or hand off separately) and the smallest slice of the task list that would be independently shippable/demoable, if one exists — informs how Step 3 can be checkpointed. Recorded, not just said — see point 9.
+
+7. Cap total tasks by type — ceiling, not target, applied to the finished list from point 6:
 
    | Type | Max tasks | If exceeded |
    |---|---|---|
@@ -151,10 +246,12 @@ Same trigger also fires implicitly from a hand-edit to AI-written code (see Step
    | New service/integration | 10 | same — flag before implementing |
    | Performance | 5 | more usually means multiple bottlenecks — separate stories |
 
-**Flow size check:** per-task file cap (point 3) × task cap (this table) compounds to 30 files worst case, uncapped independently of the task-count flag. Flow nearing ~30 distinct files → flag, propose splitting, before Step 3 — same treatment as hitting the task ceiling.
+   **Flow size check:** per-task file cap (point 6) × task cap above compounds to 30 files worst case, uncapped independently of the task-count flag. Flow nearing ~30 distinct files → flag, propose splitting, before Step 3 — same treatment as hitting the task ceiling. A "Small feature" whose Flow runs past ~8 files is the early signal of the same problem: raise it as a possible misclassification.
 
-5. File exists → write story type, design depth, Flow, Task Checklist to it, one pass (HLD/LLD notes only if used). No file → stays in chat.
-6. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
+8. **Constitution check:** `.breadcrumbs/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here and check the *whole* plan against it — approach, domain checks, testing, rollout, tasks — before presenting. Runs last on purpose: the rules it holds ("retries carry an idempotency key," "migrations must be reversible") match content that doesn't exist until points 3-5. Conflict → same handling as the point-2 tripwire, resolve before continuing. No file → nothing to check, skip silently.
+
+9. File exists → one pass, writing: story type, design depth, HLD/LLD notes, architecture decisions, **Risks/Unknowns** (point 2), domain-check outcomes, testing plan, rollout/rollback notes, Flow, **Sequencing** (point 6), Task Checklist — each only where it applied. Risks and Sequencing are the two most expensive things to re-derive on resume; they don't get left in chat. No file → stays in chat.
+10. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
 
 ---
 
@@ -163,10 +260,12 @@ Same trigger also fires implicitly from a hand-edit to AI-written code (see Step
 1. Work the Task Checklist one task at a time.
 2. **Don't ask the user mid-task.** Use best judgment. Genuine judgment call (not mechanical) → log in Task Log's "Why." Changes what was agreed (contradicts plan, needs a scope decision) → not a solo call — log under Scope Changes, flag immediately.
 3. Apply `ponytail` for how code gets written: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Exceptions still apply — never simplify away input validation, error handling, security, accessibility.
-4. After each task — file exists → append Task Log entry, check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too. Edited file isn't on the story's planned Flow (from Step 2.3) → say so explicitly before the correctness verdict ("that file's outside this story's planned Flow — [reason if evident]"), one line, non-blocking; still record the `Check:` verdict either way (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check and any Flow warning.
+4. After each task — file exists → append Task Log entry, check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too. Edited file isn't on the story's planned Flow (from Step 2.6) → say so explicitly before the correctness verdict ("that file's outside this story's planned Flow — [reason if evident]"), one line, non-blocking; still record the `Check:` verdict either way (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check and any Flow warning.
 
    **Learning from the edit:** if the hand-edit reflects a repo-wide preference rather than a one-off fix to this task (e.g. consistently strips comments a certain way, always adds a specific guard, renames a pattern the same way each time) → treat it like a stated rule (`context-file-mechanics.md`'s Project constitution trigger): ask once, "Noticed you always change X to Y — save that as a standing project rule?" Confirmed → append to `.breadcrumbs/constitution.md`, apply it from the next task onward in this story and every story after. Declined → don't ask again for this same pattern, keep it to the `Check:` verdict only. Story-specific edit (fixes this task's particular bug, not a general preference) → no ask, `Check:` verdict is enough.
 5. **Commit each task**, right after its Task Log write (same moment, before moving to the next task). One commit per completed task — mirrors the Task Log 1:1, keeps `git log` and the Task Log reconstructable from each other.
+
+   Per-task, not per-story, on purpose: each commit carries that task's own Why. Batch several tasks into one commit and the reasons collapse — a reviewer can see the change belongs to the story, but not which reason drove which hunk. That's the thing being preserved; it can't be recovered later.
 
    Conventional Commits format: `<type>(<scope>): <imperative summary>`. Scope = affected module/file area, omit if obvious from a small story. Body = short bullet list, drawn from the task's What/Why — compress, don't paste the Task Log entry verbatim.
 
@@ -192,7 +291,7 @@ Same trigger also fires implicitly from a hand-edit to AI-written code (see Step
 
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
 
-   Before running `git commit`, check the header against `~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs` (`node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`) — deterministic check, cheaper and more reliable than eyeballing the regex. Script missing (skill not installed via the sync, or running on a platform without it) → fall back to checking by hand against the table above, don't block on it.
+   Before running `git commit`, check the header with `validate-commit-message.mjs` — deterministic, cheaper and more reliable than eyeballing the regex. Resolve the script per "Validator scripts" in `context-file-mechanics.md`; not found → check by hand against the table above, don't block on it.
 6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
 7. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.
 
@@ -280,6 +379,14 @@ Status: understanding | planning | implementing | pr-ready | done
 ## Plan
 Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
 <approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
+<architecture decision(s): chosen option — why, rejected option(s) — why not. Only where 2+ valid approaches existed.>
+<domain-check outcomes / testing plan / rollout+rollback notes — only the ones that applied, one fragment each.>
+
+### Risks / Unknowns
+- <implementation risk — unfamiliar code, possible breakage, needs a spike> — status: open | resolved: <how>
+
+### Sequencing
+<tasks with no shared dependency (safe to reorder/hand off); smallest independently shippable slice, if one exists. Omit section if neither applies.>
 
 ## Flow
 <ordered list of files/modules this story is expected to touch, derived from the task breakdown — e.g. "1. src/foo.ts (Task 1)  2. src/bar.ts (Task 2, 3)". Amended only via a Scope Change entry below, never edited in place.>
@@ -309,19 +416,22 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 - Affected tasks: <task numbers>
 - Why: <reasoning behind the change>
 
+## Gate Waivers
+- <gate> — waived by user on <date> — not confirmed: <what went unreviewed>
+
 ## PR Summary
 Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
 ```
 
-Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
+Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
 Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
-`Flow` — defined Step 2.3, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
+`Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
 
 ## What NOT to do
 
-- Don't skip a gate, next step "obvious" or not. Applies in lite mode too — lite collapses which gates exist, never waives confirmation.
+- Don't skip a gate on your own initiative, next step "obvious" or not. Applies in lite mode too. Only an explicit user waiver skips one — see "User override" in `Skill.md`, and log it under `Gate Waivers` below.
 - Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface those immediately.
 - Don't overwrite past entries — running record, not a snapshot.
 - Don't commit the context file or reference it in the PR diff.
