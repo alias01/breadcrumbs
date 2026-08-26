@@ -115,7 +115,7 @@ node scripts/generate-changelog.mjs
 
 # 3. Review/edit the generated section, then rebuild and commit
 node scripts/build-platforms.mjs
-git add VERSION CHANGELOG.md .claude-plugin/plugin.json
+git add VERSION CHANGELOG.md .claude-plugin/plugin.json .claude-plugin/marketplace.json
 git commit -m "chore(release): v1.1.0"
 
 # 4. Tag and push — this triggers the release workflow

@@ -102,6 +102,31 @@ write(
   )
 );
 
+// Claude Code marketplace manifest — required for `/plugin marketplace add
+// alias01/breadcrumbs` (README install step) to discover this repo's single
+// plugin, which lives at the marketplace root. Name must be literally
+// "breadcrumbs" to match the `/plugin install breadcrumbs@breadcrumbs` the
+// README also documents.
+write(
+  ".claude-plugin/marketplace.json",
+  JSON.stringify(
+    {
+      name,
+      owner: { name: "alias01" },
+      plugins: [
+        {
+          name,
+          source: "./",
+          description,
+          version: VERSION,
+        },
+      ],
+    },
+    null,
+    2
+  )
+);
+
 // Claude Code's own local skill install (~/.claude/skills/breadcrumbs) is a
 // SEPARATE copy from this repo's skills/breadcrumbs/ — Claude Code loads
 // skills by name from there, not from this repo, so repo edits are invisible
