@@ -54,15 +54,21 @@ const fullBody = `${body}\n\n---\n\n${reference}`;
 write("AGENTS.md", `${banner}# ${name}\n\n${fullBody}\n`);
 
 // Cursor — .mdc with frontmatter Cursor understands (agent-requested rule).
+// `globs:` present-but-empty matches Cursor's own Agent Requested example.
 write(
   ".cursor/rules/breadcrumbs.mdc",
-  `---\ndescription: ${description}\nalwaysApply: false\n---\n\n${banner}${fullBody}\n`
+  `---\ndescription: ${description}\nglobs:\nalwaysApply: false\n---\n\n${banner}${fullBody}\n`
 );
 
 // Windsurf — model-decision rule, activates based on description match.
+// Windsurf caps rules at 6,000 chars each (12,000 total) and silently
+// truncates past that, so the full inlined body (~47K chars) never reaches
+// Cascade intact — it'd lose everything past roughly Step 2. Point at
+// AGENTS.md instead of inlining; Cascade reads it on activation.
+const windsurfBody = `# ${name}\n\nBefore acting on a user story, ticket, or a "continue"/"resume" request, read AGENTS.md at the repo root in full and follow it exactly. It has the complete four-gate workflow (Understand, Plan, Implement, PR), the context-file triggers, lite mode, and the guardrails under "What NOT to do" — this rule is intentionally short (Windsurf truncates long rule files) and is not a substitute for it.`;
 write(
   ".windsurf/rules/breadcrumbs.md",
-  `---\ntrigger: model_decision\ndescription: ${description}\n---\n\n${banner}${fullBody}\n`
+  `---\ntrigger: model_decision\ndescription: ${description}\n---\n\n${banner}${windsurfBody}\n`
 );
 
 // Cline — plain instructions file, no frontmatter convention.
