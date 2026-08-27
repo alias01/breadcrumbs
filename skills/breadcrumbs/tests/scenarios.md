@@ -1,6 +1,6 @@
 # breadcrumbs regression scenarios
 
-Not an automated suite — this is a prompt-following skill, there's no deterministic output to assert on. Run these by hand (in a scratch repo) after any edit to `Skill.md` or a step file, before trusting the change. Each scenario lists the prompt to give and what a correct run looks like — if actual behavior diverges, the edit broke something.
+Not an automated suite — this is a prompt-following skill, there's no deterministic output to assert on. Run these by hand (in a scratch repo) after any edit to `SKILL.md` or a step file, before trusting the change. Each scenario lists the prompt to give and what a correct run looks like — if actual behavior diverges, the edit broke something.
 
 ## 1. Lite mode, single sitting — no context file expected
 
@@ -80,9 +80,91 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Contrast check:** re-run a normal story on a branch cut directly from the default branch — **Dependencies** section stays omitted, same as before this change.
 
+
+## 7. Topic shift — asked once, not written silently
+
+**Prompt:** start any full-mode story, get through Step 1's confirm, then change the subject entirely ("unrelated — can you explain how the auth middleware works?").
+
+**Expect:**
+- Recognized as a topic shift, not a stop signal or a mid-flight break.
+- Asks **once**: "Looks like we're moving off this story — want me to checkpoint it first?"
+- Declined → **no file created**, no write, question not repeated for this same detour, answers the auth question normally.
+- Accepted (re-run the scenario) → file created, Understanding/Plan/Task Checklist backfilled at whatever step it was at, mode/design depth unchanged (a topic shift alone never escalates lite → full).
+
+## 8. Gate waiver — explicit only, and recorded
+
+**Prompt A:** paste a full-mode story, then say "just build it, skip the confirms."
+
+**Expect:**
+- Proceeds without stopping at the gates.
+- One line naming which gate was waived and what went unconfirmed.
+- File exists → `Gate Waivers` entry written. No file → stated in chat only.
+- Waiver does **not** carry into the next story.
+
+**Prompt B (contrast):** paste a story and answer the Step 1 gate with a curt "yes" or "k".
+
+**Expect:**
+- Treated as confirmation of that gate only — **not** as a waiver of the later ones. Step 2 still gates normally. Impatience/terseness is never inferred as a waiver.
+
+## 9. Multi-story resume — disambiguation without a full read
+
+**Setup:** two or three context files in `.breadcrumbs/context/`, different slugs, different `Status:` values.
+
+**Prompt:** "let's continue" — deliberately ambiguous.
+
+**Expect:**
+- Doesn't guess, doesn't read all of them.
+- Lists candidates cheaply: slug + title + `Status:` (first two lines each), nothing more.
+- Asks which one. Once picked → full read, status summarized back, resumes at the next unchecked task.
+
+## 10. Stale pr-ready cleanup — surfaced, never automatic
+
+**Setup:** a context file with `Status: pr-ready` and an mtime older than 7 days, plus one active story.
+
+**Prompt:** start or resume the active story.
+
+**Expect:**
+- Staleness noticed during the same directory scan — no separate pass.
+- After the current story's resume/start is resolved, **one line**: "N context file(s) sitting at pr-ready for 7+ days: <slugs> — merged? want these deleted?"
+- Nothing deleted without confirmation. Declined → the offer isn't repeated for that story in this session.
+
+## 11. Task cap and Flow size — flagged before Step 3, not after
+
+**Prompt:** paste a story that genuinely spans several components (e.g. "add multi-tenant support: tenant model, scoped queries, admin switcher UI, migration, audit log").
+
+**Expect:**
+- Classified `New feature/subsystem`.
+- Task breakdown runs past the 10-task cap, or the Flow past ~30 distinct files → **stops and flags before Step 3**, proposes a split.
+- Doesn't quietly build a 14-task list, doesn't append tasks after the cap check.
+
+**Contrast check:** a "Small feature" whose Flow runs past ~8 files → raised as a possible misclassification, not silently accepted.
+
+## 12. Constitution contradiction guard
+
+**Setup:** `.breadcrumbs/constitution.md` holds an active rule, e.g. `- all background work goes through the job queue — rationale: retry semantics — added 2026-08-01 — status: active`.
+
+**Prompt:** mid-story, state a conflicting repo-wide rule: "from now on, anything under 100ms runs inline, not through the queue."
+
+**Expect:**
+- Recognized as contradicting an existing **active** rule — not appended blindly.
+- Both lines surfaced, asks which stands.
+- Answered → new rule appended `status: active`, old line flipped to `status: superseded by "<new rule>" on <date>`. **Old line's text left exactly as written** — never deleted, never edited.
+- Never resolved by retiring the old rule just because the current plan is easier without it.
+
+## 13. Broad `.breadcrumbs/` exclusion — constitution stays committable
+
+**Setup:** a repo whose `.gitignore` (or `.git/info/exclude`) already contains a bare `.breadcrumbs/` line.
+
+**Prompt:** run any story far enough to fire a context-file trigger.
+
+**Expect:**
+- Broad pattern recognized as also swallowing `constitution.md`.
+- `!.breadcrumbs/constitution.md` negation added after it, and **said out loud in one line** — unlike the ordinary `.git/info/exclude` append, this one may touch a tracked file.
+- Context file itself still excluded; constitution still committable.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
 - No gate skipped, even when lite-collapsed — confirmation still required before moving on.
-- `node ~/.claude/skills/breadcrumbs/scripts/validate-context-file.mjs .breadcrumbs/context/<slug>.md` passes after every gate write.
-- Every commit header passes `node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`.
+- `node skills/breadcrumbs/scripts/validate-context-file.mjs .breadcrumbs/context/<slug>.md` passes after every gate write.
+- Every commit header passes `node skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"` — including the `Revert "..."` header when scenario 5 runs.

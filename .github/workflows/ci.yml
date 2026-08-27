@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Catches the casing bug this workflow was added for: on a
+      # case-sensitive filesystem, a plugin whose skill dir has `Skill.md`
+      # instead of `SKILL.md` silently fails to load.
+      - name: Skill entrypoint is named SKILL.md
+        run: test -f skills/breadcrumbs/SKILL.md
+
+      - name: Validator unit tests
+        run: node --test "skills/breadcrumbs/tests/**/*.test.mjs"
+
+      # AGENTS.md, .cursor/, .windsurf/, .clinerules/, .kiro/, .gemini/,
+      # .github/copilot-instructions.md and plugin.json are all generated from
+      # SKILL.md. Nothing else stops them drifting when the source is edited
+      # and the build isn't re-run.
+      - name: Generated platform files are in sync
+        run: |
+          node scripts/build-platforms.mjs
+          if ! git diff --exit-code; then
+            echo "::error::Generated files are stale — run 'node scripts/build-platforms.mjs' and commit the result."
+            exit 1
+          fi

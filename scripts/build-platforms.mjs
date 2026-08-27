@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Compiles skills/breadcrumbs/Skill.md (the canonical source) into
-// platform-specific instruction files. Re-run after editing Skill.md.
+// Compiles skills/breadcrumbs/SKILL.md (the canonical source) into
+// platform-specific instruction files. Re-run after editing SKILL.md.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, basename } from "node:path";
 import { homedir } from "node:os";
 
-const SOURCE = "skills/breadcrumbs/Skill.md";
+const SOURCE = "skills/breadcrumbs/SKILL.md";
 const VERSION = readFileSync("VERSION", "utf8").trim();
 const SCRIPTS = [
   "skills/breadcrumbs/scripts/validate-context-file.mjs",
@@ -41,7 +41,7 @@ const raw = readFileSync(SOURCE, "utf8");
 const { name, description, frontmatter, body } = parseSkill(raw);
 const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs — edit the source, then re-run the script. -->\n\n`;
 
-// Skill.md points at the step files, context-file-mechanics.md, and
+// SKILL.md points at the step files, context-file-mechanics.md, and
 // context-template.md, and expects Claude Code to Read each on demand (only
 // when that gate is reached / first context-file write). The other platforms
 // below have no such on-demand mechanism — everything they load is loaded
@@ -96,6 +96,10 @@ write(
       version: VERSION,
       license: "MIT",
       skills: ["./skills/breadcrumbs"],
+      // Ships the story-detection hook with the plugin. Without this, the
+      // hook only ever runs for people working inside this repo (via
+      // .claude/settings.json), never for anyone who installed the plugin.
+      hooks: "./hooks/hooks.json",
     },
     null,
     2
@@ -109,18 +113,27 @@ write(
 // Claude Code DOES support on-demand reads, so this sync preserves that:
 // SKILL.md stays a lean router, reference files land in references/ verbatim,
 // and pointers in the router body get rewritten to the references/ path.
-const CLAUDE_SKILL_DIR = join(homedir(), ".claude", "skills", "breadcrumbs");
-let routerForInstall = body;
-for (const refPath of REFERENCES) {
-  const file = basename(refPath);
-  routerForInstall = routerForInstall.replaceAll(`\`${file}\``, `\`references/${file}\``);
-}
-write(join(CLAUDE_SKILL_DIR, "SKILL.md"), `---\n${frontmatter}\n---\n\n${routerForInstall}\n`);
-for (const refPath of REFERENCES) {
-  write(join(CLAUDE_SKILL_DIR, "references", basename(refPath)), readFileSync(refPath, "utf8"));
-}
-for (const scriptPath of SCRIPTS) {
-  write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+//
+// Opt-in (`--install`) rather than automatic: everything above writes inside
+// the repo, this writes to $HOME. A build that mutates the developer's home
+// directory as a side effect can't be run hermetically in CI, which is exactly
+// where the generated-file drift check needs to run.
+if (process.argv.includes("--install")) {
+  const CLAUDE_SKILL_DIR = join(homedir(), ".claude", "skills", "breadcrumbs");
+  let routerForInstall = body;
+  for (const refPath of REFERENCES) {
+    const file = basename(refPath);
+    routerForInstall = routerForInstall.replaceAll(`\`${file}\``, `\`references/${file}\``);
+  }
+  write(join(CLAUDE_SKILL_DIR, "SKILL.md"), `---\n${frontmatter}\n---\n\n${routerForInstall}\n`);
+  for (const refPath of REFERENCES) {
+    write(join(CLAUDE_SKILL_DIR, "references", basename(refPath)), readFileSync(refPath, "utf8"));
+  }
+  for (const scriptPath of SCRIPTS) {
+    write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+  }
+} else {
+  console.log("(skipped ~/.claude/skills/breadcrumbs sync — pass --install to refresh it)");
 }
 
-console.log("\nDone. skills/breadcrumbs/Skill.md remains the canonical source.");
+console.log("\nDone. skills/breadcrumbs/SKILL.md remains the canonical source.");

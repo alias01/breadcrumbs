@@ -1,6 +1,6 @@
 # Context file mechanics
 
-Read once, the first time a file-creation trigger fires (see "The context file" in `Skill.md` for the triggers themselves). Not needed before that.
+Read once, the first time a file-creation trigger fires (see "The context file" in `SKILL.md` for the triggers themselves). Not needed before that.
 
 **Location once created:** `.breadcrumbs/context/<story-slug>.md` — `<story-slug>` = short kebab-case id from ticket ID/title.
 
@@ -12,7 +12,8 @@ Everything the file references — Flow entries, task file lists, Scope Changes 
 
 On creation, exclude it — but **in `.git/info/exclude`, not `.gitignore`**. Same effect for the user, and it's a local, untracked file: the exclusion never lands in a commit or shows up in someone else's diff. `.gitignore` is tracked; silently editing it puts an unexplained line in the story's own PR.
 
-- Already excluded (either file, `.breadcrumbs/context/` or a broader `.breadcrumbs/`) → nothing to do.
+- Already excluded via `.breadcrumbs/context/` → nothing to do.
+- Excluded via a **broader `.breadcrumbs/`** pattern → that also swallows `constitution.md`, which is meant to be committed. Not "nothing to do": add a `!.breadcrumbs/constitution.md` negation after it in whichever file carries the broad pattern, and say so in one line — this one isn't silent, because the user's own `.gitignore` may be the file being amended. Constitution doesn't exist yet → still add the negation, it costs nothing and prevents the silent case later.
 - Not excluded → append `.breadcrumbs/context/` to `.git/info/exclude`, no announcement needed. Silent because it's local-only and reversible; anything touching a tracked file wouldn't be.
 - No `.git/` (not a repo, or a worktree without one) → skip, don't fall back to `.gitignore`.
 

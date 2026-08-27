@@ -3,7 +3,7 @@ inclusion: manual
 description: Run a user story from a pasted ticket all the way to a PR-ready implementation through four gated steps — clarify, plan, implement, PR — while keeping a persistent context file so the work can resume in a different session or even a different AI platform without losing decisions, assumptions, or progress. Use this whenever a user pastes a user story, ticket, or feature request and wants it implemented, whenever they say "continue" or "resume" on an existing story, whenever scope changes or a test fails mid-implementation and the story needs to be reworked, and whenever they ask for a PR or PR summary. Also trigger if the user says a story got too big to explain, or asks why a past decision was made. Works alongside the ponytail skill for the implementation step.
 ---
 
-<!-- GENERATED from skills/breadcrumbs/Skill.md by scripts/build-platforms.mjs — edit the source, then re-run the script. -->
+<!-- GENERATED from skills/breadcrumbs/SKILL.md by scripts/build-platforms.mjs — edit the source, then re-run the script. -->
 
 ## Core Philosophy
 
@@ -74,7 +74,7 @@ Full guardrail list: `context-template.md`, read alongside the template on first
 
 # Context file mechanics
 
-Read once, the first time a file-creation trigger fires (see "The context file" in `Skill.md` for the triggers themselves). Not needed before that.
+Read once, the first time a file-creation trigger fires (see "The context file" in `SKILL.md` for the triggers themselves). Not needed before that.
 
 **Location once created:** `.breadcrumbs/context/<story-slug>.md` — `<story-slug>` = short kebab-case id from ticket ID/title.
 
@@ -86,7 +86,8 @@ Everything the file references — Flow entries, task file lists, Scope Changes 
 
 On creation, exclude it — but **in `.git/info/exclude`, not `.gitignore`**. Same effect for the user, and it's a local, untracked file: the exclusion never lands in a commit or shows up in someone else's diff. `.gitignore` is tracked; silently editing it puts an unexplained line in the story's own PR.
 
-- Already excluded (either file, `.breadcrumbs/context/` or a broader `.breadcrumbs/`) → nothing to do.
+- Already excluded via `.breadcrumbs/context/` → nothing to do.
+- Excluded via a **broader `.breadcrumbs/`** pattern → that also swallows `constitution.md`, which is meant to be committed. Not "nothing to do": add a `!.breadcrumbs/constitution.md` negation after it in whichever file carries the broad pattern, and say so in one line — this one isn't silent, because the user's own `.gitignore` may be the file being amended. Constitution doesn't exist yet → still add the negation, it costs nothing and prevents the silent case later.
 - Not excluded → append `.breadcrumbs/context/` to `.git/info/exclude`, no announcement needed. Silent because it's local-only and reversible; anything touching a tracked file wouldn't be.
 - No `.git/` (not a repo, or a worktree without one) → skip, don't fall back to `.gitignore`.
 
@@ -146,7 +147,7 @@ None of them resolve — the skill was pasted in as rules text, or the platform 
 
 # Step 1 — Understand & Clarify
 
-1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions. Any repo look-up needed to do this stays scoped to the story's own terms — see "Investigation scope" in `Skill.md`, not a full-repo read.
+1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions. Any repo look-up needed to do this stays scoped to the story's own terms — see "Investigation scope" in `SKILL.md`, not a full-repo read.
 2. Only then: follow-ups, only on what's genuinely vague — not everything askable in theory. Scan against a fixed taxonomy rather than open-ended guessing, so a Material gap doesn't slip through because nobody thought to ask:
    - Who/what/why: specific persona (not just "user"), what they're trying to accomplish, why it matters to them
    - Scope: what's explicitly in, what's explicitly out, whether this is one story or several bundled together
@@ -197,7 +198,7 @@ Order matters here: everything that can *add* work (points 3-5) runs before the 
 
    Size doesn't classify — the Flow does. Type is about *what kind of change*; the file/task ceilings in point 7 catch a story that outgrew its type.
 
-2. Discuss the approach at the depth classification calls for: HLD → system-design level (components, data flow, integration points). LLD → key functions/classes/schema. "No design" → name the fix approach, one-two sentences. Not a formal doc — enough to agree the shape before code. Same scoped-search rule as Step 1 ("Investigation scope" in `Skill.md`) — chase the components the story actually touches, not the whole repo.
+2. Discuss the approach at the depth classification calls for: HLD → system-design level (components, data flow, integration points). LLD → key functions/classes/schema. "No design" → name the fix approach, one-two sentences. Not a formal doc — enough to agree the shape before code. Same scoped-search rule as Step 1 ("Investigation scope" in `SKILL.md`) — chase the components the story actually touches, not the whole repo.
    - **Tripwire:** plan surfaces a Material unknown Step 1 missed → stop, resolve there (ask / log `unconfirmed` per 1.3 in `step1-understand.md`), before continuing. Applies even when 1+2 merged — a bad merge decision surfaces here, doesn't get built around.
    - **Architecture decisions:** 2+ valid approaches exist → pick one, state why, write it down (Plan section of the context file, or the chat message if no file yet) — not left as an unstated call in your head. Cross-team surface (FE/BE split) → agree the contract (API shape, request/response, error codes) before either side's tasks start.
    - **Risks/unknowns:** distinct from Step 1's Material/Cosmetic tags (those are about the story's *requirements*; this is about *implementation* risk) — flag parts you're unsure how to implement, parts touching unfamiliar code, anything needing a spike/research before real work starts, anything that could break existing functionality. Genuinely open → same tripwire handling as a Material unknown (ask, or log `unconfirmed` and proceed). Recorded, not just said — see point 9.
@@ -279,6 +280,10 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    | `perf` | Performance improvement — behavior unchanged, characteristics (speed, memory) improved |
    | `test` | Adding or modifying tests |
    | `chore` | Maintenance tasks, tooling, deps |
+   | `build` | Build system, packaging, dependency manifests |
+   | `ci` | CI config and pipeline changes |
+
+   Breaking change → `!` before the colon: `feat(api)!: drop v1 endpoint`. A `git revert` keeps the header git generates (`Revert "<original subject>"`) — don't rewrite it into Conventional form, the trailer it carries is what makes the revert traceable.
 
    Example:
    ```
@@ -292,7 +297,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
 
    Before running `git commit`, check the header with `validate-commit-message.mjs` — deterministic, cheaper and more reliable than eyeballing the regex. Resolve the script per "Validator scripts" in `context-file-mechanics.md`; not found → check by hand against the table above, don't block on it.
-6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
+6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`SKILL.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
 7. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.
 
 ---
@@ -344,11 +349,11 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 
 # breadcrumbs context file — template & guardrails
 
-Read once per story, at file creation — whichever trigger fires it (see "The context file" in `Skill.md`). Not needed again on resume — the file itself has everything by then — nor if no trigger ever fires.
+Read once per story, at file creation — whichever trigger fires it (see "The context file" in `SKILL.md`). Not needed again on resume — the file itself has everything by then — nor if no trigger ever fires.
 
 ## Content style
 
-Read by AI only (this session, a resumed session, another platform) — never the user. `Skill.md`'s "Communication style" governs chat, not this. Every section: fragments, not sentences. Drop articles/connective words where meaning stays unambiguous. Abbreviate freely. Optimize for a resuming model re-deriving state fast, not human readability.
+Read by AI only (this session, a resumed session, another platform) — never the user. `SKILL.md`'s "Communication style" governs chat, not this. Every section: fragments, not sentences. Drop articles/connective words where meaning stays unambiguous. Abbreviate freely. Optimize for a resuming model re-deriving state fast, not human readability.
 
 - Prose: `Why: We added a mutex because there was a race condition between the two writers.`
 - Telegraphic: `Why: race condition (two writers) — added mutex.`
@@ -431,9 +436,9 @@ Three Task Log forms — classification per Step 3.4, shown concretely in Task 1
 
 ## What NOT to do
 
-- Don't skip a gate on your own initiative, next step "obvious" or not. Applies in lite mode too. Only an explicit user waiver skips one — see "User override" in `Skill.md`, and log it under `Gate Waivers` below.
+- Don't skip a gate on your own initiative, next step "obvious" or not. Applies in lite mode too. Only an explicit user waiver skips one — see "User override" in `SKILL.md`, and log it under `Gate Waivers` below.
 - Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface those immediately.
 - Don't overwrite past entries — running record, not a snapshot.
 - Don't commit the context file or reference it in the PR diff.
 - Don't delete it unless the user confirms the PR merged.
-- Don't let a lite-mode story silently absorb a scope change or failed test — that's what the escalation trigger (see "The context file" in `Skill.md`) is for. Escalate to full mode rather than tracking it in chat memory alone.
+- Don't let a lite-mode story silently absorb a scope change or failed test — that's what the escalation trigger (see "The context file" in `SKILL.md`) is for. Escalate to full mode rather than tracking it in chat memory alone.

@@ -90,15 +90,31 @@ No package manager — copy the matching rule file from this repo into your proj
 
 Any tool that reads [`AGENTS.md`](AGENTS.md) from the project root picks up breadcrumbs with no setup — Codex, Amp, Jules, JetBrains Junie (once pointed at the file), and others.
 
-Works alongside the [ponytail](https://github.com/DietrichGebert/ponytail) skill for how code gets written during the Implement step — breadcrumbs owns the process and the trail, ponytail owns keeping the diff small.
+### Optional companions
+
+Two skills breadcrumbs prefers when they're installed, both degrading cleanly when they aren't:
+
+- [**ponytail**](https://github.com/DietrichGebert/ponytail) — how code gets written during Implement. Breadcrumbs owns the process and the trail, ponytail owns keeping the diff small. Absent → Step 3 falls back to plain simplest-thing-that-works.
+- **graphify** — repo investigation during Understand and Plan. A knowledge-graph query answers "what relates to what" more cheaply than grep can. Absent → investigation falls back to targeted grep and scoped reads.
 
 ## Development
 
-[`skills/breadcrumbs/Skill.md`](skills/breadcrumbs/Skill.md) is the canonical source. Every other platform file is generated from it — edit `Skill.md`, then re-run:
+[`skills/breadcrumbs/SKILL.md`](skills/breadcrumbs/SKILL.md) is the canonical source. Every other platform file is generated from it — edit `SKILL.md`, then re-run:
 
 ```bash
-node scripts/build-platforms.mjs
+node scripts/build-platforms.mjs            # regenerate the platform files in-repo
+node scripts/build-platforms.mjs --install  # ...and refresh ~/.claude/skills/breadcrumbs
 ```
+
+`--install` is opt-in because it writes outside the repo. Claude Code loads the skill by name from `~/.claude/skills/breadcrumbs`, a separate copy from this repo's `skills/breadcrumbs/` — repo edits are invisible at runtime until you pass it.
+
+The two validators have unit tests, and CI checks that the generated files above haven't drifted from `SKILL.md`:
+
+```bash
+node --test "skills/breadcrumbs/tests/**/*.test.mjs"
+```
+
+[`skills/breadcrumbs/tests/scenarios.md`](skills/breadcrumbs/tests/scenarios.md) covers the rest — the prompt-following behavior, which has no deterministic output to assert on. Run those by hand in a scratch repo after editing `SKILL.md` or a step file.
 
 [`skills/breadcrumbs/context-template.md`](skills/breadcrumbs/context-template.md) defines the context file's structure and guardrails; it gets inlined into the generated platform files (they have no on-demand file-loading, unlike Claude Code, which reads it only once per story).
 

@@ -31,12 +31,13 @@ function validate(path) {
   if (!lines[0]?.startsWith("# ")) errors.push("line 1 must be `# <Story title / ticket ID>`");
 
   const statusLine = lines.find((l) => l.startsWith("Status:"));
+  let status = "";
   if (!statusLine) {
     errors.push("missing `Status:` line");
   } else {
-    const value = statusLine.replace("Status:", "").trim();
-    if (!STATUSES.includes(value)) {
-      errors.push(`Status "${value}" not one of: ${STATUSES.join(" | ")}`);
+    status = statusLine.replace("Status:", "").trim();
+    if (!STATUSES.includes(status)) {
+      errors.push(`Status "${status}" not one of: ${STATUSES.join(" | ")}`);
     }
   }
 
@@ -46,12 +47,27 @@ function validate(path) {
 
   const checklistStart = lines.findIndex((l) => l.trim() === "## Task Checklist");
   if (checklistStart !== -1) {
+    let boxes = 0;
     for (let i = checklistStart + 1; i < lines.length; i++) {
       const line = lines[i];
       if (line.startsWith("## ")) break;
-      if (line.trim() === "" || line.startsWith("- [")) continue;
+      if (line.trim() === "") continue;
+      if (CHECKBOX.test(line)) {
+        boxes++;
+        continue;
+      }
       if (line.trim().startsWith("-")) errors.push(`Task Checklist line ${i + 1} isn't a checkbox: "${line.trim()}"`);
     }
+    // A file past the planning gate with no tasks means the breakdown never
+    // landed — the section header alone used to pass.
+    const planned = ["implementing", "pr-ready", "done"].includes(status);
+    if (boxes === 0 && planned) errors.push(`Status "${status}" but Task Checklist has no tasks`);
+  }
+
+  // Step 4.7 writes the `Last drafted:` anchor at the same moment it sets
+  // pr-ready; one without the other means the gate write was half-applied.
+  if (status === "pr-ready" && !/^Last drafted:/m.test(text)) {
+    errors.push('Status "pr-ready" but no `Last drafted:` line under `## PR Summary`');
   }
 
   return errors;

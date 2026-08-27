@@ -22,6 +22,10 @@
    | `perf` | Performance improvement — behavior unchanged, characteristics (speed, memory) improved |
    | `test` | Adding or modifying tests |
    | `chore` | Maintenance tasks, tooling, deps |
+   | `build` | Build system, packaging, dependency manifests |
+   | `ci` | CI config and pipeline changes |
+
+   Breaking change → `!` before the colon: `feat(api)!: drop v1 endpoint`. A `git revert` keeps the header git generates (`Revert "<original subject>"`) — don't rewrite it into Conventional form, the trailer it carries is what makes the revert traceable.
 
    Example:
    ```
@@ -35,5 +39,5 @@
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
 
    Before running `git commit`, check the header with `validate-commit-message.mjs` — deterministic, cheaper and more reliable than eyeballing the regex. Resolve the script per "Validator scripts" in `context-file-mechanics.md`; not found → check by hand against the table above, don't block on it.
-6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
+6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`SKILL.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
 7. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.
