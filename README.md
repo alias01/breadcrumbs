@@ -154,6 +154,9 @@ Resuming checks `.breadcrumbs/context/` for existing files. More than one candid
 **Does it slow down small fixes?**
 Bug fixes and copy/config changes run in lite mode: no context file, no design step, a two-task ceiling. Full rigor only kicks in if something mid-flight actually needs it.
 
+**What if a story gets blocked or dropped?**
+It gets a status that says so — `blocked` or `abandoned` — plus a logged reason, rather than sitting at `implementing` forever or being deleted. An abandoned story keeps the record of *why* it was dropped, which is worth as much as the record of something built. The resume scan also sweeps for rot: `pr-ready` past 7 days, `blocked` past 14, `implementing` past 30 — and offers cleanup, never doing it unprompted.
+
 **What happens when a reviewer asks for changes?**
 The story re-enters Step 3 rather than starting over — the requested work is appended to the existing task list, verified, and the PR redrafted with a *What changed since last PR* section. Steps 1 and 2 don't re-run; the understanding and plan already stand. If the story never had a context file, review is itself a trigger to create one, backfilled from the PR and diff.
 

@@ -1,5 +1,6 @@
 # PARK-482: Fix duplicate charge on payment retry
 Status: implementing
+Branch: fix/park-482-idempotency
 
 ## Original Story
 Retrying a failed payment creates a second charge. Should reuse the original attempt.

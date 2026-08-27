@@ -11,11 +11,14 @@ Read by AI only (this session, a resumed session, another platform) — never th
 
 Markdown structure (headers, lists, checkboxes) stays as-is — parsing scaffolding, not prose. Cutting it costs more to re-derive than it saves.
 
+**Dates: ISO 8601 (`YYYY-MM-DD`), always.** Every `<date>` below means that format. This file is read on other machines, in other locales, by other tools — `08/09/2026` is two different days depending on who opens it, and nothing in the file disambiguates it.
+
 ## File structure
 
 ```markdown
 # <Story title / ticket ID>
-Status: understanding | planning | implementing | pr-ready | done
+Status: understanding | planning | implementing | pr-ready | done | blocked | abandoned
+Branch: <git branch this story's commits live on — omit only outside a git repo>
 
 ## Original Story
 <verbatim paste>
@@ -88,13 +91,17 @@ Scope: full suite | <subset run, and why>
 Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
 ```
 
-Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, the `Verification` block, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
+Append, never overwrite — except `Status`, `Branch`, Task Checklist checkboxes, Current Requirements, the `Verification` block, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
 Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
 `Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
 
 `Review Rounds` — added by Step 4.8, one entry per round, append-only like Scope Changes. Answers "why does this branch have commits after the PR went out" without reopening threads that get resolved and collapsed. Declined asks matter as much as accepted ones — a disagreement that isn't written down reads later like an oversight.
+
+`Status` — five working states plus two parked ones. `done` = PR merged and the user chose to keep the file (see "Cleanup" in `context-file-mechanics.md`); the default after a merge is still deletion, so `done` is the kept-on-purpose case, not a step everything passes through. `blocked` = can't proceed, external cause. `abandoned` = deliberately stopped, kept for the record of why. Both parked states get a Scope Changes entry naming the cause in the same write — the status says *that* it stopped, the entry says *why*, and a status flip without one is the thing this file exists to prevent.
+
+`Branch` — written at creation from `git rev-parse --abbrev-ref HEAD`, amended in place if the story moves. Checked on resume (`context-file-mechanics.md`): a session that resumes on the wrong branch appends Task Log entries for commits that landed somewhere else, and nothing in the file would show it. Also what makes Step 4's stacked-branch check a comparison rather than a guess.
 
 `Verification` — written once, at Step 3.6, on the run that precedes the Step 3 gate. Amended in place on a re-run (it's "what's true now," like `Status`), not appended per attempt — the failures themselves live in Scope Changes and the fix commits.
 

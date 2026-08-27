@@ -26,7 +26,7 @@ Understanding a story needs enough repo context to ask good questions and plan r
 ## The context file
 
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
-- **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
+- **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full. Story stops for an external cause or is dropped outright ("blocked on the platform team," "we're not doing this") → same creation, then the parked status and its reason ("Parking a story" in `context-file-mechanics.md`).
 - **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
 - **Review round** — reviewer requests changes, or CI fails, on an opened PR (Step 4.8) → create if it doesn't exist yet, backfilling from the PR description and diff rather than the conversation, which is usually long gone. Doesn't escalate lite → full on its own.
 - **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
@@ -79,6 +79,8 @@ Read once, the first time a file-creation trigger fires (see "The context file" 
 
 **Location once created:** `.breadcrumbs/context/<story-slug>.md` — `<story-slug>` = short kebab-case id from ticket ID/title.
 
+On creation, write the header block in full: title, `Status:` at whatever step you're at, and `Branch:` from `git rev-parse --abbrev-ref HEAD` (omit outside a git repo). All three are first-two-lines content the resume scan and staleness sweep below read without opening the rest of the file — cheap only because they're there.
+
 **Anchored at the repo root, always relative to it** — that's what makes a story resumable on another platform. `.breadcrumbs/` lives next to the repo's own root (find it with `git rev-parse --show-toplevel`; no git → nearest ancestor directory holding the project's root marker, else the working directory, and say which was used). Never resolve it against the current working directory when that's a subdirectory, never against a home directory, never store an absolute path inside the file itself — a path like `/Users/<name>/...` doesn't survive a different machine, a different checkout, or a different tool's sandbox.
 
 Everything the file references — Flow entries, task file lists, Scope Changes — stays repo-relative for the same reason. Cursor, Windsurf, Copilot, Gemini and Claude all open the same checkout and read the same `.breadcrumbs/context/<slug>.md`; the platform-specific rules files (`AGENTS.md`, `.cursor/rules/`, `.windsurf/rules/`, `.clinerules/`, `.kiro/steering/`, `.github/copilot-instructions.md`) are committed and carry the skill itself, so the resuming tool has both halves. The optional validator scripts are the one part that may be absent — that's why nothing blocks on them.
@@ -94,15 +96,34 @@ On creation, exclude it — but **in `.git/info/exclude`, not `.gitignore`**. Sa
 
 User explicitly wants it committed / shared with teammates → that's their call, they'll say so; move the entry to `.gitignore` then, not before.
 
-**Resuming:** before any story work, check `.breadcrumbs/context/` for existing files. One match, name/slug clearly matches what the user's asking about → read it, summarize status back ("Here's where this stood: ... currently at Step X"), resume. Zero matches → nothing to resume; story hasn't started, or it's mid-way/finished in an unbroken conversation with no trigger fired yet. More than one file present and the user's request doesn't unambiguously point to one (generic "let's continue," or a new/vague prompt while other stories sit mid-flight) → don't guess. List the candidates cheaply: filename (slug) + first two lines of each (title, `Status:`) — never a full read at this stage, cost shouldn't scale with how many stories are open or how long they've grown. Present that list, ask which one. Once picked, proceed as the one-match case (full read, then resume).
+**Resuming:** before any story work, check `.breadcrumbs/context/` for existing files. One match, name/slug clearly matches what the user's asking about → read it, summarize status back ("Here's where this stood: ... currently at Step X"), resume. **Check `Branch` against `git rev-parse --abbrev-ref HEAD` as part of that read** — mismatch → say so before resuming ("file says `feature/csv-export`, you're on `main`") and ask whether to switch. Never resume silently onto a different branch: the Task Log would then record commits that landed somewhere the file doesn't name. No `Branch` line (file predates it, or no git) → note it once, write the current branch in on the next gate write. Zero matches → nothing to resume; story hasn't started, or it's mid-way/finished in an unbroken conversation with no trigger fired yet. More than one file present and the user's request doesn't unambiguously point to one (generic "let's continue," or a new/vague prompt while other stories sit mid-flight) → don't guess. List the candidates cheaply: filename (slug) + first two lines of each (title, `Status:`) — never a full read at this stage, cost shouldn't scale with how many stories are open or how long they've grown. Present that list, ask which one. Once picked, proceed as the one-match case (full read, then resume).
 
-**Staleness check (piggybacks on the scan above, no separate pass):** the directory listing itself — filenames + mtimes — is already free at this point regardless of match count. While scanning, note any file with `Status: pr-ready` (first two lines, same cheap read as the listing case) and mtime older than 7 days — that combination means the PR draft went out and nobody came back to confirm merge/delete. Collect these across the whole directory, not just the story being resumed or started. Any found → after resolving the current story's resume/start, mention them once in one line: "N context file(s) sitting at pr-ready for 7+ days: <slugs> — merged? want these deleted?" Confirmed per-file or in bulk → delete. Same rule as ordinary cleanup: never delete unprompted, this only surfaces the offer sooner instead of waiting for someone to reopen that specific story.
+**Staleness check (piggybacks on the scan above, no separate pass):** the directory listing itself — filenames + mtimes — is already free at this point regardless of match count. While scanning, read each file's first two lines (same cheap read as the listing case) and flag these combinations of `Status:` + mtime:
+
+| Status | Older than | Means | Ask |
+|---|---|---|---|
+| `pr-ready` | 7 days | PR draft went out, nobody confirmed merge | "merged? want these deleted?" |
+| `blocked` | 14 days | parked on an external cause that may have cleared | "still blocked?" |
+| `implementing` | 30 days | nobody stopped it and nobody continued it — silent rot | "still live, or should this be `abandoned`?" |
+
+`abandoned` and `done` are settled end states — never swept, they're already the answer. The 30-day `implementing` row is the one that catches a story nobody ever declared dead; without it, a forgotten story is indistinguishable from an active one and just accumulates as another candidate in the disambiguation list above.
+
+Collect across the whole directory, not just the story being resumed or started. Any found → after resolving the current story's resume/start, mention them once in one line, grouped: "N context file(s) stale: <slug> (pr-ready 12d), <slug> (implementing 40d) — merged / still live / delete?" Confirmed per-file or in bulk → delete. Same rule as ordinary cleanup: never delete unprompted, this only surfaces the offer sooner instead of waiting for someone to reopen that specific story.
 
 **Compaction on resume:** the file itself stays append-only — full detail, never compressed, that's the audit trail Core Philosophy depends on. What compacts is the *chat summary* read back to the user. Task Log/Scope Changes past 3 entries → summarize the older ones in one line each (date + What, no Why detail), give full What/Why detail only for the most recent 2-3 entries and anything still open (unconfirmed Assumptions, unresolved Scope Changes). If the user then asks about an older decision specifically, read that entry's full detail on demand — the file has it, the summary just didn't restate it. Keeps resume cost flat regardless of story length instead of scaling with it.
 
 **Known limitation — unbounded growth:** Scope Changes/Clarifying Q&A are uncapped (unlike Task Log, bounded via Step 2.7's task ceiling) — pure append, no rotation, no archival. Count starts looking like the task-count problem → treat it the same way: flag it, consider whether the story should've been split.
 
-**Cleanup:** PR merged (user-confirmed) → offer to delete. Never delete unprompted.
+**Cleanup:** PR merged (user-confirmed) → offer to delete. Never delete unprompted. Declined ("keep it," "we commit these") → set `Status: done` instead, same write. That's the one thing that writes `done`: a file kept on purpose past the merge it was working memory for. Deletion stays the default — `done` is not a step every story passes through on its way out.
+
+**Parking a story** — work stops without reaching a PR. Two states, both set on an explicit user signal, never inferred from silence:
+
+- `blocked` — can't proceed, external cause (another team, an unmerged dependency, a decision that hasn't come back). Story is expected to resume.
+- `abandoned` — deliberately stopped. Deprioritized, superseded, or the requirement was dropped outright.
+
+Either one: flip `Status` in place **and** write a Scope Changes entry in the same pass — trigger, before/after, why, and for `blocked` what would unblock it. The status says *that* the story stopped; only the entry says *why*, and a story that dies with no reason recorded is the exact failure this file exists to prevent. Deleting an abandoned story throws that reasoning away, which is why `abandoned` exists rather than "just delete it" — the record of a decision not to build something is worth as much as the record of building it.
+
+Both are also file-creation triggers when no file exists yet (same handling as a Stop signal): create, backfill, then set the parked status. Resuming a `blocked` story later → normal resume, flip `Status` back to whatever step it stopped at, note in one line that the block cleared.
 
 **Efficiency:** file exists → one write per gate, every section update batched into one pass, no read-then-write round trips. Don't re-read to confirm a write landed — trust it.
 
@@ -323,7 +344,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it. ← Task Log "Why" entries, only where they add something What didn't.
    - **Test** — how it's verified: what was added, **plus the Step 3.6 verification result** (command run, green). Skip only when genuinely nothing to verify. ← `Verification` section / test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent. Never write this section as though a suite ran when point 3.6 found nothing runnable — say that instead.
    - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Plan/Scope Changes, only where flagged.
-   - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first.
+   - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first. Confirm `HEAD` matches the file's `Branch:` line before reading anything into the comparison — run it on the wrong branch and the answer is about someone else's work.
    - **What changed since last PR** (later-update case only, incl. every re-entry round per point 8) ← Task Log entries **and** Scope Changes dated after `Last drafted:`. Task Log alone isn't enough — most review work is a fix, not a requirement change, so it never reaches Scope Changes. Declined asks (point 8) belong here too, one fragment: what was asked, why it wasn't done.
 4. **Cap every included section at 2 lines.** Pulled content runs long — compress to the essential point(s), don't truncate mid-sentence. Can't fit without losing something needed → signal the task/decision was too broad, not a reason to break the cap. **Whole draft should read in 2-5 min.** Runs longer with every section already trimmed and only the earned ones kept → the story was too big for one PR, say so instead of shipping a wall of text.
 
@@ -385,11 +406,14 @@ Read by AI only (this session, a resumed session, another platform) — never th
 
 Markdown structure (headers, lists, checkboxes) stays as-is — parsing scaffolding, not prose. Cutting it costs more to re-derive than it saves.
 
+**Dates: ISO 8601 (`YYYY-MM-DD`), always.** Every `<date>` below means that format. This file is read on other machines, in other locales, by other tools — `08/09/2026` is two different days depending on who opens it, and nothing in the file disambiguates it.
+
 ## File structure
 
 ```markdown
 # <Story title / ticket ID>
-Status: understanding | planning | implementing | pr-ready | done
+Status: understanding | planning | implementing | pr-ready | done | blocked | abandoned
+Branch: <git branch this story's commits live on — omit only outside a git repo>
 
 ## Original Story
 <verbatim paste>
@@ -462,13 +486,17 @@ Scope: full suite | <subset run, and why>
 Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
 ```
 
-Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, the `Verification` block, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
+Append, never overwrite — except `Status`, `Branch`, Task Checklist checkboxes, Current Requirements, the `Verification` block, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
 Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
 `Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
 
 `Review Rounds` — added by Step 4.8, one entry per round, append-only like Scope Changes. Answers "why does this branch have commits after the PR went out" without reopening threads that get resolved and collapsed. Declined asks matter as much as accepted ones — a disagreement that isn't written down reads later like an oversight.
+
+`Status` — five working states plus two parked ones. `done` = PR merged and the user chose to keep the file (see "Cleanup" in `context-file-mechanics.md`); the default after a merge is still deletion, so `done` is the kept-on-purpose case, not a step everything passes through. `blocked` = can't proceed, external cause. `abandoned` = deliberately stopped, kept for the record of why. Both parked states get a Scope Changes entry naming the cause in the same write — the status says *that* it stopped, the entry says *why*, and a status flip without one is the thing this file exists to prevent.
+
+`Branch` — written at creation from `git rev-parse --abbrev-ref HEAD`, amended in place if the story moves. Checked on resume (`context-file-mechanics.md`): a session that resumes on the wrong branch appends Task Log entries for commits that landed somewhere else, and nothing in the file would show it. Also what makes Step 4's stacked-branch check a comparison rather than a guess.
 
 `Verification` — written once, at Step 3.6, on the run that precedes the Step 3 gate. Amended in place on a re-run (it's "what's true now," like `Status`), not appended per attempt — the failures themselves live in Scope Changes and the fix commits.
 

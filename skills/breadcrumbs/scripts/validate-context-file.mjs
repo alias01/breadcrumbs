@@ -10,7 +10,11 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const STATUSES = ["understanding", "planning", "implementing", "pr-ready", "done"];
+// Five working states plus two parked ones (see context-template.md).
+const STATUSES = ["understanding", "planning", "implementing", "pr-ready", "done", "blocked", "abandoned"];
+// A story that reached a PR draft: both anchors below must be present.
+const DRAFTED = ["pr-ready", "done"];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ALWAYS_REQUIRED = ["## Original Story", "## Understanding Summary", "## Task Checklist"];
 const CHECKBOX = /^- \[[ x]\] /;
 
@@ -59,26 +63,38 @@ function validate(path) {
       if (line.trim().startsWith("-")) errors.push(`Task Checklist line ${i + 1} isn't a checkbox: "${line.trim()}"`);
     }
     // A file past the planning gate with no tasks means the breakdown never
-    // landed — the section header alone used to pass.
-    const planned = ["implementing", "pr-ready", "done"].includes(status);
+    // landed — the section header alone used to pass. `blocked` and
+    // `abandoned` are exempt: a story can park before it was ever broken down.
+    const planned = ["implementing", ...DRAFTED].includes(status);
     if (boxes === 0 && planned) errors.push(`Status "${status}" but Task Checklist has no tasks`);
   }
 
   // Step 4.7 writes the `Last drafted:` anchor at the same moment it sets
   // pr-ready; one without the other means the gate write was half-applied.
-  if (status === "pr-ready" && !/^Last drafted:/m.test(text)) {
-    errors.push('Status "pr-ready" but no `Last drafted:` line under `## PR Summary`');
-  }
+  // `done` inherits both checks — it can only be reached through pr-ready.
+  if (DRAFTED.includes(status)) {
+    if (!/^Last drafted:/m.test(text)) {
+      errors.push(`Status "${status}" but no \`Last drafted:\` line under \`## PR Summary\``);
+    }
 
-  // A pr-ready file always cleared the Step 3 gate, and that gate now requires
-  // the Step 3.6 verification run. Missing block = the run never happened, or
-  // happened and wasn't recorded — either way the PR's Test line is unbacked.
-  if (status === "pr-ready") {
+    // That gate also requires the Step 3.6 verification run. Missing block =
+    // the run never happened, or happened and wasn't recorded — either way
+    // the PR's Test line is unbacked.
     const run = text.match(/^Last run:.*$/m);
     if (!run) {
-      errors.push('Status "pr-ready" but no `Last run:` line under `## Verification`');
+      errors.push(`Status "${status}" but no \`Last run:\` line under \`## Verification\``);
     } else if (/—\s*red\b/.test(run[0])) {
-      errors.push(`Status "pr-ready" but verification is red: "${run[0].trim()}"`);
+      errors.push(`Status "${status}" but verification is red: "${run[0].trim()}"`);
+    }
+  }
+
+  // Dates are ISO 8601 everywhere (context-template.md, "Content style"). Only
+  // the two anchored lines have a fixed enough shape to check deterministically
+  // — and they're the two other tooling reads back, so drift there costs most.
+  for (const label of ["Last drafted", "Last run"]) {
+    const line = text.match(new RegExp(`^${label}:\\s*(\\S+)`, "m"));
+    if (line && !ISO_DATE.test(line[1])) {
+      errors.push(`\`${label}: ${line[1]}\` isn't an ISO 8601 date (YYYY-MM-DD)`);
     }
   }
 

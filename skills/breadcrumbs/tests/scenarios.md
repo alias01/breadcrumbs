@@ -222,11 +222,57 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Contrast check:** a fourth round on the same story → flagged like a blown task cap, with a proposal to split what's left into a follow-up PR.
 
+## 16. Parked stories — blocked, abandoned, and the silent-rot sweep
+
+**Prompt A (blocked):** mid-story, say "we're blocked — the platform team hasn't shipped the tenant API yet."
+
+**Expect:**
+- File created if it doesn't exist (same handling as a Stop signal).
+- `Status: blocked` amended in place — **and** a Scope Changes entry in the same write, naming the cause and what would unblock it. Status without a reason is the failure this guards against.
+- Never inferred from silence — only from an explicit signal.
+
+**Prompt B (resume a blocked story):** later, "the tenant API shipped, let's pick that back up."
+
+**Expect:**
+- Normal resume. `Status` flips back to the step it stopped at, one line noting the block cleared.
+- Doesn't restart Step 1 or 2.
+
+**Prompt C (abandoned):** on another story, "we're not doing this — product dropped it."
+
+**Expect:**
+- `Status: abandoned` + Scope Changes entry with the why.
+- **File not deleted.** The record of a decision *not* to build something is the point of the state — deleting it throws away exactly what breadcrumbs exists to keep.
+
+**Prompt D (the sweep):** with a directory holding one `pr-ready` file 12 days old, one `blocked` 20 days old, one `implementing` 40 days old, and one `abandoned` from months ago — start any story.
+
+**Expect:**
+- Sweep runs off the same directory scan, no extra pass, first two lines only.
+- Flags the first three with the right question each ("merged?", "still blocked?", "still live, or should this be `abandoned`?").
+- **`abandoned` and `done` never flagged** — settled end states.
+- One grouped line, after the current story's start is resolved. Nothing deleted without confirmation.
+
+**Validator check:** `blocked` and `abandoned` are accepted with an empty Task Checklist (a story can park before it was ever broken down); `implementing`, `pr-ready` and `done` are not.
+
+## 17. Branch binding — resume on the wrong branch
+
+**Setup:** a context file whose `Branch:` line reads `feature/csv-export`, with `main` checked out.
+
+**Prompt:** "continue the CSV export story."
+
+**Expect:**
+- `Branch` compared against `git rev-parse --abbrev-ref HEAD` as part of the same read that summarizes status back.
+- Mismatch stated before resuming ("file says `feature/csv-export`, you're on `main`"), asks whether to switch.
+- **Does not silently resume** — otherwise the Task Log records commits that landed on a branch the file doesn't name.
+- Step 4's stacked-branch check on this story confirms `HEAD` matches `Branch:` before drawing any conclusion from `git merge-base`.
+
+**Contrast check:** branches match → no mention at all, resume proceeds normally. File with no `Branch:` line (predates it, or no git) → noted once, current branch written in on the next gate write, not treated as a mismatch.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
 - No gate skipped, even when lite-collapsed — confirmation still required before moving on.
 - Step 3's gate is never reached on a red suite — the verification run precedes it, and a failure routes to 3.7 instead.
 - Re-entry (Step 4.8) never re-runs Steps 1-2, never renumbers existing tasks, and never skips the 3.6 verification for its own round.
+- Every date written to a context file is ISO 8601 (`YYYY-MM-DD`) — the validator enforces it on the `Last drafted:` and `Last run:` anchors.
 - `node skills/breadcrumbs/scripts/validate-context-file.mjs .breadcrumbs/context/<slug>.md` passes after every gate write.
 - Every commit header passes `node skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"` — including the `Revert "..."` header when scenario 5 runs.

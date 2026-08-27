@@ -33,8 +33,8 @@ const fixture = (overrides = {}) => {
     status: "Status: implementing",
     sections: "## Original Story\nx\n\n## Understanding Summary\nx\n\n## Task Checklist\n- [ ] Task 1 — x — files: a.ts",
   };
-  const { title, status, sections } = { ...base, ...overrides };
-  return `${title}\n${status}\n\n${sections}\n`;
+  const { title, status, sections, branch = "Branch: feature/x" } = { ...base, ...overrides };
+  return `${title}\n${status}\n${branch}\n\n${sections}\n`;
 };
 
 test("commit: accepts every documented type", () => {
@@ -134,4 +134,39 @@ test("context: rejects pr-ready while verification is red", () => {
 
 test("context: accepts pr-ready with both anchors present and green", () => {
   assert.equal(runContext(fixture({ status: "Status: pr-ready", sections: PR_READY_SECTIONS })), 0);
+});
+
+test("context: accepts the two parked statuses", () => {
+  for (const status of ["blocked", "abandoned"]) {
+    assert.equal(runContext(fixture({ status: `Status: ${status}` })), 0, `${status} should pass`);
+  }
+});
+
+test("context: lets a parked story have no tasks yet", () => {
+  // A story can be blocked or dropped during planning, before any breakdown —
+  // the empty-checklist rule must not fire on those.
+  const sections = "## Original Story\nx\n\n## Understanding Summary\nx\n\n## Task Checklist\n";
+  for (const status of ["blocked", "abandoned"]) {
+    assert.equal(runContext(fixture({ status: `Status: ${status}`, sections })), 0, `${status} should pass`);
+  }
+});
+
+test("context: done inherits pr-ready's anchors", () => {
+  assert.equal(runContext(fixture({ status: "Status: done", sections: PR_READY_SECTIONS })), 0);
+  const noRun = PR_READY_SECTIONS.replace("## Verification\nLast run: 2026-08-27 — `npm test` — green", "## Verification");
+  assert.equal(runContext(fixture({ status: "Status: done", sections: noRun })), 1);
+});
+
+test("context: rejects a non-ISO date on an anchored line", () => {
+  const sections = PR_READY_SECTIONS.replace("Last drafted: 2026-08-27", "Last drafted: 08/27/2026");
+  assert.equal(runContext(fixture({ status: "Status: pr-ready", sections })), 1);
+});
+
+test("context: rejects a non-ISO date on the verification line", () => {
+  const sections = PR_READY_SECTIONS.replace("Last run: 2026-08-27", "Last run: 27-Aug-2026");
+  assert.equal(runContext(fixture({ status: "Status: pr-ready", sections })), 1);
+});
+
+test("context: a Branch line is optional (no git repo)", () => {
+  assert.equal(runContext(fixture({ branch: "" })), 0);
 });
