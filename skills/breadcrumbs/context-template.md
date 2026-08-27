@@ -76,6 +76,11 @@ Scope: full suite | <subset run, and why>
 - Affected tasks: <task numbers>
 - Why: <reasoning behind the change>
 
+## Review Rounds
+### <date> — round <n>, <reviewer>
+- Asked: <what> → task(s) <numbers>
+- Declined: <what> — <why, replied on thread>
+
 ## Gate Waivers
 - <gate> — waived by user on <date> — not confirmed: <what went unreviewed>
 
@@ -88,6 +93,8 @@ Append, never overwrite — except `Status`, Task Checklist checkboxes, Current 
 Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
 `Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
+
+`Review Rounds` — added by Step 4.8, one entry per round, append-only like Scope Changes. Answers "why does this branch have commits after the PR went out" without reopening threads that get resolved and collapsed. Declined asks matter as much as accepted ones — a disagreement that isn't written down reads later like an oversight.
 
 `Verification` — written once, at Step 3.6, on the run that precedes the Step 3 gate. Amended in place on a re-run (it's "what's true now," like `Status`), not appended per attempt — the failures themselves live in Scope Changes and the fix commits.
 

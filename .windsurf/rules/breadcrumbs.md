@@ -30,9 +30,10 @@ Understanding a story needs enough repo context to ask good questions and plan r
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
 - **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
 - **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
+- **Review round** — reviewer requests changes, or CI fails, on an opened PR (Step 4.8) → create if it doesn't exist yet, backfilling from the PR description and diff rather than the conversation, which is usually long gone. Doesn't escalate lite → full on its own.
 - **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
 
-No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
+No trigger fires, all four gates finish in one sitting **and review never comes back** → no file, ever. Expected path, not a skipped step.
 
 **Trip marker:** write happens → one line before the gate message naming what was written, e.g. `[context file: wrote Understanding Summary + Assumptions]`. No file yet → no marker, content just shown in chat.
 
@@ -61,6 +62,8 @@ Read the step's file when you actually reach that gate — don't preload the oth
 | 2 — Plan | `step2-plan.md` | Plan + task breakdown confirmed (skipped in lite mode) |
 | 3 — Implement | `step3-implement.md` | Every task checked off **and** the verification run green |
 | 4 — PR | `step4-pr.md` | PR draft confirmed in chat |
+
+Not strictly one-way: review comes back on an opened PR → re-enter **Step 3** with the requested work appended, verify, redraft here (Step 4.8). Steps 1 and 2 don't re-run — the understanding and plan already stand.
 
 ## What NOT to do
 
@@ -258,7 +261,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 
 # Step 3 — Implement
 
-1. Work the Task Checklist one task at a time.
+1. Work the Task Checklist one task at a time. Tasks arrive from Step 2's breakdown or, on a re-entry round, appended by Step 4.8 — same handling either way, continuing the existing numbering.
 2. **Don't ask the user mid-task.** Use best judgment. Genuine judgment call (not mechanical) → log in Task Log's "Why." Changes what was agreed (contradicts plan, needs a scope decision) → not a solo call — log under Scope Changes, flag immediately.
 3. Apply `ponytail` for how code gets written: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Exceptions still apply — never simplify away input validation, error handling, security, accessibility.
 4. After each task — file exists → append Task Log entry, check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too. Edited file isn't on the story's planned Flow (from Step 2.6) → say so explicitly before the correctness verdict ("that file's outside this story's planned Flow — [reason if evident]"), one line, non-blocking; still record the `Check:` verdict either way (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check and any Flow warning.
@@ -323,7 +326,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    - **Test** — how it's verified: what was added, **plus the Step 3.6 verification result** (command run, green). Skip only when genuinely nothing to verify. ← `Verification` section / test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent. Never write this section as though a suite ran when point 3.6 found nothing runnable — say that instead.
    - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Plan/Scope Changes, only where flagged.
    - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first.
-   - **What changed since last PR** (later-update case only) ← Scope Changes dated after the last PR Summary write.
+   - **What changed since last PR** (later-update case only, incl. every re-entry round per point 8) ← Task Log entries **and** Scope Changes dated after `Last drafted:`. Task Log alone isn't enough — most review work is a fix, not a requirement change, so it never reaches Scope Changes. Declined asks (point 8) belong here too, one fragment: what was asked, why it wasn't done.
 4. **Cap every included section at 2 lines.** Pulled content runs long — compress to the essential point(s), don't truncate mid-sentence. Can't fit without losing something needed → signal the task/decision was too broad, not a reason to break the cap. **Whole draft should read in 2-5 min.** Runs longer with every section already trimmed and only the earned ones kept → the story was too big for one PR, say so instead of shipping a wall of text.
 
    Template:
@@ -354,7 +357,20 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    ```
 5. **Show the draft directly in chat, stop there.** Not a file draft awaiting a later write — the deliverable itself. No way to open a PR on GitHub/GitLab/Bitbucket → the chat message *is* the artifact, user copies it into the platform's PR field. Nothing written to the context file here — no later gate reads a stored PR summary back.
 6. **Gate:** confirm or request changes, iterate in chat, until happy with what they'll paste.
-7. Confirmed + file exists → write one line to PR Summary: `Last drafted: <date>` (anchor for diffing Scope Changes later, not a text copy). Update Status to `pr-ready`, same pass. Trip marker. No file → nothing to write, chat draft was the whole deliverable.
+7. Confirmed + file exists → write one line to PR Summary: `Last drafted: <date>` (anchor for diffing Task Log/Scope Changes later, not a text copy). Update Status to `pr-ready`, same pass. Trip marker. No file → nothing to write, chat draft was the whole deliverable.
+8. **Re-entry — review comes back.** Reviewer requests changes, or CI fails on the opened PR. Not a new story and not a Step 5: re-enter **Step 3** with the requested work appended to the existing Task Checklist, and come back through this step. Steps 1 and 2 don't re-run — the story's understanding and plan already stand.
+
+   - **File first.** This is a file-creation trigger in its own right (`SKILL.md`) — review lands hours or days later, usually in a different session. No file yet (single-sitting story) → create it now and backfill from the PR description and diff, saying in one line that the pre-review trail was reconstructed rather than recorded. Every later round then has a real trail.
+   - **Triage each thread before it becomes a task.** Not every comment is work:
+     - Small and in scope (nit, rename, missing test, one-function refactor) → new task, appended with the next number, never renumbered over the old ones.
+     - Changes a requirement (reviewer wants behavior the Understanding Summary doesn't cover) → Scope Change entry first, per point 7 of `step3-implement.md`, *then* the task. This is the one path that escalates lite → full.
+     - Disagree, or out of scope → **don't build it.** Reply on the thread with the reasoning; record it as a declined ask (below). Silently implementing something you think is wrong loses the disagreement from the record.
+   - `Status` back to `implementing` (amended in place). Then Step 3 as normal: one task at a time, Task Log, one commit each.
+   - **Step 3.6 re-runs** after the round's last task — every round is verified, not just the first. `Verification` block amended in place.
+   - Record the round under `## Review Rounds` (`context-template.md`): what was asked, which tasks it became, what was declined and why. Cheapest thing to write now, most expensive to re-derive from a thread that later gets resolved and collapsed.
+   - Back here, redraft with **What changed since last PR** included (point 3). New `Last drafted:` line replaces the old one; `Status` returns to `pr-ready`.
+   - **Re-entry alone doesn't escalate lite → full** — a nit on a copy change doesn't earn an HLD. Only the Scope Change path above does.
+   - Rounds repeat as needed. Nothing caps them, but a story on its fourth round is the same signal as blowing the task cap: raise it, propose splitting what's left into a follow-up PR.
 
 ---
 
@@ -436,6 +452,11 @@ Scope: full suite | <subset run, and why>
 - Affected tasks: <task numbers>
 - Why: <reasoning behind the change>
 
+## Review Rounds
+### <date> — round <n>, <reviewer>
+- Asked: <what> → task(s) <numbers>
+- Declined: <what> — <why, replied on thread>
+
 ## Gate Waivers
 - <gate> — waived by user on <date> — not confirmed: <what went unreviewed>
 
@@ -448,6 +469,8 @@ Append, never overwrite — except `Status`, Task Checklist checkboxes, Current 
 Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
 `Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
+
+`Review Rounds` — added by Step 4.8, one entry per round, append-only like Scope Changes. Answers "why does this branch have commits after the PR went out" without reopening threads that get resolved and collapsed. Declined asks matter as much as accepted ones — a disagreement that isn't written down reads later like an oversight.
 
 `Verification` — written once, at Step 3.6, on the run that precedes the Step 3 gate. Amended in place on a re-run (it's "what's true now," like `Status`), not appended per attempt — the failures themselves live in Scope Changes and the fix commits.
 

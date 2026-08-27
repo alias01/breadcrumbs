@@ -191,10 +191,42 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Validator check:** a context file at `Status: pr-ready` with no `Last run:` line, or one reading `— red:`, fails `validate-context-file.mjs`.
 
+## 15. Review re-entry — back into Step 3, not a new story
+
+**Prompt A (file exists):** run a full-mode story to a confirmed PR draft (`Status: pr-ready`), then in a fresh session say a reviewer left comments: one nit ("rename `tmp` to `pending`"), one missing test, and one you'd expect pushback on ("drop the retry path entirely" — contradicts the confirmed Understanding Summary).
+
+**Expect:**
+- **Steps 1 and 2 do not re-run.** No re-clarifying, no re-planning, no re-confirming the original understanding.
+- Each thread triaged before becoming work:
+  - nit + missing test → two new tasks, **appended with the next numbers** (Task 6, 7 — old tasks never renumbered).
+  - "drop the retry path" → recognized as a requirement change: **Scope Change entry first**, then the task. This is the path that would escalate a lite story to full.
+- `Status` amended in place back to `implementing`.
+- Tasks worked one at a time, Task Log + one commit each, exactly as in a first pass.
+- **Step 3.6 re-runs** after the round's last task — the round is verified too, not just the original work. `Verification` block amended in place, not appended.
+- Back at Step 4: redraft includes **What changed since last PR**, sourced from Task Log entries *and* Scope Changes dated after `Last drafted:`. New `Last drafted:` replaces the old one; `Status` returns to `pr-ready`.
+- `## Review Rounds` entry written: date, round number, what was asked, which tasks it became.
+
+**Prompt B (no file — the common case):** run a *lite* story start to finish in one sitting so no context file is ever created. Then, in a fresh session, paste reviewer feedback on the resulting PR.
+
+**Expect:**
+- Recognized as the **Review round** file-creation trigger — file created **now**, backfilled from the PR description and diff.
+- One line saying the pre-review trail was reconstructed, not recorded — doesn't present a backfilled understanding as though it had been confirmed at the time.
+- **Does not escalate lite → full** on re-entry alone. (Contrast: if one of the comments is a scope change, that path escalates as usual.)
+
+**Prompt C (declined ask):** on any re-entry round, feedback asks for something out of scope or that you'd push back on.
+
+**Expect:**
+- **Not silently implemented.** Reasoning replied on the thread.
+- Recorded under `## Review Rounds` as a declined ask with the why — so a later reader sees a decision, not an oversight.
+- Also surfaces in the redraft's **What changed since last PR**, one fragment.
+
+**Contrast check:** a fourth round on the same story → flagged like a blown task cap, with a proposal to split what's left into a follow-up PR.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
 - No gate skipped, even when lite-collapsed — confirmation still required before moving on.
 - Step 3's gate is never reached on a red suite — the verification run precedes it, and a failure routes to 3.7 instead.
+- Re-entry (Step 4.8) never re-runs Steps 1-2, never renumbers existing tasks, and never skips the 3.6 verification for its own round.
 - `node skills/breadcrumbs/scripts/validate-context-file.mjs .breadcrumbs/context/<slug>.md` passes after every gate write.
 - Every commit header passes `node skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"` — including the `Revert "..."` header when scenario 5 runs.

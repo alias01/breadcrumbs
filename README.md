@@ -24,6 +24,7 @@ No re-reading the diff, no guessing at intent — the trail just picks up where 
 | Switching AI tools or machines | Starts from zero | Any platform reading the file picks up identically |
 | "Why is this written this way?" | Reconstructed from memory of a diff | Task Log's original reasoning, not a retrofit |
 | PR description | Written after the fact from what's left | Pulled straight from the trail — What/Why/Test/Rollback/Dependencies |
+| Reviewer asks for changes | New round of work, disconnected from the original reasoning | Re-enters Step 3, appends tasks, re-verifies, redrafts with what changed |
 
 ## How it works
 
@@ -36,6 +37,7 @@ flowchart LR
     S2 -- confirm --> S3["3 · Implement<br/>one task at a time, logged<br/>then verified once at the end"]
     S3 -- all tasks checked, suite green --> S4["4 · PR<br/>What / Why / Test / Rollback / Dependencies"]
     S4 -- confirm --> D([PR draft in chat])
+    S4 -. review requests changes .-> S3
 
     S1 -.-> G
     S2 -.-> G
@@ -151,6 +153,9 @@ Resuming checks `.breadcrumbs/context/` for existing files. More than one candid
 
 **Does it slow down small fixes?**
 Bug fixes and copy/config changes run in lite mode: no context file, no design step, a two-task ceiling. Full rigor only kicks in if something mid-flight actually needs it.
+
+**What happens when a reviewer asks for changes?**
+The story re-enters Step 3 rather than starting over — the requested work is appended to the existing task list, verified, and the PR redrafted with a *What changed since last PR* section. Steps 1 and 2 don't re-run; the understanding and plan already stand. If the story never had a context file, review is itself a trigger to create one, backfilled from the PR and diff.
 
 **Why "breadcrumbs"?**
 Because what matters isn't the story itself — it's being able to find your way back to it.

@@ -29,9 +29,10 @@ Understanding a story needs enough repo context to ask good questions and plan r
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
 - **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
 - **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
+- **Review round** — reviewer requests changes, or CI fails, on an opened PR (Step 4.8) → create if it doesn't exist yet, backfilling from the PR description and diff rather than the conversation, which is usually long gone. Doesn't escalate lite → full on its own.
 - **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
 
-No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
+No trigger fires, all four gates finish in one sitting **and review never comes back** → no file, ever. Expected path, not a skipped step.
 
 **Trip marker:** write happens → one line before the gate message naming what was written, e.g. `[context file: wrote Understanding Summary + Assumptions]`. No file yet → no marker, content just shown in chat.
 
@@ -60,6 +61,8 @@ Read the step's file when you actually reach that gate — don't preload the oth
 | 2 — Plan | `step2-plan.md` | Plan + task breakdown confirmed (skipped in lite mode) |
 | 3 — Implement | `step3-implement.md` | Every task checked off **and** the verification run green |
 | 4 — PR | `step4-pr.md` | PR draft confirmed in chat |
+
+Not strictly one-way: review comes back on an opened PR → re-enter **Step 3** with the requested work appended, verify, redraft here (Step 4.8). Steps 1 and 2 don't re-run — the understanding and plan already stand.
 
 ## What NOT to do
 
