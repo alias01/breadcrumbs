@@ -2,6 +2,23 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
 
+## [2.0.0] - 2026-08-27
+
+### Breaking
+- The skill's entrypoint is now `skills/breadcrumbs/SKILL.md`, not `Skill.md`. Anything referencing the old path (a fork, a vendored copy, a script) needs updating. On case-sensitive filesystems the plugin never loaded under the old name, which is what prompted the rename.
+- Installing the plugin now registers a `UserPromptSubmit` hook (`hooks/hooks.json`) that previously only ran for people working inside this repo. It prints a nudge on ticket-shaped prompts; remove the `hooks` key from `.claude-plugin/plugin.json` to opt out.
+- `scripts/build-platforms.mjs` no longer refreshes `~/.claude/skills/breadcrumbs` by default — pass `--install`. Existing scripts that relied on the implicit sync now silently no-op.
+- `validate-context-file.mjs` rejects context files that 1.5.0 accepted: a `pr-ready` (or `done`) file must now carry a `Last run:` line under `## Verification`, and dates on the `Last drafted:` / `Last run:` anchors must be ISO 8601. Add the block to any in-flight story file, or let the next gate write add it.
+
+### Features
+- **skill:** add parked statuses, branch binding, and ISO dates
+- **skill:** re-enter Step 3 when review comes back on an opened PR
+- **skill:** verify once after implementation, before the Step 3 gate
+
+### Fixes
+- **scripts:** parse build/ci and breaking commits in the changelog
+- **skill:** repair plugin loading, hook detection, and commit validation
+
 ## [1.5.0] - 2026-08-22
 
 ### Features
