@@ -2,6 +2,12 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
 
+## [1.6.0] - 2026-08-27
+
+### Features
+- **breadcrumbs:** add per-task review gate in Step 3
+- **breadcrumbs:** split Step 2 into a Code Plan and a Test Plan
+
 ## [1.5.0] - 2026-08-22
 
 ### Features
