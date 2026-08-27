@@ -20,7 +20,7 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Expect (session 1):**
 - Classified `full` (small feature), Step 1 and Step 2 gated separately (unless zero Material unknowns).
-- Context file created at the stop signal — trip marker shown, backfilled Understanding/Plan/Task Checklist/Task Log for the one completed task.
+- Context file created at the stop signal — trip marker shown, backfilled Understanding/Code Plan/Test Plan/Task Checklist/Task Log for the one completed task.
 - One commit made for the completed task, Conventional Commits format.
 
 **Prompt B (session 2, fresh context):** "let's continue the CSV export story."
@@ -79,6 +79,19 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 - No other section changes — What/Why/Test/Rollback follow their usual inclusion rules independent of this.
 
 **Contrast check:** re-run a normal story on a branch cut directly from the default branch — **Dependencies** section stays omitted, same as before this change.
+
+## 7. Code Plan / Test Plan split — tests sequenced after code
+
+**Prompt:** paste a small-feature story (e.g. "add a CSV export button to the reports page"), confirm Step 1, reach Step 2.
+
+**Expect:**
+- Step 2 gate presents two clearly labeled, separate deliverables — a Code Plan (approach/design, domain checks, rollout if applicable) and a Test Plan (concrete test cases: input, expected output, which acceptance criterion each covers) — not one merged "Plan" narrative.
+- Test Plan test cases are designed now, at this gate, not deferred.
+- Task Checklist orders any test-writing task(s) after the code task(s) they exercise — never before or interleaved ahead of the code.
+- Context file (if triggered) writes `## Code Plan` and `## Test Plan` as separate sections, each individually.
+- Confirm → Step 3 implements code tasks first; the test task for a given slice of code isn't executed until that code's task is checked off.
+
+**Contrast check:** re-run a bug-fix (lite) story — Test Plan still exists (per the depth-gate table, "the one regression case that proves the fix is enough"), just collapsed to one line alongside the collapsed Step 1+2 message, not a separate gate.
 
 ## Cross-cutting checks (verify on any scenario)
 

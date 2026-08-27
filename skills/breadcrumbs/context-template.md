@@ -32,17 +32,23 @@ Status: understanding | planning | implementing | pr-ready | done
 ## Current Requirements
 <the story's requirements as they stand right now, amended in place as scope changes land — this is the "what's true today" view, kept short and current, never a history log>
 
-## Plan
+## Code Plan
 Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
 <approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
 <architecture decision(s): chosen option — why, rejected option(s) — why not. Only where 2+ valid approaches existed.>
-<domain-check outcomes / testing plan / rollout+rollback notes — only the ones that applied, one fragment each.>
+<domain-check outcomes / rollout+rollback notes — only the ones that applied, one fragment each.>
 
 ### Risks / Unknowns
 - <implementation risk — unfamiliar code, possible breakage, needs a spike> — status: open | resolved: <how>
 
 ### Sequencing
 <tasks with no shared dependency (safe to reorder/hand off); smallest independently shippable slice, if one exists. Omit section if neither applies.>
+
+## Test Plan
+<separate from Code Plan above, same confirmed Understanding — step2-plan.md point 4>
+- <test case: input — expected output/behavior — maps to acceptance criterion X>
+<unit coverage notes, edge cases from Step 1's error-handling taxonomy, domain-specific regression case if any>
+<designed here, at plan time; written/executed only after the code they exercise is implemented — Task Checklist orders test tasks after the code tasks they depend on, never ahead>
 
 ## Flow
 <ordered list of files/modules this story is expected to touch, derived from the task breakdown — e.g. "1. src/foo.ts (Task 1)  2. src/bar.ts (Task 2, 3)". Amended only via a Scope Change entry below, never edited in place.>

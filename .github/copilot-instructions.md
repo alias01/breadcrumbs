@@ -25,9 +25,9 @@ Understanding a story needs enough repo context to ask good questions and plan r
 ## The context file
 
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
-- **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
+- **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Code Plan/Test Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
 - **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.5) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
-- **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
+- **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Code Plan/Test Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
 
 No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
 
@@ -55,7 +55,7 @@ Read the step's file when you actually reach that gate — don't preload the oth
 | Step | File | Gate |
 |---|---|---|
 | 1 — Understand & Clarify | `step1-understand.md` | Understanding + Assumptions confirmed (or folded into Step 2 if zero Material unknowns) |
-| 2 — Plan | `step2-plan.md` | Plan + task breakdown confirmed (skipped in lite mode) |
+| 2 — Plan | `step2-plan.md` | Code Plan + Test Plan + task breakdown confirmed (skipped in lite mode) |
 | 3 — Implement | `step3-implement.md` | Every task checked off |
 | 4 — PR | `step4-pr.md` | PR draft confirmed in chat |
 
@@ -169,7 +169,7 @@ None of them resolve — the skill was pasted in as rules text, or the platform 
 4. Classify story type now (table in Step 2.1 of `step2-plan.md`, don't wait for Step 2). `Bug fix` / `Copy/config/content change` = **lite**; everything else = **full**. State the mode, one line.
 5. **Tag every open question/assumption**: Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, API/contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count — **not** step 4's type/size classification — decides the gate below. 10-task "New feature/subsystem," all-Cosmetic → gate merges. "Small feature," one Material unknown → gate stays separate. Task/file count belongs to Step 2.7, not here.
 6. **Gate:** file exists → write Understanding Summary + Assumptions to it in one pass, trip marker. No file → present the same content in chat only.
-   - **Zero Material unknowns** → fold Step 2 in: do Step 2's work silently (read `step2-plan.md`), present Understanding Summary + Plan together, one combined confirmation, both quoted verbatim. Regardless of story type/task count.
+   - **Zero Material unknowns** → fold Step 2 in: do Step 2's work silently (read `step2-plan.md`), present Understanding Summary + Code Plan + Test Plan together, one combined confirmation, all quoted verbatim. Regardless of story type/task count.
    - **Any Material unknown remains** (even `unconfirmed`) → summary alone, quoted verbatim, stop. No Step 2 until confirmed.
 
 ---
@@ -196,15 +196,15 @@ Order matters here: everything that can *add* work (points 3-5) runs before the 
 
 2. Discuss the approach at the depth classification calls for: HLD → system-design level (components, data flow, integration points). LLD → key functions/classes/schema. "No design" → name the fix approach, one-two sentences. Not a formal doc — enough to agree the shape before code. Same scoped-search rule as Step 1 ("Investigation scope" in `Skill.md`) — chase the components the story actually touches, not the whole repo.
    - **Tripwire:** plan surfaces a Material unknown Step 1 missed → stop, resolve there (ask / log `unconfirmed` per 1.3 in `step1-understand.md`), before continuing. Applies even when 1+2 merged — a bad merge decision surfaces here, doesn't get built around.
-   - **Architecture decisions:** 2+ valid approaches exist → pick one, state why, write it down (Plan section of the context file, or the chat message if no file yet) — not left as an unstated call in your head. Cross-team surface (FE/BE split) → agree the contract (API shape, request/response, error codes) before either side's tasks start.
+   - **Architecture decisions:** 2+ valid approaches exist → pick one, state why, write it down (Code Plan section of the context file, or the chat message if no file yet) — not left as an unstated call in your head. Cross-team surface (FE/BE split) → agree the contract (API shape, request/response, error codes) before either side's tasks start.
    - **Risks/unknowns:** distinct from Step 1's Material/Cosmetic tags (those are about the story's *requirements*; this is about *implementation* risk) — flag parts you're unsure how to implement, parts touching unfamiliar code, anything needing a spike/research before real work starts, anything that could break existing functionality. Genuinely open → same tripwire handling as a Material unknown (ask, or log `unconfirmed` and proceed). Recorded, not just said — see point 9.
 
 **Depth gate for points 3-5** — single source of truth for how much of the next three points runs. Points 3-5 don't restate it.
 
 | Design depth | Points 3-5 |
 |---|---|
-| No design (copy/config, performance, bug fix reaching here via escalation) | Skip 3 and 4 — the one regression case that proves the fix is enough. Point 5 only if the story itself touches prod data/payments/migration. |
-| LLD only (small feature, refactor) | Point 3: the single domain the story touches, folded into point 2's discussion — no table walk. Point 4: one line. Point 5: only if schema/prod-data/payments involved. |
+| No design (copy/config, performance, bug fix reaching here via escalation) | Skip 3 and 4 — the one regression case that proves the fix is enough, written as the Test Plan. Point 5 only if the story itself touches prod data/payments/migration. |
+| LLD only (small feature, refactor) | Point 3: the single domain the story touches, folded into point 2's discussion — no table walk. Point 4 (Test Plan): one line. Point 5: only if schema/prod-data/payments involved. |
 | Full HLD + LLD (new feature/subsystem, new service/integration) | All three explicitly, as written below. |
 
 Story sits at a lighter depth but genuinely carries the risk (a "small feature" writing a migration) → the risk decides, not the label. That's a judgment call, not a reason to run the whole table.
@@ -224,13 +224,14 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    | Third-party integration | Rate limits and pricing of the third-party API known; failure/downtime handling for when the third party is unavailable; auth/credential management approach clear; webhook vs polling decision made |
    | UI-only/design (no backend change) | Responsive behavior across breakpoints confirmed; accessibility (contrast, keyboard nav, screen reader) considered; design system components reused, not one-offs |
 
-4. **Testing plan:** identify which logic needs unit test coverage, list the manual/integration test cases (including the edge cases already surfaced in Step 1's error-handling taxonomy item and any domain-specific regression case from point 3), and confirm there's a clear way to verify the result against Step 1's acceptance criteria. Test work that's substantial enough to stand alone becomes its own task in point 6.
+4. **Test Plan** — a separate deliverable from the Code Plan (points 1-3, 5), not folded into it. Same confirmed Understanding, different output: identify which logic needs unit test coverage, and write the actual test cases (inputs, expected outputs, edge conditions — not just a topic list), covering the manual/integration scenarios, the edge cases already surfaced in Step 1's error-handling taxonomy item, and any domain-specific regression case from point 3. Each test case maps back to one of Step 1's acceptance criteria — if it doesn't, either the criteria are incomplete or the test isn't earning its place. Designed now, at plan time; written/executed only once the code it exercises exists — see point 6's sequencing rule and `step3-implement.md`. Test work substantial enough to stand alone becomes its own task in point 6.
 
 5. **Rollout & rollback** — only for stories that touch production data, payments, or require a migration/backward-compat path (New service/integration is where this is most often mandatory; the Database/schema domain always needs it; other types only if the story itself says so): decide whether a feature flag is needed, address migration/backward-compatibility concerns, and confirm a rollback plan exists. Flag/migration/backfill work is real work — it becomes tasks in point 6, not a footnote.
 
 6. Agreed → break into small tasks along natural seams: dependency order first, then component/layer (multi-part work) / file-module boundary (refactors). For multi-layer stories, make the layers explicit — frontend (components, state, routing), backend (endpoints, business logic), data layer (schema changes, migrations), integration points (third-party APIs, other services) — only the layers the story actually touches. Scoped right = one Task Log entry (one What + one Why, no "and also"), ≤3 files. Otherwise: split further. Everything points 3-5 surfaced is already on the table by now — nothing gets appended after the cap check below.
    - **Flow:** the ordered file/module list across all tasks = the story's **Flow** — the set of files this story is expected to touch, and in what order. Derived directly from the task breakdown, no extra thinking. Decided here, at planning, not revisited unless a Scope Change amends it.
    - **Sequencing:** note which tasks have no shared dependency (safe to reorder or hand off separately) and the smallest slice of the task list that would be independently shippable/demoable, if one exists — informs how Step 3 can be checkpointed. Recorded, not just said — see point 9.
+   - **Code before tests:** task(s) drawn from the Test Plan (point 4) are ordered after every code task they exercise — designed now, but never written/run ahead of the code they test, even when dependency order would otherwise allow it. Step 3 executes the Task Checklist in this order, so this is what makes tests run after implementation, not interleaved with it.
 
 7. Cap total tasks by type — ceiling, not target, applied to the finished list from point 6:
 
@@ -247,14 +248,14 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 
 8. **Constitution check:** `.breadcrumbs/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here and check the *whole* plan against it — approach, domain checks, testing, rollout, tasks — before presenting. Runs last on purpose: the rules it holds ("retries carry an idempotency key," "migrations must be reversible") match content that doesn't exist until points 3-5. Conflict → same handling as the point-2 tripwire, resolve before continuing. No file → nothing to check, skip silently.
 
-9. File exists → one pass, writing: story type, design depth, HLD/LLD notes, architecture decisions, **Risks/Unknowns** (point 2), domain-check outcomes, testing plan, rollout/rollback notes, Flow, **Sequencing** (point 6), Task Checklist — each only where it applied. Risks and Sequencing are the two most expensive things to re-derive on resume; they don't get left in chat. No file → stays in chat.
-10. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
+9. File exists → one pass, writing: story type, design depth, HLD/LLD notes, architecture decisions, **Risks/Unknowns** (point 2), domain-check outcomes, rollout/rollback notes (Code Plan), **Test Plan** (point 4, its own section — not folded into the Code Plan notes), Flow, **Sequencing** (point 6), Task Checklist — each only where it applied. Risks and Sequencing are the two most expensive things to re-derive on resume; they don't get left in chat. No file → stays in chat.
+10. **Gate:** trip marker if a write happened. Present the Code Plan, the Test Plan, and the task breakdown as clearly separate, labeled pieces (not one merged narrative), quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
 
 ---
 
 # Step 3 — Implement
 
-1. Work the Task Checklist one task at a time.
+1. Work the Task Checklist one task at a time, in order. Step 2 already sequenced test tasks (from the Test Plan) after the code tasks they exercise — don't reorder to write/run a test ahead of the code it covers, even if it'd be convenient.
 2. **Don't ask the user mid-task.** Use best judgment. Genuine judgment call (not mechanical) → log in Task Log's "Why." Changes what was agreed (contradicts plan, needs a scope decision) → not a solo call — log under Scope Changes, flag immediately.
 3. Apply `ponytail` for how code gets written: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Exceptions still apply — never simplify away input validation, error handling, security, accessibility.
 4. After each task — file exists → append Task Log entry, check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too. Edited file isn't on the story's planned Flow (from Step 2.6) → say so explicitly before the correctness verdict ("that file's outside this story's planned Flow — [reason if evident]"), one line, non-blocking; still record the `Check:` verdict either way (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check and any Flow warning.
@@ -289,7 +290,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
 
    Before running `git commit`, check the header with `validate-commit-message.mjs` — deterministic, cheaper and more reliable than eyeballing the regex. Resolve the script per "Validator scripts" in `context-file-mechanics.md`; not found → check by hand against the table above, don't block on it.
-6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
+6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Code Plan/Test Plan, adjust Task Checklist. Continue in the same file.
 7. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.
 
 ---
@@ -301,9 +302,9 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 3. Fixed section set, same five names regardless of type — **What, Why, Test, Rollback, Dependencies.** No type-varying sections anymore. Bias toward fewer: include a section only if it earns its place for a reviewer, omit rather than pad. File exists → pull content from it, don't re-summarize; no file → derive the same from the conversation.
    - **What** — always. The change, as plainly as possible. ← Task Log "What" entries, concatenated.
    - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it. ← Task Log "Why" entries, only where they add something What didn't.
-   - **Test** — how it's verified: test added, manual repro steps, "none needed" + reason. Skip only when genuinely nothing to verify. ← test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent.
-   - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Plan/Scope Changes, only where flagged.
-   - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first.
+   - **Test** — how it's verified: test added, manual repro steps, "none needed" + reason. Skip only when genuinely nothing to verify. ← test-related Task Log entries / the Test Plan section; no coverage found → say so, don't invent.
+   - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Code Plan/Scope Changes, only where flagged.
+   - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Code Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first.
    - **What changed since last PR** (later-update case only) ← Scope Changes dated after the last PR Summary write.
 4. **Cap every included section at 2 lines.** Pulled content runs long — compress to the essential point(s), don't truncate mid-sentence. Can't fit without losing something needed → signal the task/decision was too broad, not a reason to break the cap. **Whole draft should read in 2-5 min.** Runs longer with every section already trimmed and only the earned ones kept → the story was too big for one PR, say so instead of shipping a wall of text.
 
@@ -373,17 +374,23 @@ Status: understanding | planning | implementing | pr-ready | done
 ## Current Requirements
 <the story's requirements as they stand right now, amended in place as scope changes land — this is the "what's true today" view, kept short and current, never a history log>
 
-## Plan
+## Code Plan
 Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
 <approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
 <architecture decision(s): chosen option — why, rejected option(s) — why not. Only where 2+ valid approaches existed.>
-<domain-check outcomes / testing plan / rollout+rollback notes — only the ones that applied, one fragment each.>
+<domain-check outcomes / rollout+rollback notes — only the ones that applied, one fragment each.>
 
 ### Risks / Unknowns
 - <implementation risk — unfamiliar code, possible breakage, needs a spike> — status: open | resolved: <how>
 
 ### Sequencing
 <tasks with no shared dependency (safe to reorder/hand off); smallest independently shippable slice, if one exists. Omit section if neither applies.>
+
+## Test Plan
+<separate from Code Plan above, same confirmed Understanding — step2-plan.md point 4>
+- <test case: input — expected output/behavior — maps to acceptance criterion X>
+<unit coverage notes, edge cases from Step 1's error-handling taxonomy, domain-specific regression case if any>
+<designed here, at plan time; written/executed only after the code they exercise is implemented — Task Checklist orders test tasks after the code tasks they depend on, never ahead>
 
 ## Flow
 <ordered list of files/modules this story is expected to touch, derived from the task breakdown — e.g. "1. src/foo.ts (Task 1)  2. src/bar.ts (Task 2, 3)". Amended only via a Scope Change entry below, never edited in place.>
