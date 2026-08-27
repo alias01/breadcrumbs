@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks a commit message against the Conventional Commits format defined
-// in skills/breadcrumbs/step3-implement.md (Step 3.5).
+// in skills/breadcrumbs/step3-implement.md (Step 3.6).
 //
 // Usage: node scripts/validate-commit-message.mjs <path-to-message-file>
 //        node scripts/validate-commit-message.mjs -m "feat(auth): add reset flow"

@@ -87,14 +87,14 @@ Last drafted: <date> — full text was shown in chat for the user to copy into G
 
 Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
-Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
+Three Task Log forms — classification per Step 3.5, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
-`Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
+`Flow` — defined Step 2.6, flagged when violated per Step 3.5. Recorded as a `Flow` line here (Task 3 example above).
 
 ## What NOT to do
 
 - Don't skip a gate on your own initiative, next step "obvious" or not. Applies in lite mode too. Only an explicit user waiver skips one — see "User override" in `Skill.md`, and log it under `Gate Waivers` below.
-- Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface those immediately.
+- Don't ask the user questions *during* a task's execution — decide, log, move on; exception: scope-changing issues, surface those immediately. This is separate from the per-task review gate *after* the task is done (Step 3.4) — that one does stop and wait, by design, unless the user's waived it.
 - Don't overwrite past entries — running record, not a snapshot.
 - Don't commit the context file or reference it in the PR diff.
 - Don't delete it unless the user confirms the PR merged.

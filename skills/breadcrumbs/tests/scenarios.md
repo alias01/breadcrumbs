@@ -60,8 +60,8 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 **Prompt:** mid-story (full mode), after a task implementing some requirement X is already committed, say "actually, requirement X isn't needed — I don't like this implementation, revert it."
 
 **Expect:**
-- Recognized as a Step 3.5 trigger (owner invalidates a requirement/assumption, scope changes mid-flight) — context file created now if it doesn't exist yet.
-- Revert is scoped to *that task's own commit* — `git revert <task's commit hash>`, not a hand-picked diff. Only possible cleanly because Step 3.5 commits one task per commit; a story implemented as one big commit would force picking lines out of a mixed diff instead.
+- Recognized as a Step 3.7 trigger (owner invalidates a requirement/assumption, scope changes mid-flight) — context file created now if it doesn't exist yet.
+- Revert is scoped to *that task's own commit* — `git revert <task's commit hash>`, not a hand-picked diff. Only possible cleanly because Step 3.6 commits one task per commit; a story implemented as one big commit would force picking lines out of a mixed diff instead.
 - Structured Scope Changes entry logged: trigger (owner decided X unnecessary), before (had X), after (X removed), affected tasks, why.
 - Current Requirements amended in place — drops X, doesn't leave it contradicting the Task Log.
 - Task Checklist updated for the dropped task — **not silently deleted**: the Task Log keeps the record that X was built, then explicitly reverted, and why. A later reader (different session, teammate, different AI) sees a deliberate decision, not a gap that looks like something got forgotten.
@@ -92,6 +92,26 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 - Confirm → Step 3 implements code tasks first; the test task for a given slice of code isn't executed until that code's task is checked off.
 
 **Contrast check:** re-run a bug-fix (lite) story — Test Plan still exists (per the depth-gate table, "the one regression case that proves the fix is enough"), just collapsed to one line alongside the collapsed Step 1+2 message, not a separate gate.
+
+## 8. Per-task review gate — feedback loop, then waiver
+
+**Prompt A:** run a small-feature story (3+ tasks) through Step 1 and Step 2 confirm, into Step 3.
+
+**Expect (Task 1):**
+- After implementing Task 1, before logging/committing it: shown the change for review, stopped, waiting — not narrated-and-moved-on.
+- Give feedback (e.g. "rename this variable, and handle the empty-list case") → fixed in place, same task, still uncommitted; updated change re-shown.
+- Give feedback again → loops again.
+- Say "looks good" (or equivalent) → *then* Task Log entry + checkbox + one commit for Task 1, only now. Only one commit exists for Task 1 despite the two rounds of feedback.
+- Moves to Task 2, same gate repeats.
+
+**Prompt B (mid-story):** say "don't ask me between tasks" before Task 3.
+
+**Expect:**
+- Waiver acknowledged in one line, applies for the rest of *this* story's tasks (Task 3 onward) — implemented and committed without the per-task stop.
+- Context file (if it exists) gets a `Gate Waivers` entry.
+- Next new story → gate is back to default (per-task review), waiver didn't carry over.
+
+**Contrast check:** feedback on a task that changes what was agreed (e.g. "actually this should also support X") rather than fixing that task's execution → handled as a Step 3.7 mid-flight break (Scope Changes entry, Current Requirements amended), not folded into the fix-and-loop.
 
 ## Cross-cutting checks (verify on any scenario)
 
