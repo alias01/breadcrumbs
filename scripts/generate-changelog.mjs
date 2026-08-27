@@ -20,7 +20,7 @@ const TYPE_LABELS = {
   refactor: "Refactoring",
   docs: "Documentation",
 };
-const MAINTENANCE_TYPES = new Set(["chore", "style", "test"]);
+const MAINTENANCE_TYPES = new Set(["chore", "style", "test", "build", "ci"]);
 const SECTION_ORDER = ["feat", "fix", "perf", "refactor", "docs", "maintenance", "other"];
 
 function sh(cmd) {
@@ -47,7 +47,10 @@ if (subjects.length === 0) {
 }
 
 const buckets = Object.fromEntries(SECTION_ORDER.map((k) => [k, []]));
-const CONVENTIONAL = /^(feat|fix|perf|refactor|docs|style|test|chore)(\([\w./-]+\))?: (.+)/;
+// Types and the optional `!` breaking marker must stay in step with
+// skills/breadcrumbs/scripts/validate-commit-message.mjs — a type that
+// validates on commit but doesn't parse here silently lands in "Other".
+const CONVENTIONAL = /^(feat|fix|perf|refactor|docs|style|test|chore|build|ci)(\([\w./-]+\))?!?: (.+)/;
 
 for (const subject of subjects) {
   const match = subject.match(CONVENTIONAL);
