@@ -39,5 +39,16 @@
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
 
    Before running `git commit`, check the header with `validate-commit-message.mjs` — deterministic, cheaper and more reliable than eyeballing the regex. Resolve the script per "Validator scripts" in `context-file-mechanics.md`; not found → check by hand against the table above, don't block on it.
-6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`SKILL.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
-7. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.
+6. **Verification run — once, after the last task, before the gate.** Not per task: the suite runs against the story's finished work, not a half-built intermediate state where failures are expected and tell you nothing.
+
+   Without this, Step 4's **Test** line is a claim about work nobody ran. That's the whole point of the step — it turns "regression test added" into "regression test added, suite green."
+
+   - **Which checks:** whatever a contributor runs locally — tests, linter, typecheck, build. Discover them from the repo, don't guess a command: `package.json` scripts, `Makefile` targets, `pyproject.toml`/`tox.ini`/`noxfile.py`, `Cargo.toml`, `go.mod`, the CI workflow's own steps, or a constitution rule naming them. Resolve once per story, reuse.
+   - **Nothing runnable found** → say so in one line at the gate, naming what you did instead ("no test/lint command found — verified by <X>"). Never invent a command, never skip silently.
+   - **Scope:** whole suite when it's fast. Slow suite → the packages/paths on the story's Flow (Step 2.6) plus whatever Step 2.4's testing plan named, and say which subset ran.
+   - **Green** → proceed to the gate.
+   - **Red** → this is point 7's Mid-flight break trigger. Fix, re-run, repeat until green. **The fix is its own commit** (`fix(...)` / `test(...)`), never an amend or a rewrite of an already-made task commit — 3.5's Task Log↔commit 1:1 has to survive, and a reviewer should see the failure and the fix as two facts, not one tidied-up one. Name the task the failure belongs to in that commit's body.
+   - **Never reach the gate on red.** "Tests fail but the feature works" isn't a passing state — it's a fix, or an explicit user waiver logged under `Gate Waivers`.
+   - File exists → record the outcome under `## Verification` (`context-template.md`), same write as the gate. No file → state it in chat at the gate.
+7. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`SKILL.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
+8. **Gate:** every task checked off **and** point 6 green (or its "nothing runnable" line stated) → summarize what was built plus the verification result, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks and any verification fixes already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.

@@ -10,7 +10,7 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 - Classified `lite` (bug fix), stated in one line.
 - Step 1 + Step 2 collapse into one message: understanding + task list (≤2 tasks) + "confirm?"
 - On confirm: tasks implemented, one commit per task (`fix(...): ...` header), no per-task chat message beyond progress narration.
-- One wrap-up message after all tasks, not per-task.
+- One wrap-up message after all tasks, not per-task — **including the Step 3.6 verification result** (lite collapses gates, it doesn't waive the run).
 - **No `.breadcrumbs/context/` file created** — no trigger fired (single sitting, no stop/break/topic-shift).
 - PR draft on request: five-section template, only earned sections included.
 
@@ -60,7 +60,7 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 **Prompt:** mid-story (full mode), after a task implementing some requirement X is already committed, say "actually, requirement X isn't needed — I don't like this implementation, revert it."
 
 **Expect:**
-- Recognized as a Step 3.5 trigger (owner invalidates a requirement/assumption, scope changes mid-flight) — context file created now if it doesn't exist yet.
+- Recognized as a Step 3.7 trigger (owner invalidates a requirement/assumption, scope changes mid-flight) — context file created now if it doesn't exist yet.
 - Revert is scoped to *that task's own commit* — `git revert <task's commit hash>`, not a hand-picked diff. Only possible cleanly because Step 3.5 commits one task per commit; a story implemented as one big commit would force picking lines out of a mixed diff instead.
 - Structured Scope Changes entry logged: trigger (owner decided X unnecessary), before (had X), after (X removed), affected tasks, why.
 - Current Requirements amended in place — drops X, doesn't leave it contradicting the Task Log.
@@ -162,9 +162,39 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 - `!.breadcrumbs/constitution.md` negation added after it, and **said out loud in one line** — unlike the ordinary `.git/info/exclude` append, this one may touch a tracked file.
 - Context file itself still excluded; constitution still committable.
 
+## 14. Verification run — once, at the end, and the gate holds on red
+
+**Prompt A (green path):** run any story to the last task in a repo with a working test command (e.g. a `test` script in `package.json`).
+
+**Expect:**
+- Suite runs **once, after the last task's commit** — not before each commit, not per task.
+- Command discovered from the repo (`package.json` scripts / `Makefile` / CI workflow), not guessed.
+- Green → gate message includes the result ("`npm test` green"), then stops for confirmation.
+- File exists → `## Verification` block written with `Last run:` and the scope.
+- Step 4's **Test** section carries the same result, not just "test added."
+
+**Prompt B (red path):** same, but make one task's change break an existing test.
+
+**Expect:**
+- Failure caught at the verification run, **not** at the gate — the gate is never reached on red.
+- Handled as a Step 3.7 mid-flight break (context file created if it didn't exist).
+- Fix lands as **its own commit** (`fix(...)` / `test(...)`), naming the task it belongs to in the body — **not** an amend or force-push over the task's original commit.
+- Suite re-run after the fix. Green → gate. Still red → fix again, repeat.
+- Task Log ↔ commit 1:1 from Step 3.5 still holds: N task commits + M fix commits, none rewritten.
+
+**Prompt C (no runnable checks):** same story in a repo with no test/lint/build command at all.
+
+**Expect:**
+- Doesn't invent a command, doesn't silently skip.
+- One line at the gate naming what was done instead ("no test/lint command found — verified by <X>").
+- Step 4's **Test** section says the same — never implies a suite ran.
+
+**Validator check:** a context file at `Status: pr-ready` with no `Last run:` line, or one reading `— red:`, fails `validate-context-file.mjs`.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
 - No gate skipped, even when lite-collapsed — confirmation still required before moving on.
+- Step 3's gate is never reached on a red suite — the verification run precedes it, and a failure routes to 3.7 instead.
 - `node skills/breadcrumbs/scripts/validate-context-file.mjs .breadcrumbs/context/<slug>.md` passes after every gate write.
 - Every commit header passes `node skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"` — including the `Revert "..."` header when scenario 5 runs.

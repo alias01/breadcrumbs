@@ -5,7 +5,7 @@
 3. Fixed section set, same five names regardless of type — **What, Why, Test, Rollback, Dependencies.** No type-varying sections anymore. Bias toward fewer: include a section only if it earns its place for a reviewer, omit rather than pad. File exists → pull content from it, don't re-summarize; no file → derive the same from the conversation.
    - **What** — always. The change, as plainly as possible. ← Task Log "What" entries, concatenated.
    - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it. ← Task Log "Why" entries, only where they add something What didn't.
-   - **Test** — how it's verified: test added, manual repro steps, "none needed" + reason. Skip only when genuinely nothing to verify. ← test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent.
+   - **Test** — how it's verified: what was added, **plus the Step 3.6 verification result** (command run, green). Skip only when genuinely nothing to verify. ← `Verification` section / test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent. Never write this section as though a suite ran when point 3.6 found nothing runnable — say that instead.
    - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Plan/Scope Changes, only where flagged.
    - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first.
    - **What changed since last PR** (later-update case only) ← Scope Changes dated after the last PR Summary write.
@@ -35,7 +35,7 @@
 
    **Why:** Retries omitted an idempotency key, so the provider treated each retry as a new charge. Now one key is generated per order and forwarded on every retry.
 
-   **Test:** Regression test simulates a retried request and asserts a single charge.
+   **Test:** Regression test simulates a retried request and asserts a single charge. `npm test` green.
    ```
 5. **Show the draft directly in chat, stop there.** Not a file draft awaiting a later write — the deliverable itself. No way to open a PR on GitHub/GitLab/Bitbucket → the chat message *is* the artifact, user copies it into the platform's PR field. Nothing written to the context file here — no later gate reads a stored PR summary back.
 6. **Gate:** confirm or request changes, iterate in chat, until happy with what they'll paste.

@@ -38,6 +38,10 @@ Tasks 1 and 2 independent. Task 1 alone is shippable.
 - What: key generated in `createOrder`, persisted on order row.
 - Why: per-order scope (Q&A above) — attempt-scoped key would defeat the point.
 
+## Verification
+Last run: 2026-08-12 — `npm test -- payments` — green
+Scope: payments package only — full suite is 11min
+
 ## Scope Changes / Reimplementation
 
 ## Gate Waivers

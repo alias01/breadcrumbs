@@ -64,6 +64,10 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 - Check: <correct | issue found — one line, per the manual-edit review>
 - Flow: <on plan | off plan — reason if evident. Only present when the edited file isn't on the story's Flow above.>
 
+## Verification
+Last run: <date> — `<command(s)>` — green | red: <what failed>
+Scope: full suite | <subset run, and why>
+
 ## Scope Changes / Reimplementation
 ### <date> — <short label>
 - Trigger: <test failure, owner feedback, scope change, etc.>
@@ -79,11 +83,13 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
 ```
 
-Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
+Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, the `Verification` block, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
 Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
 `Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
+
+`Verification` — written once, at Step 3.6, on the run that precedes the Step 3 gate. Amended in place on a re-run (it's "what's true now," like `Status`), not appended per attempt — the failures themselves live in Scope Changes and the fix commits.
 
 ## What NOT to do
 

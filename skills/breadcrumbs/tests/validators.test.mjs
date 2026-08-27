@@ -107,12 +107,31 @@ test("context: allows an empty checklist while still understanding", () => {
   assert.equal(runContext(fixture({ status: "Status: understanding", sections })), 0);
 });
 
+const PR_READY_SECTIONS = [
+  "## Original Story\nx",
+  "## Understanding Summary\nx",
+  "## Task Checklist\n- [x] Task 1 — x — files: a.ts",
+  "## Verification\nLast run: 2026-08-27 — `npm test` — green",
+  "## PR Summary\nLast drafted: 2026-08-27",
+].join("\n\n");
+
 test("context: rejects pr-ready with no `Last drafted:` anchor", () => {
-  assert.equal(runContext(fixture({ status: "Status: pr-ready" })), 1);
+  const sections = PR_READY_SECTIONS.replace("## PR Summary\nLast drafted: 2026-08-27", "## PR Summary");
+  assert.equal(runContext(fixture({ status: "Status: pr-ready", sections })), 1);
 });
 
-test("context: accepts pr-ready with the anchor present", () => {
-  const sections =
-    "## Original Story\nx\n\n## Understanding Summary\nx\n\n## Task Checklist\n- [x] Task 1 — x — files: a.ts\n\n## PR Summary\nLast drafted: 2026-08-27";
-  assert.equal(runContext(fixture({ status: "Status: pr-ready", sections })), 0);
+test("context: rejects pr-ready with no verification run", () => {
+  // Step 3's gate now requires the 3.6 run; a pr-ready file without it means
+  // the PR's Test line has nothing behind it.
+  const sections = PR_READY_SECTIONS.replace("## Verification\nLast run: 2026-08-27 — `npm test` — green", "## Verification");
+  assert.equal(runContext(fixture({ status: "Status: pr-ready", sections })), 1);
+});
+
+test("context: rejects pr-ready while verification is red", () => {
+  const sections = PR_READY_SECTIONS.replace("— green", "— red: 2 failing in payments");
+  assert.equal(runContext(fixture({ status: "Status: pr-ready", sections })), 1);
+});
+
+test("context: accepts pr-ready with both anchors present and green", () => {
+  assert.equal(runContext(fixture({ status: "Status: pr-ready", sections: PR_READY_SECTIONS })), 0);
 });

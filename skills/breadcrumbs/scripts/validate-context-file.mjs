@@ -70,6 +70,18 @@ function validate(path) {
     errors.push('Status "pr-ready" but no `Last drafted:` line under `## PR Summary`');
   }
 
+  // A pr-ready file always cleared the Step 3 gate, and that gate now requires
+  // the Step 3.6 verification run. Missing block = the run never happened, or
+  // happened and wasn't recorded — either way the PR's Test line is unbacked.
+  if (status === "pr-ready") {
+    const run = text.match(/^Last run:.*$/m);
+    if (!run) {
+      errors.push('Status "pr-ready" but no `Last run:` line under `## Verification`');
+    } else if (/—\s*red\b/.test(run[0])) {
+      errors.push(`Status "pr-ready" but verification is red: "${run[0].trim()}"`);
+    }
+  }
+
   return errors;
 }
 

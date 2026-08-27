@@ -27,7 +27,7 @@ Understanding a story needs enough repo context to ask good questions and plan r
 
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
 - **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
-- **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.5) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
+- **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
 - **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
 
 No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
@@ -57,7 +57,7 @@ Read the step's file when you actually reach that gate — don't preload the oth
 |---|---|---|
 | 1 — Understand & Clarify | `step1-understand.md` | Understanding + Assumptions confirmed (or folded into Step 2 if zero Material unknowns) |
 | 2 — Plan | `step2-plan.md` | Plan + task breakdown confirmed (skipped in lite mode) |
-| 3 — Implement | `step3-implement.md` | Every task checked off |
+| 3 — Implement | `step3-implement.md` | Every task checked off **and** the verification run green |
 | 4 — PR | `step4-pr.md` | PR draft confirmed in chat |
 
 ## What NOT to do
@@ -295,8 +295,19 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
 
    Before running `git commit`, check the header with `validate-commit-message.mjs` — deterministic, cheaper and more reliable than eyeballing the regex. Resolve the script per "Validator scripts" in `context-file-mechanics.md`; not found → check by hand against the table above, don't block on it.
-6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`SKILL.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
-7. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.
+6. **Verification run — once, after the last task, before the gate.** Not per task: the suite runs against the story's finished work, not a half-built intermediate state where failures are expected and tell you nothing.
+
+   Without this, Step 4's **Test** line is a claim about work nobody ran. That's the whole point of the step — it turns "regression test added" into "regression test added, suite green."
+
+   - **Which checks:** whatever a contributor runs locally — tests, linter, typecheck, build. Discover them from the repo, don't guess a command: `package.json` scripts, `Makefile` targets, `pyproject.toml`/`tox.ini`/`noxfile.py`, `Cargo.toml`, `go.mod`, the CI workflow's own steps, or a constitution rule naming them. Resolve once per story, reuse.
+   - **Nothing runnable found** → say so in one line at the gate, naming what you did instead ("no test/lint command found — verified by <X>"). Never invent a command, never skip silently.
+   - **Scope:** whole suite when it's fast. Slow suite → the packages/paths on the story's Flow (Step 2.6) plus whatever Step 2.4's testing plan named, and say which subset ran.
+   - **Green** → proceed to the gate.
+   - **Red** → this is point 7's Mid-flight break trigger. Fix, re-run, repeat until green. **The fix is its own commit** (`fix(...)` / `test(...)`), never an amend or a rewrite of an already-made task commit — 3.5's Task Log↔commit 1:1 has to survive, and a reviewer should see the failure and the fix as two facts, not one tidied-up one. Name the task the failure belongs to in that commit's body.
+   - **Never reach the gate on red.** "Tests fail but the feature works" isn't a passing state — it's a fix, or an explicit user waiver logged under `Gate Waivers`.
+   - File exists → record the outcome under `## Verification` (`context-template.md`), same write as the gate. No file → state it in chat at the gate.
+7. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`SKILL.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
+8. **Gate:** every task checked off **and** point 6 green (or its "nothing runnable" line stated) → summarize what was built plus the verification result, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks and any verification fixes already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.
 
 ---
 
@@ -307,7 +318,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 3. Fixed section set, same five names regardless of type — **What, Why, Test, Rollback, Dependencies.** No type-varying sections anymore. Bias toward fewer: include a section only if it earns its place for a reviewer, omit rather than pad. File exists → pull content from it, don't re-summarize; no file → derive the same from the conversation.
    - **What** — always. The change, as plainly as possible. ← Task Log "What" entries, concatenated.
    - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it. ← Task Log "Why" entries, only where they add something What didn't.
-   - **Test** — how it's verified: test added, manual repro steps, "none needed" + reason. Skip only when genuinely nothing to verify. ← test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent.
+   - **Test** — how it's verified: what was added, **plus the Step 3.6 verification result** (command run, green). Skip only when genuinely nothing to verify. ← `Verification` section / test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent. Never write this section as though a suite ran when point 3.6 found nothing runnable — say that instead.
    - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Plan/Scope Changes, only where flagged.
    - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first.
    - **What changed since last PR** (later-update case only) ← Scope Changes dated after the last PR Summary write.
@@ -337,7 +348,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 
    **Why:** Retries omitted an idempotency key, so the provider treated each retry as a new charge. Now one key is generated per order and forwarded on every retry.
 
-   **Test:** Regression test simulates a retried request and asserts a single charge.
+   **Test:** Regression test simulates a retried request and asserts a single charge. `npm test` green.
    ```
 5. **Show the draft directly in chat, stop there.** Not a file draft awaiting a later write — the deliverable itself. No way to open a PR on GitHub/GitLab/Bitbucket → the chat message *is* the artifact, user copies it into the platform's PR field. Nothing written to the context file here — no later gate reads a stored PR summary back.
 6. **Gate:** confirm or request changes, iterate in chat, until happy with what they'll paste.
@@ -411,6 +422,10 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 - Check: <correct | issue found — one line, per the manual-edit review>
 - Flow: <on plan | off plan — reason if evident. Only present when the edited file isn't on the story's Flow above.>
 
+## Verification
+Last run: <date> — `<command(s)>` — green | red: <what failed>
+Scope: full suite | <subset run, and why>
+
 ## Scope Changes / Reimplementation
 ### <date> — <short label>
 - Trigger: <test failure, owner feedback, scope change, etc.>
@@ -426,11 +441,13 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
 ```
 
-Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
+Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, the `Verification` block, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
 Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
 `Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
+
+`Verification` — written once, at Step 3.6, on the run that precedes the Step 3 gate. Amended in place on a re-run (it's "what's true now," like `Status`), not appended per attempt — the failures themselves live in Scope Changes and the fix commits.
 
 ## What NOT to do
 

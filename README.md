@@ -33,8 +33,8 @@ Every story runs through four gates, confirmed with you at each one:
 flowchart LR
     T([Paste a ticket]) --> S1["1 · Understand<br/>restate, surface assumptions"]
     S1 -- confirm --> S2["2 · Plan<br/>design depth scaled to size"]
-    S2 -- confirm --> S3["3 · Implement<br/>one task at a time, logged"]
-    S3 -- all tasks checked --> S4["4 · PR<br/>What / Why / Test / Rollback / Dependencies"]
+    S2 -- confirm --> S3["3 · Implement<br/>one task at a time, logged<br/>then verified once at the end"]
+    S3 -- all tasks checked, suite green --> S4["4 · PR<br/>What / Why / Test / Rollback / Dependencies"]
     S4 -- confirm --> D([PR draft in chat])
 
     S1 -.-> G
