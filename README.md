@@ -117,6 +117,8 @@ Two files ignore the flag: [`AGENTS.md`](AGENTS.md) is always full (it's the fal
 
 ### Releasing
 
+[`docs/decisions.md`](docs/decisions.md) records why the non-obvious calls were made — the Windsurf cap, why pointers are plain paths rather than `@file`, what `--profile=full` is for — plus what's still unverified. Read it before "fixing" something in the build that looks wrong.
+
 Versioning is manual — [`VERSION`](VERSION) is the single source of truth, read by `build-platforms.mjs` into the generated `plugin.json`.
 
 ```bash

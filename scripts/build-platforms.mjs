@@ -79,6 +79,11 @@ const fullBody = `${body}\n\n---\n\n${reference}`;
 // capped lower); WINDSURF_HEADROOM keeps a margin for that number moving.
 const WINDSURF_CAP = 12000;
 const WINDSURF_HEADROOM = 1000;
+// Measured in BYTES, not JS .length: the source is full of →, — and ≤, which are
+// 3 and 2 bytes in UTF-8, so bytes run ~1% above character count and the gap grows
+// with the file. Which unit Windsurf counts isn't documented; bytes is the
+// conservative read, and the difference is free to absorb.
+const byteLen = (s) => Buffer.byteLength(s, "utf8");
 
 // Rewrite the router's bare filename pointers to repo-relative paths, so a
 // platform without Claude Code's skill-directory resolution can still find them.
@@ -136,9 +141,9 @@ write(
 // Router only: the full text does not fit under the cap (see above).
 // Always lean regardless of --profile: the full text cannot fit under the cap.
 const windsurf = `---\ntrigger: model_decision\ndescription: ${description}\n---\n\n${banner}${leanBody}\n`;
-if (windsurf.length > WINDSURF_CAP - WINDSURF_HEADROOM) {
+if (byteLen(windsurf) > WINDSURF_CAP - WINDSURF_HEADROOM) {
   throw new Error(
-    `.windsurf/rules/breadcrumbs.md is ${windsurf.length} chars — over the ${WINDSURF_CAP} cap ` +
+    `.windsurf/rules/breadcrumbs.md is ${byteLen(windsurf)} bytes — over the ${WINDSURF_CAP} cap ` +
       `minus ${WINDSURF_HEADROOM} headroom. Windsurf truncates past the cap SILENTLY, so this ` +
       `must fail the build rather than ship a half-skill. Trim Skill.md or move content into a ` +
       `reference file under ${REF_DIR}.`
