@@ -211,18 +211,34 @@ write(
 // Claude Code DOES support on-demand reads, so this sync preserves that:
 // SKILL.md stays a lean router, reference files land in references/ verbatim,
 // and pointers in the router body get rewritten to the references/ path.
+// Skipped under --check: this is a machine-local install, not repo state. On a CI
+// runner it doesn't exist at all, so comparing it would report every file stale
+// on every run.
 const CLAUDE_SKILL_DIR = join(homedir(), ".claude", "skills", "breadcrumbs");
-let routerForInstall = body;
-for (const refPath of REFERENCES) {
-  const file = basename(refPath);
-  routerForInstall = routerForInstall.replaceAll(`\`${file}\``, `\`references/${file}\``);
+if (!CHECK) {
+  let routerForInstall = body;
+  for (const refPath of REFERENCES) {
+    const file = basename(refPath);
+    routerForInstall = routerForInstall.replaceAll(`\`${file}\``, `\`references/${file}\``);
+  }
+  write(join(CLAUDE_SKILL_DIR, "SKILL.md"), `---\n${frontmatter}\n---\n\n${routerForInstall}\n`);
+  for (const refPath of REFERENCES) {
+    write(join(CLAUDE_SKILL_DIR, "references", basename(refPath)), readFileSync(refPath, "utf8"));
+  }
+  for (const scriptPath of SCRIPTS) {
+    write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+  }
 }
-write(join(CLAUDE_SKILL_DIR, "SKILL.md"), `---\n${frontmatter}\n---\n\n${routerForInstall}\n`);
-for (const refPath of REFERENCES) {
-  write(join(CLAUDE_SKILL_DIR, "references", basename(refPath)), readFileSync(refPath, "utf8"));
-}
-for (const scriptPath of SCRIPTS) {
-  write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+
+if (CHECK) {
+  if (stale.length > 0) {
+    console.error(`Generated files are out of date with ${SOURCE}:`);
+    for (const path of stale) console.error(`  ${path}`);
+    console.error(`\nRebuild with: node scripts/build-platforms.mjs --profile=${PROFILE}`);
+    process.exit(1);
+  }
+  console.log(`All generated files are in sync with ${SOURCE} (profile: ${PROFILE}).`);
+  process.exit(0);
 }
 
 console.log(`\nprofile: ${PROFILE}  (router ${Math.round(leanBody.length / 1000)}KB vs full ${Math.round(fullBody.length / 1000)}KB)`);
