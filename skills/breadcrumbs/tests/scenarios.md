@@ -122,6 +122,36 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Contrast check:** a single one-off correction specific to one task ("that variable name is wrong here") → **no** ask. It's a Task Log `Why`, not a rule. Asking on every correction is as much a regression as never asking.
 
+## 10. Windsurf — router fits the cap, reference files get read
+
+Windsurf enforces a hard per-file cap on workspace rules and **truncates past it silently**. The
+inlined build was 52,480 chars against a 12,000 cap, so Windsurf received roughly the router and
+Step 1 — no gates, no Step 3, no template — with no error anywhere. Windsurf therefore ships as a
+router plus repo-relative pointers.
+
+**Build check (deterministic, run on every edit to `Skill.md`):**
+- `node scripts/build-platforms.mjs` → `.windsurf/rules/breadcrumbs.md` is under 11,000 chars.
+- Pad `Skill.md` past the cap and re-run → **build throws**, naming the size and the cap. A silent
+  pass here is the original bug returning; the whole point of the guard is that it's loud.
+- Every reference pointer inside the file reads `skills/breadcrumbs/<file>.md`, not a bare filename —
+  Windsurf has no skill-directory resolution, so a bare name resolves to nothing.
+- Other platform files are byte-identical (this change is Windsurf-only).
+
+**Behavioural check (run by hand, in Windsurf, on a scratch repo):**
+- Paste a small-feature story. Cascade activates the rule on description match.
+- At the Step 1 gate it **reads `skills/breadcrumbs/step1-understand.md`** before asking questions —
+  the taxonomy is in that file, not in the rule.
+- At Step 2 it reads `step2-plan.md`; at Step 3, `step3-implement.md`; on first context-file write,
+  `context-file-mechanics.md` + `context-template.md`.
+- The gates themselves, lite-mode rules, and the verification requirement come from the rule text
+  and hold **even if a reference read is skipped** — that's the tiering. Losing `step2-plan.md`
+  costs plan depth; losing a gate would be a different failure, and must not happen.
+
+**The regression to watch for:** Cascade never reads any reference file and improvises step content
+from the router alone. Symptom is plausible-looking output with no taxonomy, no domain checks, and no
+Task Log format. If that shows up, the lean profile isn't safe on Windsurf and the trade needs
+revisiting — not more pointer wording.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.

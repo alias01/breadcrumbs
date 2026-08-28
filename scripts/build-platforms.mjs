@@ -43,12 +43,57 @@ const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs —
 
 // Skill.md points at the step files, context-file-mechanics.md, and
 // context-template.md, and expects Claude Code to Read each on demand (only
-// when that gate is reached / first context-file write). The other platforms
-// below have no such on-demand mechanism — everything they load is loaded
-// every time — so all of it gets inlined here instead of dangling pointers
-// to files they'll never read.
+// when that gate is reached / first context-file write). Most platforms below
+// have no equivalent gate-triggered read, so everything is inlined for them
+// rather than left as pointers — the guaranteed-but-fat form.
 const reference = REFERENCES.map((path) => readFileSync(path, "utf8").trim()).join("\n\n---\n\n");
 const fullBody = `${body}\n\n---\n\n${reference}`;
+
+// Windsurf enforces a HARD per-file cap on workspace rules and truncates past
+// it silently — no error, no warning. The inlined body is ~52KB, so Windsurf was
+// getting roughly the router and Step 1 and nothing else: no gates, no Step 3,
+// no template. That's not degraded output, it's a different skill.
+//
+// So Windsurf gets the router alone, with the reference files left as
+// repo-relative paths for Cascade to read at each gate. The files are committed,
+// so the pointers resolve. Cap is on the *workspace* rule (global_rules.md is
+// capped lower); WINDSURF_HEADROOM keeps a margin for that number moving.
+const WINDSURF_CAP = 12000;
+const WINDSURF_HEADROOM = 1000;
+
+// Rewrite the router's bare filename pointers to repo-relative paths, so a
+// platform without Claude Code's skill-directory resolution can still find them.
+function routerBody(prefix) {
+  let out = body;
+  for (const refPath of REFERENCES) {
+    const file = basename(refPath);
+    out = out.replaceAll(`\`${file}\``, `\`${prefix}${file}\``);
+  }
+  return out;
+}
+
+const REF_DIR = "skills/breadcrumbs/";
+const readOnDemand = `## Reference files — read on demand
+
+This rule is a router. Each step's full text, the context-file mechanics, and the
+file template live in the repository, not in this rule. Read the one you need, from
+the repo root, **at the moment you reach that gate** — not up front:
+
+| When | Read |
+|---|---|
+| Step 1 gate | \`${REF_DIR}step1-understand.md\` |
+| Step 2 gate | \`${REF_DIR}step2-plan.md\` |
+| Step 3 (implementing) | \`${REF_DIR}step3-implement.md\` |
+| Step 4 (PR) | \`${REF_DIR}step4-pr.md\` |
+| First context-file write | \`${REF_DIR}context-file-mechanics.md\` + \`${REF_DIR}context-template.md\` |
+
+No file access, or the files aren't present → say so before the first gate rather
+than improvising a step's content. The rules below are the whole contract; the step
+files carry the detail that makes them work.
+
+---
+
+`;
 
 // AGENTS.md — portable, instruction-only, no frontmatter.
 write("AGENTS.md", `${banner}# ${name}\n\n${fullBody}\n`);
@@ -60,10 +105,17 @@ write(
 );
 
 // Windsurf — model-decision rule, activates based on description match.
-write(
-  ".windsurf/rules/breadcrumbs.md",
-  `---\ntrigger: model_decision\ndescription: ${description}\n---\n\n${banner}${fullBody}\n`
-);
+// Router only: the full text does not fit under the cap (see above).
+const windsurf = `---\ntrigger: model_decision\ndescription: ${description}\n---\n\n${banner}${readOnDemand}${routerBody(REF_DIR)}\n`;
+if (windsurf.length > WINDSURF_CAP - WINDSURF_HEADROOM) {
+  throw new Error(
+    `.windsurf/rules/breadcrumbs.md is ${windsurf.length} chars — over the ${WINDSURF_CAP} cap ` +
+      `minus ${WINDSURF_HEADROOM} headroom. Windsurf truncates past the cap SILENTLY, so this ` +
+      `must fail the build rather than ship a half-skill. Trim Skill.md or move content into a ` +
+      `reference file under ${REF_DIR}.`
+  );
+}
+write(".windsurf/rules/breadcrumbs.md", windsurf);
 
 // Cline — plain instructions file, no frontmatter convention.
 write(".clinerules/breadcrumbs.md", `${banner}# ${name}\n\n${fullBody}\n`);
