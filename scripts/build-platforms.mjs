@@ -43,47 +43,137 @@ const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs —
 
 // Skill.md points at the step files, context-file-mechanics.md, and
 // context-template.md, and expects Claude Code to Read each on demand (only
-// when that gate is reached / first context-file write). The other platforms
-// below have no such on-demand mechanism — everything they load is loaded
-// every time — so all of it gets inlined here instead of dangling pointers
-// to files they'll never read.
+// when that gate is reached / first context-file write).
+//
+// Two shapes are built from that same source:
+//
+//   lean (default) — the router alone, reference files left as repo-relative
+//     pointers the agent reads at each gate. ~2.1k tokens instead of ~13.6k,
+//     and on the always-loaded targets (Copilot) that saving is per turn, for
+//     the whole session, whether or not a story is in play.
+//   full — everything inlined. ~13.6k tokens, but nothing depends on the agent
+//     choosing to follow a pointer.
+//
+// Lean is a real trade, not a free win: a pointer is a soft instruction, and a
+// weaker model may skip it. It's mitigated by WHAT is left in the router rather
+// than by hoping — the gates, "never skip a gate", lite-mode rules, the
+// verification requirement and the context-file triggers all stay inline, so a
+// skipped reference read costs plan *depth*, not a gate. Build with
+// `--profile=full` to fall back per-run if a platform proves unreliable.
+const PROFILE = (process.argv.find((a) => a.startsWith("--profile=")) ?? "--profile=lean").split("=")[1];
+if (!["lean", "full"].includes(PROFILE)) {
+  throw new Error(`unknown --profile=${PROFILE} (expected "lean" or "full")`);
+}
+
 const reference = REFERENCES.map((path) => readFileSync(path, "utf8").trim()).join("\n\n---\n\n");
 const fullBody = `${body}\n\n---\n\n${reference}`;
 
-// AGENTS.md — portable, instruction-only, no frontmatter.
+// Windsurf enforces a HARD per-file cap on workspace rules and truncates past
+// it silently — no error, no warning. The inlined body is ~52KB, so Windsurf was
+// getting roughly the router and Step 1 and nothing else: no gates, no Step 3,
+// no template. That's not degraded output, it's a different skill.
+//
+// So Windsurf gets the router alone, with the reference files left as
+// repo-relative paths for Cascade to read at each gate. The files are committed,
+// so the pointers resolve. Cap is on the *workspace* rule (global_rules.md is
+// capped lower); WINDSURF_HEADROOM keeps a margin for that number moving.
+const WINDSURF_CAP = 12000;
+const WINDSURF_HEADROOM = 1000;
+// Measured in BYTES, not JS .length: the source is full of →, — and ≤, which are
+// 3 and 2 bytes in UTF-8, so bytes run ~1% above character count and the gap grows
+// with the file. Which unit Windsurf counts isn't documented; bytes is the
+// conservative read, and the difference is free to absorb.
+const byteLen = (s) => Buffer.byteLength(s, "utf8");
+
+// Rewrite the router's bare filename pointers to repo-relative paths, so a
+// platform without Claude Code's skill-directory resolution can still find them.
+function routerBody(prefix) {
+  let out = body;
+  for (const refPath of REFERENCES) {
+    const file = basename(refPath);
+    out = out.replaceAll(`\`${file}\``, `\`${prefix}${file}\``);
+  }
+  return out;
+}
+
+const REF_DIR = "skills/breadcrumbs/";
+const readOnDemand = `## Reference files — read on demand
+
+This is a router. Each step's full text, the context-file mechanics, and the file
+template live in the repository, not in this file. Read the one you need, from the
+repo root, **at the moment you reach that gate** — not up front:
+
+| When | Read |
+|---|---|
+| Step 1 gate | \`${REF_DIR}step1-understand.md\` |
+| Step 2 gate | \`${REF_DIR}step2-plan.md\` |
+| Step 3 (implementing) | \`${REF_DIR}step3-implement.md\` |
+| Step 4 (PR) | \`${REF_DIR}step4-pr.md\` |
+| First context-file write | \`${REF_DIR}context-file-mechanics.md\` + \`${REF_DIR}context-template.md\` |
+
+No file access, or the files aren't present → say so before the first gate rather
+than improvising a step's content. The rules below are the whole contract; the step
+files carry the detail that makes them work.
+
+---
+
+`;
+
+const leanBody = `${readOnDemand}${routerBody(REF_DIR)}`;
+// What every target below except AGENTS.md gets, per --profile.
+const body4 = PROFILE === "lean" ? leanBody : fullBody;
+
+// AGENTS.md — portable, instruction-only, no frontmatter. ALWAYS full, both
+// profiles: it's the fallback for any tool that can't read files on demand, and
+// the one place where the guarantee is worth the 13.6k. Everything else has a
+// file-read tool and a committed repo to resolve pointers against.
 write("AGENTS.md", `${banner}# ${name}\n\n${fullBody}\n`);
 
 // Cursor — .mdc with frontmatter Cursor understands (agent-requested rule).
+// Pointers stay plain relative paths: Cursor's `@file` syntax pulls a file into
+// context EAGERLY, which would reintroduce exactly the cost this removes.
 write(
   ".cursor/rules/breadcrumbs.mdc",
-  `---\ndescription: ${description}\nalwaysApply: false\n---\n\n${banner}${fullBody}\n`
+  `---\ndescription: ${description}\nalwaysApply: false\n---\n\n${banner}${body4}\n`
 );
 
 // Windsurf — model-decision rule, activates based on description match.
-write(
-  ".windsurf/rules/breadcrumbs.md",
-  `---\ntrigger: model_decision\ndescription: ${description}\n---\n\n${banner}${fullBody}\n`
-);
+// Router only: the full text does not fit under the cap (see above).
+// Always lean regardless of --profile: the full text cannot fit under the cap.
+const windsurf = `---\ntrigger: model_decision\ndescription: ${description}\n---\n\n${banner}${leanBody}\n`;
+if (byteLen(windsurf) > WINDSURF_CAP - WINDSURF_HEADROOM) {
+  throw new Error(
+    `.windsurf/rules/breadcrumbs.md is ${byteLen(windsurf)} bytes — over the ${WINDSURF_CAP} cap ` +
+      `minus ${WINDSURF_HEADROOM} headroom. Windsurf truncates past the cap SILENTLY, so this ` +
+      `must fail the build rather than ship a half-skill. Trim Skill.md or move content into a ` +
+      `reference file under ${REF_DIR}.`
+  );
+}
+write(".windsurf/rules/breadcrumbs.md", windsurf);
 
-// Cline — plain instructions file, no frontmatter convention.
-write(".clinerules/breadcrumbs.md", `${banner}# ${name}\n\n${fullBody}\n`);
+// Cline — plain instructions file, no frontmatter convention. Cline reads files
+// on request, so the router's pointers resolve.
+write(".clinerules/breadcrumbs.md", `${banner}# ${name}\n\n${body4}\n`);
 
 // Kiro — steering doc, manually referenced (safe default; switch to
 // `inclusion: always` if you want it loaded on every request instead).
+// Pointers stay plain relative paths rather than Kiro's `#[[file:...]]`
+// directive, which inlines the target EAGERLY — same trap as Cursor's `@file`.
 write(
   ".kiro/steering/breadcrumbs.md",
-  `---\ninclusion: manual\ndescription: ${description}\n---\n\n${banner}${fullBody}\n`
+  `---\ninclusion: manual\ndescription: ${description}\n---\n\n${banner}${body4}\n`
 );
 
-// GitHub Copilot — repo-wide custom instructions, always loaded, no
-// per-skill triggering available, so this is intentionally the full text.
-write(".github/copilot-instructions.md", `${banner}# ${name}\n\n${fullBody}\n`);
+// GitHub Copilot — repo-wide custom instructions, always loaded with no
+// per-skill triggering. Biggest beneficiary of the lean profile: this cost is
+// paid on every turn of every session, including ones that never touch a story.
+write(".github/copilot-instructions.md", `${banner}# ${name}\n\n${body4}\n`);
 
 // Gemini CLI — custom slash command (no description-match auto-trigger like
 // Cursor/Windsurf, so this is invoked explicitly as `/breadcrumbs`).
 write(
   ".gemini/commands/breadcrumbs.toml",
-  `description = ${JSON.stringify(description)}\n\nprompt = """\n${banner}${fullBody.replaceAll('"""', '\\"\\"\\"')}\n"""\n`
+  `description = ${JSON.stringify(description)}\n\nprompt = """\n${banner}${body4.replaceAll('"""', '\\"\\"\\"')}\n"""\n`
 );
 
 // Claude Code plugin manifest — wraps the existing skill, doesn't duplicate it.
@@ -123,4 +213,9 @@ for (const scriptPath of SCRIPTS) {
   write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
 }
 
+console.log(`\nprofile: ${PROFILE}  (router ${Math.round(leanBody.length / 1000)}KB vs full ${Math.round(fullBody.length / 1000)}KB)`);
+if (PROFILE === "lean") {
+  console.log("  AGENTS.md stays full — the fallback for tools that can't read files on demand.");
+  console.log("  Re-run with --profile=full to inline everything if a platform ignores the pointers.");
+}
 console.log("\nDone. skills/breadcrumbs/Skill.md remains the canonical source.");

@@ -8,9 +8,11 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Expect:**
 - Classified `lite` (bug fix), stated in one line.
-- Step 1 + Step 2 collapse into one message: understanding + task list (≤2 tasks) + "confirm?"
+- Step 1 + Step 2 collapse into one message: understanding + task list (≤2 tasks) + **the check that will prove it** + "confirm?"
+- **Bug-fix checks appear inline in that collapsed message** (four fragments, not a design doc): root cause named — not "add a disabled flag" as an end in itself but *why* the second submit gets through; repro confirmed; same defect looked for elsewhere (other double-submitting buttons); regression case named. A run that jumps straight to a task list has regressed.
 - On confirm: tasks implemented, one commit per task (`fix(...): ...` header), no per-task chat message beyond progress narration.
-- One wrap-up message after all tasks, not per-task.
+- **Each task verified before checkoff** — the named check actually run, outcome stated. Not "added a test"; "ran it, passes."
+- One wrap-up message after all tasks, not per-task — and the wrap-up names what proved it, not just what was built.
 - **No `.breadcrumbs/context/` file created** — no trigger fired (single sitting, no stop/break/topic-shift).
 - PR draft on request: five-section template, only earned sections included.
 
@@ -60,8 +62,8 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 **Prompt:** mid-story (full mode), after a task implementing some requirement X is already committed, say "actually, requirement X isn't needed — I don't like this implementation, revert it."
 
 **Expect:**
-- Recognized as a Step 3.5 trigger (owner invalidates a requirement/assumption, scope changes mid-flight) — context file created now if it doesn't exist yet.
-- Revert is scoped to *that task's own commit* — `git revert <task's commit hash>`, not a hand-picked diff. Only possible cleanly because Step 3.5 commits one task per commit; a story implemented as one big commit would force picking lines out of a mixed diff instead.
+- Recognized as a Step 3.7 trigger (owner invalidates a requirement/assumption, scope changes mid-flight) — context file created now if it doesn't exist yet.
+- Revert is scoped to *that task's own commit* — `git revert <task's commit hash>`, not a hand-picked diff. Only possible cleanly because Step 3.6 commits one task per commit; a story implemented as one big commit would force picking lines out of a mixed diff instead.
 - Structured Scope Changes entry logged: trigger (owner decided X unnecessary), before (had X), after (X removed), affected tasks, why.
 - Current Requirements amended in place — drops X, doesn't leave it contradicting the Task Log.
 - Task Checklist updated for the dropped task — **not silently deleted**: the Task Log keeps the record that X was built, then explicitly reverted, and why. A later reader (different session, teammate, different AI) sees a deliberate decision, not a gap that looks like something got forgotten.
@@ -80,9 +82,117 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Contrast check:** re-run a normal story on a branch cut directly from the default branch — **Dependencies** section stays omitted, same as before this change.
 
+## 7. Verification gate — a task can't be checked off unverified
+
+**Prompt:** run a small-feature story (full mode) with a testing plan agreed at Step 2.4, then during Step 3 watch the first task complete.
+
+**Expect:**
+- Before the task is checked off: the Step 2.4 case(s) mapped to *that task* are run, outcome stated in chat.
+- No case mapped to it → falls back to the repo's own fast checks over the touched files, and **says which** ("ran `npm test -- reports/`").
+- Task Log entry carries a `Verified:` line on whichever of the three forms applies — including the mechanical single-line form.
+- At the Step 3 gate: the **whole** planned set runs again, plus the repo suite for what the story touched — not just a re-summary of the per-task runs. Wrap-up names cases run + outcome.
+- `node .../validate-context-file.mjs .breadcrumbs/context/<slug>.md` passes.
+
+**Negative check (the regression this exists to catch):** hand-edit the context file to delete a `Verified:` line from one Task Log entry, re-run the validator → **FAIL**, naming that entry. Silent pass means the check isn't wired.
+
+**Failure-path check:** make one planned case fail (break the code under it). Expect: task **not** checked off, fix + re-run, no "checked off with a caveat." Cause is the plan rather than the code → Step 3.7 Mid-flight break instead, not a checkoff.
+
+## 8. Lite mode still reads the constitution
+
+**Setup:** `.breadcrumbs/constitution.md` exists with an active rule that a lite change can violate — e.g. `- No user identifiers in log lines — rationale: PII — added <date> — status: active`.
+
+**Prompt:** a copy/config story that adds a log line including a username, e.g. "log the username on failed login so support can trace it."
+
+**Expect:**
+- Classified `lite`, Step 2 skipped as usual — **but the constitution is still read and checked**, inline at the collapsed gate.
+- Conflict surfaced before the gate message asks for confirmation, handled like a Step 2.2 tripwire — resolved, not built around.
+- A run that implements it as asked because "lite skips Step 2" is the regression.
+
+**Contrast check:** no `.breadcrumbs/constitution.md` present → no mention of it at all, gate message unchanged from scenario 1. The check is silent when there's nothing to check.
+
+## 9. Constitution trigger — a correction that never becomes an edit
+
+**Prompt:** mid-story, correct the same class of thing twice in chat without touching any file yourself — e.g. after task 1, "don't log the raw token there"; after task 2, "again — no raw tokens in log lines."
+
+**Expect:**
+- Second correction → asks **once** whether to save it as a standing project rule (same wording as the stated-rule and hand-edit triggers).
+- Confirmed → appended to `.breadcrumbs/constitution.md`, active, with rationale + date; applied from the next task onward.
+- Declined → not asked again for this pattern; recorded under this story's Assumptions instead.
+- Never appended silently on the strength of the corrections alone.
+
+**Contrast check:** a single one-off correction specific to one task ("that variable name is wrong here") → **no** ask. It's a Task Log `Why`, not a rule. Asking on every correction is as much a regression as never asking.
+
+## 10. Windsurf — router fits the cap, reference files get read
+
+Windsurf enforces a hard per-file cap on workspace rules and **truncates past it silently**. The
+inlined build was 52,480 chars against a 12,000 cap, so Windsurf received roughly the router and
+Step 1 — no gates, no Step 3, no template — with no error anywhere. Windsurf therefore ships as a
+router plus repo-relative pointers.
+
+**Build check (deterministic, run on every edit to `Skill.md`):**
+- `node scripts/build-platforms.mjs` → `.windsurf/rules/breadcrumbs.md` is under 11,000 chars.
+- Pad `Skill.md` past the cap and re-run → **build throws**, naming the size and the cap. A silent
+  pass here is the original bug returning; the whole point of the guard is that it's loud.
+- Every reference pointer inside the file reads `skills/breadcrumbs/<file>.md`, not a bare filename —
+  Windsurf has no skill-directory resolution, so a bare name resolves to nothing.
+- Other platform files are byte-identical (this change is Windsurf-only).
+
+**Behavioural check (run by hand, in Windsurf, on a scratch repo):**
+- Paste a small-feature story. Cascade activates the rule on description match.
+- At the Step 1 gate it **reads `skills/breadcrumbs/step1-understand.md`** before asking questions —
+  the taxonomy is in that file, not in the rule.
+- At Step 2 it reads `step2-plan.md`; at Step 3, `step3-implement.md`; on first context-file write,
+  `context-file-mechanics.md` + `context-template.md`.
+- The gates themselves, lite-mode rules, and the verification requirement come from the rule text
+  and hold **even if a reference read is skipped** — that's the tiering. Losing `step2-plan.md`
+  costs plan depth; losing a gate would be a different failure, and must not happen.
+
+**The regression to watch for:** Cascade never reads any reference file and improvises step content
+from the router alone. Symptom is plausible-looking output with no taxonomy, no domain checks, and no
+Task Log format. If that shows up, the lean profile isn't safe on Windsurf and the trade needs
+revisiting — not more pointer wording.
+
+## 11. Lean profile — pointers get followed, or they don't
+
+Cursor, Cline, Kiro, Copilot and Gemini ship the router with repo-relative pointers instead of the
+inlined text (~2.4k tokens instead of ~13.8k). This scenario exists because that saving is only real
+if the agent actually reads the pointed-at files.
+
+**Build checks (deterministic):**
+- Default build == `--profile=lean`; `--profile=full` restores inlining; `--profile=medium` fails.
+- Every lean file still contains the gates, "never skip a gate", lite-mode rules, verification
+  (3.4/3.8), Mid-flight break and User override — the tier that must survive a skipped read.
+- Every pointer reads `skills/breadcrumbs/<file>.md`; zero bare filenames.
+- `AGENTS.md` full under both profiles; `.windsurf/...` lean under both.
+- `.gemini/commands/breadcrumbs.toml` still parses as TOML (the body is embedded in a `"""` string,
+  so a stray triple-quote would silently corrupt it).
+
+**Behavioural check — run once per platform, on a scratch repo:**
+Paste a small-feature story and watch whether the reference file is read at each gate.
+
+| Gate | File that must be read |
+|---|---|
+| Step 1 | `skills/breadcrumbs/step1-understand.md` |
+| Step 2 | `skills/breadcrumbs/step2-plan.md` |
+| Step 3 | `skills/breadcrumbs/step3-implement.md` |
+| Step 4 | `skills/breadcrumbs/step4-pr.md` |
+| First file write | `context-file-mechanics.md` + `context-template.md` |
+
+**Pass:** the files are read at the gate, and behaviour matches the same story run on Claude Code.
+
+**Fail:** plausible-looking output with no Step 1 taxonomy, no Step 2 domain checks, no Task Log
+format — the agent improvised from the router alone. That platform goes back to `--profile=full`;
+it is *not* fixed by rewording the pointers.
+
+**Partial:** gates and lite-mode rules hold but plan depth is thin. That's the designed degradation,
+not a failure — record it and decide per platform whether the token saving is worth it.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
 - No gate skipped, even when lite-collapsed — confirmation still required before moving on.
 - `node ~/.claude/skills/breadcrumbs/scripts/validate-context-file.mjs .breadcrumbs/context/<slug>.md` passes after every gate write.
+- No task checked off without a stated verification outcome, in chat and (file exists) as a `Verified:` line.
+- Step 3's gate never passes with a known-failing case — fixed and re-run, or escalated as a Mid-flight break.
+- Step 4's **Test** section reports what *ran*, never what was planned.
 - Every commit header passes `node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`.

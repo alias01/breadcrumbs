@@ -100,9 +100,24 @@ Works alongside the [ponytail](https://github.com/DietrichGebert/ponytail) skill
 node scripts/build-platforms.mjs
 ```
 
-[`skills/breadcrumbs/context-template.md`](skills/breadcrumbs/context-template.md) defines the context file's structure and guardrails; it gets inlined into the generated platform files (they have no on-demand file-loading, unlike Claude Code, which reads it only once per story).
+[`skills/breadcrumbs/context-template.md`](skills/breadcrumbs/context-template.md) defines the context file's structure and guardrails.
+
+**Build profiles.** The generated files come in two shapes:
+
+```bash
+node scripts/build-platforms.mjs                  # lean (default)
+node scripts/build-platforms.mjs --profile=full   # inline everything
+```
+
+*Lean* ships the router and leaves the step files as repo-relative pointers the agent reads at each gate — ~2.4k tokens per platform file instead of ~13.8k. *Full* inlines everything: bigger, but nothing depends on the agent choosing to follow a pointer.
+
+Lean is a real trade. A pointer is a soft instruction, and a weaker model may skip it. It's managed by what stays in the router — the four gates, "never skip a gate", lite-mode rules, the verification requirement and the context-file triggers are all inline, so a skipped reference read costs plan *depth*, not a gate. If a platform ignores the pointers outright, rebuild with `--profile=full`.
+
+Two files ignore the flag: [`AGENTS.md`](AGENTS.md) is always full (it's the fallback for tools that can't read files on demand), and `.windsurf/rules/breadcrumbs.md` is always lean (Windsurf enforces a 12,000-char cap and truncates past it silently — the build fails rather than ship a half-skill).
 
 ### Releasing
+
+[`docs/decisions.md`](docs/decisions.md) records why the non-obvious calls were made — the Windsurf cap, why pointers are plain paths rather than `@file`, what `--profile=full` is for — plus what's still unverified. Read it before "fixing" something in the build that looks wrong.
 
 Versioning is manual — [`VERSION`](VERSION) is the single source of truth, read by `build-platforms.mjs` into the generated `plugin.json`.
 

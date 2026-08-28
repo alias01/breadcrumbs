@@ -2,6 +2,18 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
 
+## [1.6.0] - 2026-08-28
+
+### Features
+- **platforms:** lean router profile, ~84% smaller on five targets
+- **breadcrumbs:** verify every task before checkoff
+
+### Fixes
+- **windsurf:** ship router only, cap was silently truncating 77%
+
+### Documentation
+- record platform decisions, make windsurf cap byte-based
+
 ## [1.5.0] - 2026-08-22
 
 ### Features

@@ -52,9 +52,14 @@ Still append-only: the file only grows, and `status:` is the one field amended i
 
 **Created only when earned, never scaffolded speculatively:** a user states a rule mid-story that's clearly repo-wide, not story-specific ("we always do X across this whole project," not "for this story, do X") → ask once, "want me to save that as a standing project rule so future stories check against it too?" Confirmed → create if missing, append the rule. Declined → log it under this story's Assumptions instead, don't ask again for the same rule.
 
-Same trigger also fires implicitly from a hand-edit to AI-written code (see Step 3.4's "Learning from the edit") when the edit looks like a general preference rather than a fix to this task alone — not just from something the user says out loud.
+Two implicit triggers besides something the user says out loud:
 
-**Read:** once per story, at Step 2 (Plan), point 8 — last, after the plan is complete — see `step2-plan.md` — if the file exists. Not re-read every gate.
+- **Hand-edit to AI-written code** (see Step 3.5's "Learning from the edit") — the edit reads as a general preference rather than a fix to this task alone.
+- **Correction that never becomes an edit** — the user corrects the same class of thing twice in a story, or once in plainly repo-wide terms ("we never do X here"), without touching the file themselves. Same ask-once, same wording. This is the trigger that catches the correction nothing else here retains: "don't put the token in the log line," said once in chat, is gone the moment the session ends unless it's asked about and written down.
+
+Both go through the same confirmation as a stated rule — never appended silently. A one-off correction specific to this task isn't a rule; it's an Assumption or a Task Log `Why` in this story's file. The bar is repo-wide *and* standing, and a single ambiguous correction doesn't clear it.
+
+**Read:** once per story, if the file exists. Full mode → Step 2 (Plan), point 8, last, after the plan is complete (`step2-plan.md`). Lite mode → the collapsed Step 1+2 gate ("Lite mode" in `Skill.md`), since lite skips Step 2 entirely and these rules are repo-wide, not scaled to story size. Not re-read every gate.
 
 **Checked, not just read:** Step 2's plan gets checked against its active rules before presenting to the user. Conflict → same handling as the Step 2.2 tripwire (a missed Material unknown): surface it, resolve before continuing, don't build around it.
 
@@ -62,7 +67,7 @@ Same trigger also fires implicitly from a hand-edit to AI-written code (see Step
 
 ## Validator scripts
 
-Two optional scripts ship with the skill: `validate-context-file.mjs` and `validate-commit-message.mjs` (used by Step 3.5). They live in a `scripts/` directory alongside the skill's own files, so the path depends on how the skill was loaded — never hard-code one platform's layout.
+Two optional scripts ship with the skill: `validate-context-file.mjs` and `validate-commit-message.mjs` (used by Step 3.6). They live in a `scripts/` directory alongside the skill's own files, so the path depends on how the skill was loaded — never hard-code one platform's layout.
 
 Resolve by trying, in order, `scripts/<name>.mjs` relative to: the directory this file was loaded from → `skills/breadcrumbs/` under the repo root → `.claude/skills/breadcrumbs/` under the repo root → `~/.claude/skills/breadcrumbs/`. First hit wins; run it as `node <resolved-path> [args]`. Resolve once per session, reuse the hit.
 

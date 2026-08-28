@@ -2,7 +2,9 @@
 // Checks a breadcrumbs context file against the structure defined in
 // skills/breadcrumbs/context-template.md. Catches format drift a model
 // might introduce under lite-mode speed pressure — cheap, deterministic,
-// doesn't need a model to run it.
+// doesn't need a model to run it. Also enforces that every Task Log entry
+// carries a `Verified:` line, so an unverified checkoff fails structurally
+// rather than depending on the model to notice.
 //
 // Usage: node scripts/validate-context-file.mjs <path> [...more paths]
 //        node scripts/validate-context-file.mjs   (checks everything in .breadcrumbs/context/)
@@ -42,6 +44,36 @@ function validate(path) {
 
   for (const section of ALWAYS_REQUIRED) {
     if (!text.includes(section)) errors.push(`missing required section "${section}"`);
+  }
+
+  // Every Task Log entry needs a `Verified:` line (Step 3.4) — a checked-off
+  // task with no recorded verification is the failure this catches, and it's
+  // the one thing in the Task Log a resuming session can't re-derive.
+  const logStart = lines.findIndex((l) => l.trim() === "## Task Log");
+  if (logStart !== -1) {
+    let heading = null;
+    let headingLine = 0;
+    let verified = false;
+    const closeEntry = () => {
+      if (heading && !verified) {
+        errors.push(`Task Log entry "${heading}" (line ${headingLine}) has no \`- Verified:\` line`);
+      }
+    };
+    for (let i = logStart + 1; i <= lines.length; i++) {
+      const line = lines[i] ?? "## <eof>";
+      if (line.startsWith("## ")) {
+        closeEntry();
+        break;
+      }
+      if (line.startsWith("### ")) {
+        closeEntry();
+        heading = line.replace(/^###\s*/, "").trim();
+        headingLine = i + 1;
+        verified = false;
+        continue;
+      }
+      if (/^\s*-\s*Verified:/.test(line)) verified = true;
+    }
   }
 
   const checklistStart = lines.findIndex((l) => l.trim() === "## Task Checklist");
