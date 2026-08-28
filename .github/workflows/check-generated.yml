@@ -1,0 +1,20 @@
+# Skill.md is the canonical source; the platform files are generated from it.
+# Nothing else stops an edit to the source from shipping with stale generated
+# files, so this check is the enforcement — see scripts/build-platforms.mjs.
+name: Check generated files
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify generated files match Skill.md
+        run: node scripts/build-platforms.mjs --check
