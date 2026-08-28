@@ -28,7 +28,7 @@ Understanding a story needs enough repo context to ask good questions and plan r
 
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
 - **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
-- **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.5) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
+- **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
 - **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
 
 No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
@@ -45,8 +45,11 @@ No trigger fires, all four gates finish in one sitting → no file, ever. Expect
 
 Auto-detected Step 1.4: `Bug fix` / `Copy/config/content change` → lite. Everything else → full mode, per the four steps below. Single source of truth for what lite changes — step files aren't separately annotated.
 
-- Step 1 gate + all of Step 2 collapse into one, unconditionally (lite types are always simple enough, no Material/Cosmetic check needed): state approach ("no design" depth) + task list (max 2), one message ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
-- Step 3: one wrap-up message after all tasks, not per-task.
+- Step 1 gate + all of Step 2 collapse into one, unconditionally (lite types are always simple enough, no Material/Cosmetic check needed): state approach ("no design" depth) + task list (max 2) + the check that will prove it works, one message ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
+- **Two Step 2 checks survive the collapse.** Neither scales with story size, and lite is where both get skipped most often:
+  - `Bug fix` → Step 2.3's bug-fix domain row, inline, one fragment each: root cause understood (not the symptom), repro confirmed, same defect looked for elsewhere before patching one spot, regression case named. Four fragments, not a design doc. Dropping them is how a lite fix ships as a patch over a symptom.
+  - Either lite type → Step 2.8's constitution check (`.breadcrumbs/constitution.md`). Standing repo-wide rules have no story-type exemption — "it's only a copy change" is exactly the story that violates one quietly. No file → skip silently.
+- Step 3: one wrap-up message after all tasks, not per-task. **Verification isn't collapsed** — 3.4 still runs per task, 3.8 still runs the named check before the wrap-up.
 - Step 4: PR draft as usual, from the conversation.
 - File creation: same triggers as "The context file" above, no lite exception. Scope change / test failure mid-flight → escalates lite → full too, same moment the file's created. Say so in one line.
 

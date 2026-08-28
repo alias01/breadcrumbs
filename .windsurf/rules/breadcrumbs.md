@@ -29,7 +29,7 @@ Understanding a story needs enough repo context to ask good questions and plan r
 
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
 - **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
-- **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.5) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
+- **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
 - **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
 
 No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
@@ -46,8 +46,11 @@ No trigger fires, all four gates finish in one sitting → no file, ever. Expect
 
 Auto-detected Step 1.4: `Bug fix` / `Copy/config/content change` → lite. Everything else → full mode, per the four steps below. Single source of truth for what lite changes — step files aren't separately annotated.
 
-- Step 1 gate + all of Step 2 collapse into one, unconditionally (lite types are always simple enough, no Material/Cosmetic check needed): state approach ("no design" depth) + task list (max 2), one message ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
-- Step 3: one wrap-up message after all tasks, not per-task.
+- Step 1 gate + all of Step 2 collapse into one, unconditionally (lite types are always simple enough, no Material/Cosmetic check needed): state approach ("no design" depth) + task list (max 2) + the check that will prove it works, one message ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
+- **Two Step 2 checks survive the collapse.** Neither scales with story size, and lite is where both get skipped most often:
+  - `Bug fix` → Step 2.3's bug-fix domain row, inline, one fragment each: root cause understood (not the symptom), repro confirmed, same defect looked for elsewhere before patching one spot, regression case named. Four fragments, not a design doc. Dropping them is how a lite fix ships as a patch over a symptom.
+  - Either lite type → Step 2.8's constitution check (`.breadcrumbs/constitution.md`). Standing repo-wide rules have no story-type exemption — "it's only a copy change" is exactly the story that violates one quietly. No file → skip silently.
+- Step 3: one wrap-up message after all tasks, not per-task. **Verification isn't collapsed** — 3.4 still runs per task, 3.8 still runs the named check before the wrap-up.
 - Step 4: PR draft as usual, from the conversation.
 - File creation: same triggers as "The context file" above, no lite exception. Scope change / test failure mid-flight → escalates lite → full too, same moment the file's created. Say so in one line.
 
@@ -126,9 +129,14 @@ Still append-only: the file only grows, and `status:` is the one field amended i
 
 **Created only when earned, never scaffolded speculatively:** a user states a rule mid-story that's clearly repo-wide, not story-specific ("we always do X across this whole project," not "for this story, do X") → ask once, "want me to save that as a standing project rule so future stories check against it too?" Confirmed → create if missing, append the rule. Declined → log it under this story's Assumptions instead, don't ask again for the same rule.
 
-Same trigger also fires implicitly from a hand-edit to AI-written code (see Step 3.4's "Learning from the edit") when the edit looks like a general preference rather than a fix to this task alone — not just from something the user says out loud.
+Two implicit triggers besides something the user says out loud:
 
-**Read:** once per story, at Step 2 (Plan), point 8 — last, after the plan is complete — see `step2-plan.md` — if the file exists. Not re-read every gate.
+- **Hand-edit to AI-written code** (see Step 3.5's "Learning from the edit") — the edit reads as a general preference rather than a fix to this task alone.
+- **Correction that never becomes an edit** — the user corrects the same class of thing twice in a story, or once in plainly repo-wide terms ("we never do X here"), without touching the file themselves. Same ask-once, same wording. This is the trigger that catches the correction nothing else here retains: "don't put the token in the log line," said once in chat, is gone the moment the session ends unless it's asked about and written down.
+
+Both go through the same confirmation as a stated rule — never appended silently. A one-off correction specific to this task isn't a rule; it's an Assumption or a Task Log `Why` in this story's file. The bar is repo-wide *and* standing, and a single ambiguous correction doesn't clear it.
+
+**Read:** once per story, if the file exists. Full mode → Step 2 (Plan), point 8, last, after the plan is complete (`step2-plan.md`). Lite mode → the collapsed Step 1+2 gate ("Lite mode" in `Skill.md`), since lite skips Step 2 entirely and these rules are repo-wide, not scaled to story size. Not re-read every gate.
 
 **Checked, not just read:** Step 2's plan gets checked against its active rules before presenting to the user. Conflict → same handling as the Step 2.2 tripwire (a missed Material unknown): surface it, resolve before continuing, don't build around it.
 
@@ -136,7 +144,7 @@ Same trigger also fires implicitly from a hand-edit to AI-written code (see Step
 
 ## Validator scripts
 
-Two optional scripts ship with the skill: `validate-context-file.mjs` and `validate-commit-message.mjs` (used by Step 3.5). They live in a `scripts/` directory alongside the skill's own files, so the path depends on how the skill was loaded — never hard-code one platform's layout.
+Two optional scripts ship with the skill: `validate-context-file.mjs` and `validate-commit-message.mjs` (used by Step 3.6). They live in a `scripts/` directory alongside the skill's own files, so the path depends on how the skill was loaded — never hard-code one platform's layout.
 
 Resolve by trying, in order, `scripts/<name>.mjs` relative to: the directory this file was loaded from → `skills/breadcrumbs/` under the repo root → `.claude/skills/breadcrumbs/` under the repo root → `~/.claude/skills/breadcrumbs/`. First hit wins; run it as `node <resolved-path> [args]`. Resolve once per session, reuse the hit.
 
@@ -221,13 +229,15 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    | API/backend | Request/response contract defined (fields, types, status codes) — feeds point 2's cross-team contract; auth/permission requirements clear; rate limiting/throttling considered; idempotency needed (safe to retry without side effects); versioning impact on existing consumers; expected load/concurrency where it changes the design |
    | Mobile app | Offline behavior defined; platform differences (iOS vs Android behavior/UI); app store review implications if UI/permissions change; battery/data usage impact if polling or background work involved |
    | Database/schema | Migration is backward-compatible during deploy, reversible or rollback plan exists — feeds point 5; impact on existing queries/indexes considered; backfill needed for existing records; data volume at expected scale |
-   | Bug fix (only reachable via a lite→full escalation — plain bug fixes are lite and skip Step 2 entirely) | Root cause understood, not just the symptom; repro steps confirmed; checked whether the same defect exists elsewhere before patching one spot; regression test added — feeds point 4 |
+   | Bug fix (full-mode form, reached via a lite→full escalation; the same four checks run inline at the lite collapsed gate — see "Lite mode" in `Skill.md` — so a plain bug fix never skips them) | Root cause understood, not just the symptom; repro steps confirmed; checked whether the same defect exists elsewhere before patching one spot; regression test added — feeds point 4 |
    | Infra/DevOps | Uptime/downtime impact known; monitoring/alerting updated if new failure modes introduced; cost impact considered (new resources, scaling); change is scriptable/repeatable, not a manual one-off |
    | Data pipeline/ETL | Source data reliability/format assumptions validated; failure handling defined for a batch failing midway; reprocessing/backfill strategy exists; downstream consumers identified |
    | Third-party integration | Rate limits and pricing of the third-party API known; failure/downtime handling for when the third party is unavailable; auth/credential management approach clear; webhook vs polling decision made |
    | UI-only/design (no backend change) | Responsive behavior across breakpoints confirmed; accessibility (contrast, keyboard nav, screen reader) considered; design system components reused, not one-offs |
 
 4. **Testing plan:** identify which logic needs unit test coverage, list the manual/integration test cases (including the edge cases already surfaced in Step 1's error-handling taxonomy item and any domain-specific regression case from point 3), and confirm there's a clear way to verify the result against Step 1's acceptance criteria. Test work that's substantial enough to stand alone becomes its own task in point 6.
+
+   **Listed to be run, not to be filed.** Step 3 executes this set — its point 4 per task, its point 8 as a whole before the gate — so each case states what gets run and what passing looks like, and names the task(s) it covers. A case mapped to no task means a missing task or a case that doesn't belong here; a task covered by no case means Step 3.4 falls back to the repo's own checks, which is a weaker verdict — decide now whether that's acceptable, rather than discovering it mid-implementation.
 
 5. **Rollout & rollback** — only for stories that touch production data, payments, or require a migration/backward-compat path (New service/integration is where this is most often mandatory; the Database/schema domain always needs it; other types only if the story itself says so): decide whether a feature flag is needed, address migration/backward-compatibility concerns, and confirm a rollback plan exists. Flag/migration/backfill work is real work — it becomes tasks in point 6, not a footnote.
 
@@ -248,7 +258,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 
    **Flow size check:** per-task file cap (point 6) × task cap above compounds to 30 files worst case, uncapped independently of the task-count flag. Flow nearing ~30 distinct files → flag, propose splitting, before Step 3 — same treatment as hitting the task ceiling. A "Small feature" whose Flow runs past ~8 files is the early signal of the same problem: raise it as a possible misclassification.
 
-8. **Constitution check:** `.breadcrumbs/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here and check the *whole* plan against it — approach, domain checks, testing, rollout, tasks — before presenting. Runs last on purpose: the rules it holds ("retries carry an idempotency key," "migrations must be reversible") match content that doesn't exist until points 3-5. Conflict → same handling as the point-2 tripwire, resolve before continuing. No file → nothing to check, skip silently.
+8. **Constitution check:** `.breadcrumbs/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here and check the *whole* plan against it — approach, domain checks, testing, rollout, tasks — before presenting. Runs last on purpose: the rules it holds ("retries carry an idempotency key," "migrations must be reversible") match content that doesn't exist until points 3-5. Conflict → same handling as the point-2 tripwire, resolve before continuing. No file → nothing to check, skip silently. Lite mode skips Step 2 but *not* this check — it runs inline at the collapsed Step 1+2 gate instead (see "Lite mode" in `Skill.md`), because these rules are repo-wide and don't scale with story size.
 
 9. File exists → one pass, writing: story type, design depth, HLD/LLD notes, architecture decisions, **Risks/Unknowns** (point 2), domain-check outcomes, testing plan, rollout/rollback notes, Flow, **Sequencing** (point 6), Task Checklist — each only where it applied. Risks and Sequencing are the two most expensive things to re-derive on resume; they don't get left in chat. No file → stays in chat.
 10. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
@@ -260,10 +270,16 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 1. Work the Task Checklist one task at a time.
 2. **Don't ask the user mid-task.** Use best judgment. Genuine judgment call (not mechanical) → log in Task Log's "Why." Changes what was agreed (contradicts plan, needs a scope decision) → not a solo call — log under Scope Changes, flag immediately.
 3. Apply `ponytail` for how code gets written: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Exceptions still apply — never simplify away input validation, error handling, security, accessibility.
-4. After each task — file exists → append Task Log entry, check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too. Edited file isn't on the story's planned Flow (from Step 2.6) → say so explicitly before the correctness verdict ("that file's outside this story's planned Flow — [reason if evident]"), one line, non-blocking; still record the `Check:` verdict either way (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check and any Flow warning.
+4. **Verify before checking the task off.** A task isn't done because the code is written — it's done when something demonstrates it works. This is the step that makes the Task Log a record of what was *proven*, not only what was decided.
+   - Run the cases Step 2.4's testing plan mapped to this task (lite → the check named at the collapsed gate). Nothing mapped to it → run the repo's own fast checks over what you touched (the existing test file, typecheck, lint — whatever a contributor runs locally) and name which.
+   - Genuinely nothing executable (copy change, doc edit) → say so, plus what you inspected instead. That's a valid verdict; silence isn't.
+   - Fails → not a checkoff. Fix, re-run. Still fails and the cause is the plan rather than the code → that's the Mid-flight break in point 7, not a task checked off with a caveat attached.
+   - **Self-review, same pass, before presenting:** re-read your own diff against the task's Why and the plan's approach — leftover scaffolding, a TODO standing in for the fix, a temporary workaround where the root cause was the point, an abstraction the task never asked for. Found something → fix it now; don't present it and wait to be told. Mirror of the manual-edit review in point 5, pointed at your own output.
+   - Outcome carries into the Task Log (point 5) as `Verified:` — what ran, what it showed. That field is where Step 4's **Test** section comes from, so "no coverage found" in a PR draft can only mean this step reported it, never that nobody looked.
+5. After each task — file exists → append Task Log entry (`Verified:` from point 4 included, all three forms), check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too. Edited file isn't on the story's planned Flow (from Step 2.6) → say so explicitly before the correctness verdict ("that file's outside this story's planned Flow — [reason if evident]"), one line, non-blocking; still record the `Check:` verdict either way (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check and any Flow warning.
 
-   **Learning from the edit:** if the hand-edit reflects a repo-wide preference rather than a one-off fix to this task (e.g. consistently strips comments a certain way, always adds a specific guard, renames a pattern the same way each time) → treat it like a stated rule (`context-file-mechanics.md`'s Project constitution trigger): ask once, "Noticed you always change X to Y — save that as a standing project rule?" Confirmed → append to `.breadcrumbs/constitution.md`, apply it from the next task onward in this story and every story after. Declined → don't ask again for this same pattern, keep it to the `Check:` verdict only. Story-specific edit (fixes this task's particular bug, not a general preference) → no ask, `Check:` verdict is enough.
-5. **Commit each task**, right after its Task Log write (same moment, before moving to the next task). One commit per completed task — mirrors the Task Log 1:1, keeps `git log` and the Task Log reconstructable from each other.
+   **Learning from the edit:** if the hand-edit reflects a repo-wide preference rather than a one-off fix to this task (e.g. consistently strips comments a certain way, always adds a specific guard, renames a pattern the same way each time) → treat it like a stated rule (`context-file-mechanics.md`'s Project constitution trigger): ask once, "Noticed you always change X to Y — save that as a standing project rule?" Confirmed → append to `.breadcrumbs/constitution.md`, apply it from the next task onward in this story and every story after. Declined → don't ask again for this same pattern, keep it to the `Check:` verdict only. Story-specific edit (fixes this task's particular bug, not a general preference) → no ask, `Check:` verdict is enough. The same ask covers a correction the user only *says* and never edits, when it repeats or is plainly repo-wide — see the Project constitution triggers in `context-file-mechanics.md`.
+6. **Commit each task**, right after its Task Log write (same moment, before moving to the next task). One commit per completed task — mirrors the Task Log 1:1, keeps `git log` and the Task Log reconstructable from each other.
 
    Per-task, not per-story, on purpose: each commit carries that task's own Why. Batch several tasks into one commit and the reasons collapse — a reviewer can see the change belongs to the story, but not which reason drove which hunk. That's the thing being preserved; it can't be recovered later.
 
@@ -292,8 +308,13 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
 
    Before running `git commit`, check the header with `validate-commit-message.mjs` — deterministic, cheaper and more reliable than eyeballing the regex. Resolve the script per "Validator scripts" in `context-file-mechanics.md`; not found → check by hand against the table above, don't block on it.
-6. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
-7. **Gate:** every task checked off → summarize what was built, stop, wait for confirmation before PR (`step4-pr.md`). Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits.
+7. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
+8. **Gate:** every task checked off → **run the whole planned test set now**, not just point 4's per-task checks: every case Step 2.4 listed (lite → the check named at the collapsed gate), plus the repo's own suite over what the story touched. Per-task verification proves each task in isolation; this proves they compose — the failure it exists to catch is task 5 breaking what task 2 established, which no per-task run can see.
+   - Green → summarize what was built *and what proved it* (one line: cases run + outcome), stop, wait for confirmation before PR (`step4-pr.md`).
+   - Red → not a gate to pass with a note attached. Fix, re-run; cause is the plan rather than the code → point 7's Mid-flight break. Never present a story as ready with a known-failing case.
+   - Nothing runnable for the whole story → say that explicitly at the gate, with what was checked instead. Goes to the user as a fact about the story, not as a silence.
+
+   Commits for all tasks already exist by this point — Step 4 drafts the PR description, it doesn't create new commits. A fix made *here* is its own commit and its own Task Log entry: the Log stays 1:1 with `git log`, and "integration caught something the task-level run didn't" is itself worth preserving.
 
 ---
 
@@ -304,7 +325,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 3. Fixed section set, same five names regardless of type — **What, Why, Test, Rollback, Dependencies.** No type-varying sections anymore. Bias toward fewer: include a section only if it earns its place for a reviewer, omit rather than pad. File exists → pull content from it, don't re-summarize; no file → derive the same from the conversation.
    - **What** — always. The change, as plainly as possible. ← Task Log "What" entries, concatenated.
    - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it. ← Task Log "Why" entries, only where they add something What didn't.
-   - **Test** — how it's verified: test added, manual repro steps, "none needed" + reason. Skip only when genuinely nothing to verify. ← test-related Task Log entries / Plan testing notes; no coverage found → say so, don't invent.
+   - **Test** — what actually verified it, *with the outcome*: the cases run at Step 3.4/3.8 and what they showed, manual repro steps, or "nothing runnable" + what was inspected instead. Skip only when genuinely nothing to verify. ← Task Log `Verified:` lines and the Step 3 gate's full run — **not** the Plan's testing notes, which say what was intended; a reviewer reading "unit tests for the retry path" needs to know they ran, not that they were planned. Verification reported none → say that, don't invent.
    - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Plan/Scope Changes, only where flagged.
    - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first.
    - **What changed since last PR** (later-update case only) ← Scope Changes dated after the last PR Summary write.
@@ -334,7 +355,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 
    **Why:** Retries omitted an idempotency key, so the provider treated each retry as a new charge. Now one key is generated per order and forwarded on every retry.
 
-   **Test:** Regression test simulates a retried request and asserts a single charge.
+   **Test:** Regression test simulates a retried request, asserts a single charge — passes; provider-retry suite green.
    ```
 5. **Show the draft directly in chat, stop there.** Not a file draft awaiting a later write — the deliverable itself. No way to open a PR on GitHub/GitLab/Bitbucket → the chat message *is* the artifact, user copies it into the platform's PR field. Nothing written to the context file here — no later gate reads a stored PR summary back.
 6. **Gate:** confirm or request changes, iterate in chat, until happy with what they'll paste.
@@ -399,13 +420,16 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 ### Task 1 — <date>
 - What: <what was implemented>
 - Why: <reasoning / decisions made>
+- Verified: <what ran — planned case / repo check / "nothing runnable: <what was inspected instead>"> — <outcome>
 
 ### Task 2 — <date> (mechanical, no judgment call)
 - [x] Task 2 — <short description> — files: <list>
+- Verified: <as above>
 
 ### Task 3 — <date> (manual edit, by user)
 - [x] Task 3 — <short description> — files: <list>
 - Check: <correct | issue found — one line, per the manual-edit review>
+- Verified: <as above>
 - Flow: <on plan | off plan — reason if evident. Only present when the edited file isn't on the story's Flow above.>
 
 ## Scope Changes / Reimplementation
@@ -425,14 +449,17 @@ Last drafted: <date> — full text was shown in chat for the user to copy into G
 
 Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
 
-Three Task Log forms — classification per Step 3.4, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
+Three Task Log forms — classification per Step 3.5, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
 
-`Flow` — defined Step 2.6, flagged when violated per Step 3.4. Recorded as a `Flow` line here (Task 3 example above).
+`Verified:` — on all three forms, no exceptions (Step 3.4). What ran and what it showed, one fragment. An entry without it reads to a resuming session as a task nobody proved, which is exactly what it is. "Nothing runnable" is a legitimate value; an absent line isn't.
+
+`Flow` — defined Step 2.6, flagged when violated per Step 3.5. Recorded as a `Flow` line here (Task 3 example above).
 
 ## What NOT to do
 
 - Don't skip a gate on your own initiative, next step "obvious" or not. Applies in lite mode too. Only an explicit user waiver skips one — see "User override" in `Skill.md`, and log it under `Gate Waivers` below.
 - Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface those immediately.
+- Don't check a task off without a `Verified:` line, and don't pass the Step 3 gate with a known-failing case. "Tests exist" isn't verification; "tests ran, here's the outcome" is.
 - Don't overwrite past entries — running record, not a snapshot.
 - Don't commit the context file or reference it in the PR diff.
 - Don't delete it unless the user confirms the PR merged.
