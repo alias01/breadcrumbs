@@ -2,7 +2,7 @@
 // Compiles skills/breadcrumbs/Skill.md (the canonical source) into
 // platform-specific instruction files. Re-run after editing Skill.md.
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join, basename } from "node:path";
 import { homedir } from "node:os";
 
@@ -31,9 +31,21 @@ function parseSkill(raw) {
   return { name, description, frontmatter: frontmatter.trim(), body: body.trim() };
 }
 
+// --check renders every target exactly as a build would, then compares instead
+// of writing — so the verification can't drift from the build, and CI can fail a
+// PR whose generated files weren't rebuilt from Skill.md. Writes nothing, ever.
+const CHECK = process.argv.includes("--check");
+const stale = [];
+
 function write(path, content) {
+  const final = content.endsWith("\n") ? content : content + "\n";
+  if (CHECK) {
+    const current = existsSync(path) ? readFileSync(path, "utf8") : null;
+    if (current !== final) stale.push(path);
+    return;
+  }
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, content.endsWith("\n") ? content : content + "\n");
+  writeFileSync(path, final);
   console.log(`wrote ${path}`);
 }
 
