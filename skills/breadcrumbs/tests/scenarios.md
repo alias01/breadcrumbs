@@ -152,6 +152,41 @@ from the router alone. Symptom is plausible-looking output with no taxonomy, no 
 Task Log format. If that shows up, the lean profile isn't safe on Windsurf and the trade needs
 revisiting — not more pointer wording.
 
+## 11. Lean profile — pointers get followed, or they don't
+
+Cursor, Cline, Kiro, Copilot and Gemini ship the router with repo-relative pointers instead of the
+inlined text (~2.4k tokens instead of ~13.8k). This scenario exists because that saving is only real
+if the agent actually reads the pointed-at files.
+
+**Build checks (deterministic):**
+- Default build == `--profile=lean`; `--profile=full` restores inlining; `--profile=medium` fails.
+- Every lean file still contains the gates, "never skip a gate", lite-mode rules, verification
+  (3.4/3.8), Mid-flight break and User override — the tier that must survive a skipped read.
+- Every pointer reads `skills/breadcrumbs/<file>.md`; zero bare filenames.
+- `AGENTS.md` full under both profiles; `.windsurf/...` lean under both.
+- `.gemini/commands/breadcrumbs.toml` still parses as TOML (the body is embedded in a `"""` string,
+  so a stray triple-quote would silently corrupt it).
+
+**Behavioural check — run once per platform, on a scratch repo:**
+Paste a small-feature story and watch whether the reference file is read at each gate.
+
+| Gate | File that must be read |
+|---|---|
+| Step 1 | `skills/breadcrumbs/step1-understand.md` |
+| Step 2 | `skills/breadcrumbs/step2-plan.md` |
+| Step 3 | `skills/breadcrumbs/step3-implement.md` |
+| Step 4 | `skills/breadcrumbs/step4-pr.md` |
+| First file write | `context-file-mechanics.md` + `context-template.md` |
+
+**Pass:** the files are read at the gate, and behaviour matches the same story run on Claude Code.
+
+**Fail:** plausible-looking output with no Step 1 taxonomy, no Step 2 domain checks, no Task Log
+format — the agent improvised from the router alone. That platform goes back to `--profile=full`;
+it is *not* fixed by rewording the pointers.
+
+**Partial:** gates and lite-mode rules hold but plan depth is thin. That's the designed degradation,
+not a failure — record it and decide per platform whether the token saving is worth it.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.

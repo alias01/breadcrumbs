@@ -7,9 +7,9 @@ description: Run a user story from a pasted ticket all the way to a PR-ready imp
 
 ## Reference files — read on demand
 
-This rule is a router. Each step's full text, the context-file mechanics, and the
-file template live in the repository, not in this rule. Read the one you need, from
-the repo root, **at the moment you reach that gate** — not up front:
+This is a router. Each step's full text, the context-file mechanics, and the file
+template live in the repository, not in this file. Read the one you need, from the
+repo root, **at the moment you reach that gate** — not up front:
 
 | When | Read |
 |---|---|

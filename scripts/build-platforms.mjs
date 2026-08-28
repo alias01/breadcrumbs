@@ -43,9 +43,28 @@ const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs —
 
 // Skill.md points at the step files, context-file-mechanics.md, and
 // context-template.md, and expects Claude Code to Read each on demand (only
-// when that gate is reached / first context-file write). Most platforms below
-// have no equivalent gate-triggered read, so everything is inlined for them
-// rather than left as pointers — the guaranteed-but-fat form.
+// when that gate is reached / first context-file write).
+//
+// Two shapes are built from that same source:
+//
+//   lean (default) — the router alone, reference files left as repo-relative
+//     pointers the agent reads at each gate. ~2.1k tokens instead of ~13.6k,
+//     and on the always-loaded targets (Copilot) that saving is per turn, for
+//     the whole session, whether or not a story is in play.
+//   full — everything inlined. ~13.6k tokens, but nothing depends on the agent
+//     choosing to follow a pointer.
+//
+// Lean is a real trade, not a free win: a pointer is a soft instruction, and a
+// weaker model may skip it. It's mitigated by WHAT is left in the router rather
+// than by hoping — the gates, "never skip a gate", lite-mode rules, the
+// verification requirement and the context-file triggers all stay inline, so a
+// skipped reference read costs plan *depth*, not a gate. Build with
+// `--profile=full` to fall back per-run if a platform proves unreliable.
+const PROFILE = (process.argv.find((a) => a.startsWith("--profile=")) ?? "--profile=lean").split("=")[1];
+if (!["lean", "full"].includes(PROFILE)) {
+  throw new Error(`unknown --profile=${PROFILE} (expected "lean" or "full")`);
+}
+
 const reference = REFERENCES.map((path) => readFileSync(path, "utf8").trim()).join("\n\n---\n\n");
 const fullBody = `${body}\n\n---\n\n${reference}`;
 
@@ -75,9 +94,9 @@ function routerBody(prefix) {
 const REF_DIR = "skills/breadcrumbs/";
 const readOnDemand = `## Reference files — read on demand
 
-This rule is a router. Each step's full text, the context-file mechanics, and the
-file template live in the repository, not in this rule. Read the one you need, from
-the repo root, **at the moment you reach that gate** — not up front:
+This is a router. Each step's full text, the context-file mechanics, and the file
+template live in the repository, not in this file. Read the one you need, from the
+repo root, **at the moment you reach that gate** — not up front:
 
 | When | Read |
 |---|---|
@@ -95,18 +114,28 @@ files carry the detail that makes them work.
 
 `;
 
-// AGENTS.md — portable, instruction-only, no frontmatter.
+const leanBody = `${readOnDemand}${routerBody(REF_DIR)}`;
+// What every target below except AGENTS.md gets, per --profile.
+const body4 = PROFILE === "lean" ? leanBody : fullBody;
+
+// AGENTS.md — portable, instruction-only, no frontmatter. ALWAYS full, both
+// profiles: it's the fallback for any tool that can't read files on demand, and
+// the one place where the guarantee is worth the 13.6k. Everything else has a
+// file-read tool and a committed repo to resolve pointers against.
 write("AGENTS.md", `${banner}# ${name}\n\n${fullBody}\n`);
 
 // Cursor — .mdc with frontmatter Cursor understands (agent-requested rule).
+// Pointers stay plain relative paths: Cursor's `@file` syntax pulls a file into
+// context EAGERLY, which would reintroduce exactly the cost this removes.
 write(
   ".cursor/rules/breadcrumbs.mdc",
-  `---\ndescription: ${description}\nalwaysApply: false\n---\n\n${banner}${fullBody}\n`
+  `---\ndescription: ${description}\nalwaysApply: false\n---\n\n${banner}${body4}\n`
 );
 
 // Windsurf — model-decision rule, activates based on description match.
 // Router only: the full text does not fit under the cap (see above).
-const windsurf = `---\ntrigger: model_decision\ndescription: ${description}\n---\n\n${banner}${readOnDemand}${routerBody(REF_DIR)}\n`;
+// Always lean regardless of --profile: the full text cannot fit under the cap.
+const windsurf = `---\ntrigger: model_decision\ndescription: ${description}\n---\n\n${banner}${leanBody}\n`;
 if (windsurf.length > WINDSURF_CAP - WINDSURF_HEADROOM) {
   throw new Error(
     `.windsurf/rules/breadcrumbs.md is ${windsurf.length} chars — over the ${WINDSURF_CAP} cap ` +
@@ -117,25 +146,29 @@ if (windsurf.length > WINDSURF_CAP - WINDSURF_HEADROOM) {
 }
 write(".windsurf/rules/breadcrumbs.md", windsurf);
 
-// Cline — plain instructions file, no frontmatter convention.
-write(".clinerules/breadcrumbs.md", `${banner}# ${name}\n\n${fullBody}\n`);
+// Cline — plain instructions file, no frontmatter convention. Cline reads files
+// on request, so the router's pointers resolve.
+write(".clinerules/breadcrumbs.md", `${banner}# ${name}\n\n${body4}\n`);
 
 // Kiro — steering doc, manually referenced (safe default; switch to
 // `inclusion: always` if you want it loaded on every request instead).
+// Pointers stay plain relative paths rather than Kiro's `#[[file:...]]`
+// directive, which inlines the target EAGERLY — same trap as Cursor's `@file`.
 write(
   ".kiro/steering/breadcrumbs.md",
-  `---\ninclusion: manual\ndescription: ${description}\n---\n\n${banner}${fullBody}\n`
+  `---\ninclusion: manual\ndescription: ${description}\n---\n\n${banner}${body4}\n`
 );
 
-// GitHub Copilot — repo-wide custom instructions, always loaded, no
-// per-skill triggering available, so this is intentionally the full text.
-write(".github/copilot-instructions.md", `${banner}# ${name}\n\n${fullBody}\n`);
+// GitHub Copilot — repo-wide custom instructions, always loaded with no
+// per-skill triggering. Biggest beneficiary of the lean profile: this cost is
+// paid on every turn of every session, including ones that never touch a story.
+write(".github/copilot-instructions.md", `${banner}# ${name}\n\n${body4}\n`);
 
 // Gemini CLI — custom slash command (no description-match auto-trigger like
 // Cursor/Windsurf, so this is invoked explicitly as `/breadcrumbs`).
 write(
   ".gemini/commands/breadcrumbs.toml",
-  `description = ${JSON.stringify(description)}\n\nprompt = """\n${banner}${fullBody.replaceAll('"""', '\\"\\"\\"')}\n"""\n`
+  `description = ${JSON.stringify(description)}\n\nprompt = """\n${banner}${body4.replaceAll('"""', '\\"\\"\\"')}\n"""\n`
 );
 
 // Claude Code plugin manifest — wraps the existing skill, doesn't duplicate it.
@@ -175,4 +208,9 @@ for (const scriptPath of SCRIPTS) {
   write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
 }
 
+console.log(`\nprofile: ${PROFILE}  (router ${Math.round(leanBody.length / 1000)}KB vs full ${Math.round(fullBody.length / 1000)}KB)`);
+if (PROFILE === "lean") {
+  console.log("  AGENTS.md stays full — the fallback for tools that can't read files on demand.");
+  console.log("  Re-run with --profile=full to inline everything if a platform ignores the pointers.");
+}
 console.log("\nDone. skills/breadcrumbs/Skill.md remains the canonical source.");
