@@ -99,6 +99,41 @@ committed — so the pointers resolve.
 
 ---
 
+## 2026-09-02 — A scale target, not a performance pass
+
+**Decision:** Step 1 captures one `Scale target:` line per story (volume, rate, latency budget —
+or "none stated — current scale assumed"). Step 2 sizes the plan against it in one fragment;
+Step 3.4's self-review scans the diff for the patterns that break under growth; a regression
+against the target is a Mid-flight break, told to the user before any fix. Ponytail's exception
+list gains "holds the scale target."
+
+**Why not "every story optimized and scalable":** it has no pass/fail without a target, so it
+would have become prose the model nods at — the same failure the `Verified:` line was added to
+kill. It also fights ponytail (YAGNI) and lite mode (a copy change should pay nothing). The
+skill already *mentioned* performance in three places (Step 1 taxonomy, Step 2 domain rows,
+`perf` commit type) and *enforced* it in none: ponytail's exception list omitted it, Step 3.4
+checked function only, and Step 3.7's triggers had no room for "it got slower." An N+1 loop
+that worked on the dev fixture shipped with nothing to catch it.
+
+**Why the target lives at Step 1:** the user's ask was to know, up front, what scale the story
+is being built for — not to optimize blindly. "Current scale assumed" is a legitimate answer;
+*not knowing* is the failure. Capturing it once lets every later step judge "works" against
+the same number instead of re-deriving it.
+
+**Why lite gets only the scan, not the Step 2 check:** the Step 2 check needs the plan, and
+lite has none. The scan runs inside verification, which lite never collapses, so lite still
+catches the regression — at the diff, where it's visible, rather than at a plan that doesn't
+exist. Same reasoning as the two surviving lite checks above: cost doesn't scale with story
+size.
+
+**Why no benchmark step and no performance domain row:** most repos have nothing to run one
+against; "nothing runnable" is already a legitimate verdict, and the testing plan now says up
+front when the scan is the only check. A domain row would run on every story, which is exactly
+the blanket mandate this replaces. Repo-specific rules ("all list endpoints paginated") belong
+in `.breadcrumbs/constitution.md`, which Step 2.8 and lite already enforce.
+
+---
+
 ## Open — the behavioural half is unverified
 
 Everything verified so far is deterministic: validators, build guards, file sizes, TOML

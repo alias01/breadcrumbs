@@ -26,7 +26,7 @@ Understanding a story needs enough repo context to ask good questions and plan r
 
 **Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
 - **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
-- **Mid-flight break** — test fails, an assumption breaks, scope changes (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
+- **Mid-flight break** — test fails, an assumption breaks, scope changes, a perf/scale regression surfaces (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
 - **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
 
 No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
@@ -49,7 +49,7 @@ Auto-detected Step 1.4: `Bug fix` / `Copy/config/content change` → lite. Every
   - Either lite type → Step 2.8's constitution check (`.breadcrumbs/constitution.md`). Standing repo-wide rules have no story-type exemption — "it's only a copy change" is exactly the story that violates one quietly. No file → skip silently.
 - Step 3: one wrap-up message after all tasks, not per-task. **Verification isn't collapsed** — 3.4 still runs per task, 3.8 still runs the named check before the wrap-up.
 - Step 4: PR draft as usual, from the conversation.
-- File creation: same triggers as "The context file" above, no lite exception. Scope change / test failure mid-flight → escalates lite → full too, same moment the file's created. Say so in one line.
+- File creation: same triggers as "The context file" above, no lite exception. Scope change / test failure / perf regression mid-flight → escalates lite → full too, same moment the file's created. Say so in one line.
 
 ## The four steps
 
@@ -161,7 +161,8 @@ None of them resolve — the skill was pasted in as rules text, or the platform 
    - API/contract boundaries
    - Auth/permissions
    - Error handling & edge cases: error states/messages, loading/empty/success states, empty input/network failure/permission denied
-   - Performance/scale, security/compliance requirements, device/browser/platform requirements
+   - **Scale target:** expected data volume, request rate/concurrency, latency budget — the numbers the implementation is sized for. Story states one → record verbatim. Silent → Material only when the change sits on a data- or request-dependent path (new query, loop over user data, hot endpoint); otherwise Cosmetic → assume "none stated — current scale assumed," log per 1.3. Not a mandate to optimize: sized-for-current-scale is a legitimate answer, *not knowing* is the failure. Step 2 sizes the plan against this line, Step 3.4 judges the diff by it.
+   - Security/compliance requirements, device/browser/platform requirements
    - i18n/locale
    - Backward compatibility
    - Existing pattern to follow, or net-new
@@ -176,7 +177,7 @@ None of them resolve — the skill was pasted in as rules text, or the platform 
 3. User can't answer either (owner unavailable / genuinely undecided) → don't block. Log under Assumptions w/ reasoning, mark `unconfirmed`. Tell the user it needs owner confirmation before final; proceed anyway.
 4. Classify story type now (table in Step 2.1 of `step2-plan.md`, don't wait for Step 2). `Bug fix` / `Copy/config/content change` = **lite**; everything else = **full**. State the mode, one line.
 5. **Tag every open question/assumption**: Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, API/contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count — **not** step 4's type/size classification — decides the gate below. 10-task "New feature/subsystem," all-Cosmetic → gate merges. "Small feature," one Material unknown → gate stays separate. Task/file count belongs to Step 2.7, not here.
-6. **Gate:** file exists → write Understanding Summary + Assumptions to it in one pass, trip marker. No file → present the same content in chat only.
+6. **Gate:** file exists → write Understanding Summary + Assumptions to it in one pass, trip marker. No file → present the same content in chat only. Understanding Summary always ends with one `Scale target:` line (point 2) — the assumed "current scale" form included, so a resuming session and the PR reviewer both know what the story was sized for.
    - **Zero Material unknowns** → fold Step 2 in: do Step 2's work silently (read `step2-plan.md`), present Understanding Summary + Plan together, one combined confirmation, both quoted verbatim. Regardless of story type/task count.
    - **Any Material unknown remains** (even `unconfirmed`) → summary alone, quoted verbatim, stop. No Step 2 until confirmed.
 
@@ -219,7 +220,9 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 
 3. **Domain-specific checks** — orthogonal to the Type table in point 1 (Type drives design depth/task caps; a story can span 0, 1, or multiple domains below). Identify which domain(s) the story touches; anything they surface goes into the approach (point 2) and, if it's work, into the task breakdown (point 6). Skip domains the story doesn't touch.
 
-   **No re-asking.** Auth/permissions, error handling, backward compatibility and performance/scale were already scanned in Step 1's taxonomy. Here they're checked against the *plan*, silently — a question only goes back to the user if the plan surfaces something Step 1's answer doesn't cover, and then it's a point-2 tripwire, not a fresh round of questions.
+   **No re-asking.** Auth/permissions, error handling, backward compatibility and the scale target were already scanned in Step 1's taxonomy. Here they're checked against the *plan*, silently — a question only goes back to the user if the plan surfaces something Step 1's answer doesn't cover, and then it's a point-2 tripwire, not a fresh round of questions.
+
+   **Scale target check** — runs at every design depth in full mode, not just Full HLD (it's one fragment, doesn't scale with story size; lite never reaches here, Step 3.4's diff scan covers it there). Take Step 1's `Scale target:` line and walk the plan's data- or request-dependent paths — each new query, each loop over user data, each call added to a hot path — asking whether it holds at that target. Holds → one fragment in the approach saying how ("paginated, indexed on `user_id`"). Doesn't, or can't tell → point-2 tripwire: change the approach, or log it under Risks/Unknowns as open. "Current scale assumed" is still a target: the check is then that nothing in the plan gets worse than what's there today. This is sizing, not optimizing — a plan that holds at the stated target is done, however simple.
 
    | Domain | Checks |
    |---|---|
@@ -233,6 +236,8 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    | UI-only/design (no backend change) | Responsive behavior across breakpoints confirmed; accessibility (contrast, keyboard nav, screen reader) considered; design system components reused, not one-offs |
 
 4. **Testing plan:** identify which logic needs unit test coverage, list the manual/integration test cases (including the edge cases already surfaced in Step 1's error-handling taxonomy item and any domain-specific regression case from point 3), and confirm there's a clear way to verify the result against Step 1's acceptance criteria. Test work that's substantial enough to stand alone becomes its own task in point 6.
+
+   **Scale target with a number and a way to measure it** (existing benchmark, load script, query plan, timing assertion) → one case names it, same what-runs / what-passing-looks-like form as the rest. No way to measure → say so here, one fragment: Step 3.4's diff scan is then the only check, and the user learns that now rather than at the PR.
 
    **Listed to be run, not to be filed.** Step 3 executes this set — its point 4 per task, its point 8 as a whole before the gate — so each case states what gets run and what passing looks like, and names the task(s) it covers. A case mapped to no task means a missing task or a case that doesn't belong here; a task covered by no case means Step 3.4 falls back to the repo's own checks, which is a weaker verdict — decide now whether that's acceptable, rather than discovering it mid-implementation.
 
@@ -257,7 +262,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 
 8. **Constitution check:** `.breadcrumbs/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here and check the *whole* plan against it — approach, domain checks, testing, rollout, tasks — before presenting. Runs last on purpose: the rules it holds ("retries carry an idempotency key," "migrations must be reversible") match content that doesn't exist until points 3-5. Conflict → same handling as the point-2 tripwire, resolve before continuing. No file → nothing to check, skip silently. Lite mode skips Step 2 but *not* this check — it runs inline at the collapsed Step 1+2 gate instead (see "Lite mode" in `Skill.md`), because these rules are repo-wide and don't scale with story size.
 
-9. File exists → one pass, writing: story type, design depth, HLD/LLD notes, architecture decisions, **Risks/Unknowns** (point 2), domain-check outcomes, testing plan, rollout/rollback notes, Flow, **Sequencing** (point 6), Task Checklist — each only where it applied. Risks and Sequencing are the two most expensive things to re-derive on resume; they don't get left in chat. No file → stays in chat.
+9. File exists → one pass, writing: story type, design depth, HLD/LLD notes, architecture decisions, **Risks/Unknowns** (point 2), domain-check outcomes, scale-target outcome (point 3), testing plan, rollout/rollback notes, Flow, **Sequencing** (point 6), Task Checklist — each only where it applied. Risks and Sequencing are the two most expensive things to re-derive on resume; they don't get left in chat. No file → stays in chat.
 10. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
 
 ---
@@ -266,12 +271,13 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 
 1. Work the Task Checklist one task at a time.
 2. **Don't ask the user mid-task.** Use best judgment. Genuine judgment call (not mechanical) → log in Task Log's "Why." Changes what was agreed (contradicts plan, needs a scope decision) → not a solo call — log under Scope Changes, flag immediately.
-3. Apply `ponytail` for how code gets written: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Exceptions still apply — never simplify away input validation, error handling, security, accessibility.
+3. Apply `ponytail` for how code gets written: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Exceptions still apply — never simplify away input validation, error handling, security, accessibility, or holding the story's scale target (Step 1): "simplest thing that works" means works at that scale, not on the dev fixture. A target of "current scale assumed" still means: don't make the path worse than it is today.
 4. **Verify before checking the task off.** A task isn't done because the code is written — it's done when something demonstrates it works. This is the step that makes the Task Log a record of what was *proven*, not only what was decided.
    - Run the cases Step 2.4's testing plan mapped to this task (lite → the check named at the collapsed gate). Nothing mapped to it → run the repo's own fast checks over what you touched (the existing test file, typecheck, lint — whatever a contributor runs locally) and name which.
    - Genuinely nothing executable (copy change, doc edit) → say so, plus what you inspected instead. That's a valid verdict; silence isn't.
    - Fails → not a checkoff. Fix, re-run. Still fails and the cause is the plan rather than the code → that's the Mid-flight break in point 7, not a task checked off with a caveat attached.
-   - **Self-review, same pass, before presenting:** re-read your own diff against the task's Why and the plan's approach — leftover scaffolding, a TODO standing in for the fix, a temporary workaround where the root cause was the point, an abstraction the task never asked for. Found something → fix it now; don't present it and wait to be told. Mirror of the manual-edit review in point 5, pointed at your own output.
+   - **Self-review, same pass, before presenting:** re-read your own diff against the task's Why and the plan's approach — leftover scaffolding, a TODO standing in for the fix, a temporary workaround where the root cause was the point, an abstraction the task never asked for. Found something → fix it now; don't present it and wait to be told.
+   - **Scale scan, same pass:** read the diff against the scale target for the patterns that break under growth — a query or network call per item of a collection that grows with data, an unbounded load into memory, a new query path with no pagination or index, synchronous work added to a hot path. Found, trivial, inside the task's scope → fix now, note it in `Verified:`. Found and not trivial, or the diff plainly can't hold the target → **not a checkoff**: that's the perf regression trigger in point 7. Nothing found → say nothing extra; the scan is silent when clean. Mirror of the manual-edit review in point 5, pointed at your own output.
    - Outcome carries into the Task Log (point 5) as `Verified:` — what ran, what it showed. That field is where Step 4's **Test** section comes from, so "no coverage found" in a PR draft can only mean this step reported it, never that nobody looked.
 5. After each task — file exists → append Task Log entry (`Verified:` from point 4 included, all three forms), check it off, same write, trip marker. Either way: tell the user what was done, next task without waiting unless interjected. Genuine judgment call → full What/Why block; mechanical → single checklist line; user edited the file by hand (per the standing manual-edit review) → checklist line + one-line `Check:` verdict, same review that's already shown in chat, logged here too. Edited file isn't on the story's planned Flow (from Step 2.6) → say so explicitly before the correctness verdict ("that file's outside this story's planned Flow — [reason if evident]"), one line, non-blocking; still record the `Check:` verdict either way (`context-template.md` has all three forms). Quote whichever form was written, don't restate. No file, no trigger yet → just narrate progress in chat, including the manual-edit check and any Flow warning.
 
@@ -305,9 +311,9 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
    Scope change / mid-flight fix mid-task → still one commit for the task once it lands, type reflects what actually shipped (e.g. a task that started as `feat` but the scope change made it fix a bug too → `fix` if that's now the dominant change).
 
    Before running `git commit`, check the header with `validate-commit-message.mjs` — deterministic, cheaper and more reliable than eyeballing the regex. Resolve the script per "Validator scripts" in `context-file-mechanics.md`; not found → check by hand against the table above, don't block on it.
-7. Test fails / owner invalidates an assumption / scope changes mid-flight → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file.
+7. Test fails / owner invalidates an assumption / scope changes mid-flight / **perf or scale regression surfaces** (a planned case shows a slowdown, or point 4's scan finds a pattern that won't hold at the scale target) → Mid-flight break trigger (`Skill.md`) applies. Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update relevant Assumptions/Plan, adjust Task Checklist. Continue in the same file. Perf case: tell the user immediately, in one line — what regressed, against which target, what it would take to hold it — before fixing or working around it. Before/After in the entry names the target and the pattern that broke it. The regression is the user's call to absorb or fix; it's never a silent fix, and never a silent ship.
 8. **Gate:** every task checked off → **run the whole planned test set now**, not just point 4's per-task checks: every case Step 2.4 listed (lite → the check named at the collapsed gate), plus the repo's own suite over what the story touched. Per-task verification proves each task in isolation; this proves they compose — the failure it exists to catch is task 5 breaking what task 2 established, which no per-task run can see.
-   - Green → summarize what was built *and what proved it* (one line: cases run + outcome), stop, wait for confirmation before PR (`step4-pr.md`).
+   - Green → summarize what was built *and what proved it* (one line: cases run + outcome), plus the scale target it holds and whether that was measured or only scanned (one fragment), stop, wait for confirmation before PR (`step4-pr.md`).
    - Red → not a gate to pass with a note attached. Fix, re-run; cause is the plan rather than the code → point 7's Mid-flight break. Never present a story as ready with a known-failing case.
    - Nothing runnable for the whole story → say that explicitly at the gate, with what was checked instead. Goes to the user as a fact about the story, not as a silence.
 
@@ -322,7 +328,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 3. Fixed section set, same five names regardless of type — **What, Why, Test, Rollback, Dependencies.** No type-varying sections anymore. Bias toward fewer: include a section only if it earns its place for a reviewer, omit rather than pad. File exists → pull content from it, don't re-summarize; no file → derive the same from the conversation.
    - **What** — always. The change, as plainly as possible. ← Task Log "What" entries, concatenated.
    - **Why** — always, unless it'd just restate What (trivial copy/config fix) — then drop it. ← Task Log "Why" entries, only where they add something What didn't.
-   - **Test** — what actually verified it, *with the outcome*: the cases run at Step 3.4/3.8 and what they showed, manual repro steps, or "nothing runnable" + what was inspected instead. Skip only when genuinely nothing to verify. ← Task Log `Verified:` lines and the Step 3 gate's full run — **not** the Plan's testing notes, which say what was intended; a reviewer reading "unit tests for the retry path" needs to know they ran, not that they were planned. Verification reported none → say that, don't invent.
+   - **Test** — what actually verified it, *with the outcome*: the cases run at Step 3.4/3.8 and what they showed, manual repro steps, or "nothing runnable" + what was inspected instead. Skip only when genuinely nothing to verify. ← Task Log `Verified:` lines and the Step 3 gate's full run — **not** the Plan's testing notes, which say what was intended; a reviewer reading "unit tests for the retry path" needs to know they ran, not that they were planned. Verification reported none → say that, don't invent. Scale target stated at Step 1 → one fragment here: the target, and whether a case measured it or Step 3.4 only scanned for it — the reviewer should know what scale this was sized for without opening the ticket.
    - **Rollback** — only if reverting isn't a plain revert (migration, feature flag, external state, data backfill). ← Plan/Scope Changes, only where flagged.
    - **Dependencies** — only if this PR depends on or blocks something else, including sitting on top of another unmerged branch. ← Assumptions/Plan, only where flagged; branch dependency ← `git merge-base HEAD <default-branch>` isn't `<default-branch>`'s tip → this branch is stacked, name the base branch, note it needs merging first.
    - **What changed since last PR** (later-update case only) ← Scope Changes dated after the last PR Summary write.
@@ -384,6 +390,7 @@ Status: understanding | planning | implementing | pr-ready | done
 
 ## Understanding Summary
 <Claude's restated understanding, confirmed by user on <date>>
+Scale target: <volume / rate / latency budget the story is sized for — or "none stated — current scale assumed". Step 2 sizes the plan against it, Step 3.4 judges the diff by it.>
 
 ## Clarifying Q&A
 - Q: ... — A: ...
@@ -398,7 +405,7 @@ Status: understanding | planning | implementing | pr-ready | done
 Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
 <approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
 <architecture decision(s): chosen option — why, rejected option(s) — why not. Only where 2+ valid approaches existed.>
-<domain-check outcomes / testing plan / rollout+rollback notes — only the ones that applied, one fragment each.>
+<domain-check outcomes / scale-target outcome (holds — how; or open risk) / testing plan / rollout+rollback notes — only the ones that applied, one fragment each.>
 
 ### Risks / Unknowns
 - <implementation risk — unfamiliar code, possible breakage, needs a spike> — status: open | resolved: <how>
