@@ -22,6 +22,7 @@ Status: understanding | planning | implementing | pr-ready | done
 
 ## Understanding Summary
 <Claude's restated understanding, confirmed by user on <date>>
+Scale target: <volume / rate / latency budget the story is sized for — or "none stated — current scale assumed". Step 2 sizes the plan against it, Step 3.4 judges the diff by it.>
 
 ## Clarifying Q&A
 - Q: ... — A: ...

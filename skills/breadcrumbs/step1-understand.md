@@ -10,7 +10,8 @@
    - API/contract boundaries
    - Auth/permissions
    - Error handling & edge cases: error states/messages, loading/empty/success states, empty input/network failure/permission denied
-   - Performance/scale, security/compliance requirements, device/browser/platform requirements
+   - **Scale target:** expected data volume, request rate/concurrency, latency budget — the numbers the implementation is sized for. Story states one → record verbatim. Silent → Material only when the change sits on a data- or request-dependent path (new query, loop over user data, hot endpoint); otherwise Cosmetic → assume "none stated — current scale assumed," log per 1.3. Not a mandate to optimize: sized-for-current-scale is a legitimate answer, *not knowing* is the failure. Step 2 sizes the plan against this line, Step 3.4 judges the diff by it.
+   - Security/compliance requirements, device/browser/platform requirements
    - i18n/locale
    - Backward compatibility
    - Existing pattern to follow, or net-new
@@ -25,6 +26,6 @@
 3. User can't answer either (owner unavailable / genuinely undecided) → don't block. Log under Assumptions w/ reasoning, mark `unconfirmed`. Tell the user it needs owner confirmation before final; proceed anyway.
 4. Classify story type now (table in Step 2.1 of `step2-plan.md`, don't wait for Step 2). `Bug fix` / `Copy/config/content change` = **lite**; everything else = **full**. State the mode, one line.
 5. **Tag every open question/assumption**: Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, API/contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count — **not** step 4's type/size classification — decides the gate below. 10-task "New feature/subsystem," all-Cosmetic → gate merges. "Small feature," one Material unknown → gate stays separate. Task/file count belongs to Step 2.7, not here.
-6. **Gate:** file exists → write Understanding Summary + Assumptions to it in one pass, trip marker. No file → present the same content in chat only.
+6. **Gate:** file exists → write Understanding Summary + Assumptions to it in one pass, trip marker. No file → present the same content in chat only. Understanding Summary always ends with one `Scale target:` line (point 2) — the assumed "current scale" form included, so a resuming session and the PR reviewer both know what the story was sized for.
    - **Zero Material unknowns** → fold Step 2 in: do Step 2's work silently (read `step2-plan.md`), present Understanding Summary + Plan together, one combined confirmation, both quoted verbatim. Regardless of story type/task count.
    - **Any Material unknown remains** (even `unconfirmed`) → summary alone, quoted verbatim, stop. No Step 2 until confirmed.
