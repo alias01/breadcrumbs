@@ -187,6 +187,30 @@ it is *not* fixed by rewording the pointers.
 **Partial:** gates and lite-mode rules hold but plan depth is thin. That's the designed degradation,
 not a failure — record it and decide per platform whether the token saving is worth it.
 
+## 12. Scale target — captured at Step 1, a regression against it is a break, not a checkoff
+
+**Prompt A:** paste a small-feature story that adds a data-dependent path but says nothing about scale, e.g. "show each customer's last five orders on the admin customer list."
+
+**Expect (Step 1):**
+- The taxonomy scan raises the scale target as **Material** (new query on a list path), asks one question — roughly "how many customers does this list page render, and is there a latency budget?" — not a generic "any performance requirements?"
+- Answered or not, the Understanding Summary ends with one `Scale target:` line. Unanswered → `none stated — current scale assumed`, logged `unconfirmed`, said out loud per the stop rule. A summary with no such line has regressed.
+
+**Expect (Step 2):**
+- The approach carries one fragment saying how the plan holds at that target ("one batched query for the page's customer ids, not one per row").
+- Testing plan either names a measurable case (query count assertion, timing) or says in one fragment that nothing can measure it and Step 3.4's scan is the only check.
+- **No** separate performance domain row, no benchmark task added on its own initiative — this is sizing, not optimizing.
+
+**Prompt B (Step 3):** let the implementation of the data-fetch task land as a per-customer query inside the render loop (or hand-edit it into that shape).
+
+**Expect:**
+- Step 3.4's scale scan names the pattern (query per item of a collection that grows with data) before the task is checked off.
+- Trivial to fix inside the task → fixed, noted in `Verified:`. Not trivial, or the target genuinely can't be held → **not checked off**: one line to the user first — what regressed, against which target, what it would take to hold — then a Scope Changes entry whose Before/After names the target and the pattern. Context file created now if none existed (mid-flight break); lite would escalate to full here.
+- Gate summary and the PR's **Test** section both name the target and say whether it was measured or only scanned.
+
+**Contrast check:** a copy/config story (lite) → no scale question asked, `Scale target: none stated — current scale assumed` appears without ceremony, Step 2's check never runs, Step 3.4's scan still runs and stays silent on a clean diff. A lite story that gets a scale question, or a full story whose PR omits the target, are both regressions — in opposite directions.
+
+**The failure this exists to catch:** the pre-change skill mentioned performance in three places and enforced it in none — ponytail's "simplest thing that works" could ship an N+1 loop that works on the dev fixture, and no trigger surfaced it. The scan is what makes "let me know when it hurts performance" a rule rather than a hope.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
@@ -195,4 +219,5 @@ not a failure — record it and decide per platform whether the token saving is 
 - No task checked off without a stated verification outcome, in chat and (file exists) as a `Verified:` line.
 - Step 3's gate never passes with a known-failing case — fixed and re-run, or escalated as a Mid-flight break.
 - Step 4's **Test** section reports what *ran*, never what was planned.
+- Every Understanding Summary ends with a `Scale target:` line; a perf/scale regression found at Step 3.4 is told to the user before it is fixed or shipped, never absorbed silently.
 - Every commit header passes `node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`.
