@@ -37,7 +37,7 @@ Scale target: <volume / rate / latency budget the story is sized for — or "non
 Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
 <approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
 <architecture decision(s): chosen option — why, rejected option(s) — why not. Only where 2+ valid approaches existed.>
-<domain-check outcomes / testing plan / rollout+rollback notes — only the ones that applied, one fragment each.>
+<domain-check outcomes / scale-target outcome (holds — how; or open risk) / testing plan / rollout+rollback notes — only the ones that applied, one fragment each.>
 
 ### Risks / Unknowns
 - <implementation risk — unfamiliar code, possible breakage, needs a spike> — status: open | resolved: <how>
