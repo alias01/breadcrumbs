@@ -150,6 +150,70 @@ That matters most for the lean profile. Scenario 11 defines the check and the th
 
 Worth running on one platform before relying on it anywhere. Cursor is the fastest to test.
 
+**Partial data point, 2026-09-04** (see entry below): a scope-change-heavy story was run once
+each on Sonnet and Haiku, both reading the full step files directly (not through lean
+pointers), so this doesn't touch the lean-profile question above — that stays open, Cursor
+still untested. What it does cover: whether the gates/validators/scope-change mechanics hold
+across model tiers when the reference files *are* read. They did. See below for where they
+didn't.
+
+---
+
+## 2026-09-04 — First live-model run: Sonnet vs Haiku, same scope-change story
+
+**Setup:** same fictitious story (CSV export, small feature, full mode) run twice, once
+narrated by Sonnet and once by a Haiku subagent given the same skill files and told to
+self-confirm gates (no real second party). Both hit the identical 3 mid-flight scope changes
+in the same order: two additions (date-range filter, rate limiting), one removal (drop CSV for
+JSON) landing after three other tasks had already built on the CSV path. Haiku's transcript
+and artifacts were independently re-checked (git log, context-file validator, commit-message
+validator) rather than taken from its own self-report.
+
+**What held on both models:**
+- Commit-message validator: 6/6 on Haiku, 5/6 on Sonnet — mechanically enforced, mechanically
+  followed.
+- `validate-context-file.mjs`: pass on both.
+- Context file created at the first scope change (mid-flight break trigger), not before.
+- All 3 scope changes logged as structured entries (date/trigger/before/after/affected/why).
+- The CSV-removal judgment call — Step 3.6 says a clean `git revert` only works when nothing
+  later depends on the reverted commit — was reasoned out **independently and identically** on
+  both models: not a clean revert (3 later tasks depend on the CSV code), handle as a
+  replacement task instead, keep the CSV history in the Task Log rather than deleting it. This
+  is the least-scripted judgment call in the whole scenario and it converged anyway.
+
+**What drifted — always in the parts with no validator:**
+- Haiku's PR draft nested 5 sub-bullets under one Test bullet — step4-pr.md is explicit, "no
+  sub-bullets."
+- Its Out of scope section ran 4 bullets against a stated cap of 2.
+- It included `**Rollback:** Not needed` — exactly the empty-earning-its-place section step4-pr.md
+  says to omit rather than pad (a new endpoint with no revert complexity has no rollback story
+  to tell).
+- Its Task Checklist left Tasks 1/2 checked off with no in-checklist marker that they'd been
+  superseded — the reasoning survived in the Task Log and Scope Changes sections, but the
+  checklist itself doesn't carry it the way scenario 5's guardrail intends (a resuming session
+  glancing at just the checklist wouldn't see it).
+- Haiku's own closing self-report claimed "no material deviations detected." All four points
+  above contradict that. **Don't trust a model's self-audit of its own fidelity to the skill —
+  verify against the actual files and validators, every time**, same as this entry did.
+
+**Resource cost — counter to the obvious assumption:** Haiku spent ~99K tokens and 70 tool
+calls (~7m52s) on a story Sonnet completed in roughly a third of the tokens and far fewer tool
+calls. "Smaller/cheaper model" was not "cheaper to run" for this skill in this trial — it took
+more exploration, not less, to reach a comparable (in places more elaborate than necessary —
+it hand-wrote a raw `http` server where a thin stub would do) result.
+
+**n=1 each, not a benchmark.** Both models had the full step files read directly, so this says
+nothing about the lean-pointer-skipping failure mode Scenario 11 is actually worried about —
+that's still open, per the note above. What this run does add: the tiered design (gates/format
+inlined or validator-enforced; judgment calls left as prose) held up exactly as intended on a
+second, weaker model — the enforced tier stayed enforced, the unenforced tier drifted first at
+Step 4, the one gate with no script watching it.
+
+**Follow-up worth doing:** a lightweight structural check for Step 4 output (bullet count per
+section against the stated caps, no nested sub-bullets, empty/near-empty optional sections)
+would close the gap the same way `Verified:` closed the checkoff gap. Not written yet — flagging
+per this file's own rule, expensive-to-rediscover facts go here.
+
 ---
 
 ## Open — review follow-ups, 2026-09-04
