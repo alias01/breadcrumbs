@@ -49,7 +49,7 @@ Auto-detected at Step 1.4: `Bug fix` / `Copy/config/content change` → lite; ev
 
 - Step 1 gate + all of Step 2 collapse into one message: approach ("no design" depth) + task list (max 2) + the check that will prove it works + the `Scale target:` line, ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
 - **Two Step 2 checks survive the collapse**, inline:
-  - `Bug fix` → one fragment each: root cause (not the symptom), repro confirmed, same defect looked for elsewhere, regression case named.
+  - `Bug fix` → one fragment each: root cause (not the symptom), repro confirmed, same defect looked for elsewhere, regression case named. **Regression test first, red; then the fix, green** — that run is the repro. Never stash, revert or copy a fix aside to prove a test fails.
   - Either type → constitution check: `.breadcrumbs/constitution.md` exists → check the plan against its `status: active` lines; conflict → surface, resolve before continuing. No file → skip silently.
 - Step 3: one wrap-up message after all tasks, not per-task. **Verification isn't collapsed** — 3.4 per task, 3.8 before the wrap-up. One commit per task, `<type>(<scope>): <imperative summary>` (`fix`/`feat`/`test`/`docs`/`refactor`/`chore`), checked with `scripts/validate-commit-message.mjs` if present — don't search for it.
 - Step 4: PR draft as usual.
@@ -218,7 +218,7 @@ Lighter depth but the story genuinely carries the risk (a "small feature" writin
    | API/backend | Request/response contract defined (fields, types, status codes) — feeds point 2's cross-team contract; auth/permission requirements clear; rate limiting/throttling; idempotency (safe to retry); versioning impact on existing consumers; expected load/concurrency where it changes the design |
    | Mobile app | Offline behavior; iOS vs Android differences; app store review implications if UI/permissions change; battery/data impact if polling or background work |
    | Database/schema | Migration backward-compatible during deploy, reversible or rollback plan — feeds point 5; impact on existing queries/indexes; backfill for existing records; data volume at expected scale |
-   | Bug fix (via lite→full escalation; the lite gate runs the same four inline) | Root cause understood, not the symptom; repro confirmed; same defect looked for elsewhere before patching one spot; regression test added — feeds point 4 |
+   | Bug fix (via lite→full escalation; the lite gate runs the same four inline) | Root cause understood, not the symptom; repro confirmed; same defect looked for elsewhere before patching one spot; regression test added — written first and seen red before the fix, never proved by stashing or reverting the fix — feeds point 4 |
    | Infra/DevOps | Uptime/downtime impact; monitoring/alerting for new failure modes; cost impact (new resources, scaling); scriptable/repeatable, not a manual one-off |
    | Data pipeline/ETL | Source data reliability/format assumptions validated; failure handling for a batch failing midway; reprocessing/backfill strategy; downstream consumers identified |
    | Third-party integration | Rate limits and pricing known; failure/downtime handling; auth/credential management; webhook vs polling decided |
