@@ -23,7 +23,7 @@ No re-reading the diff, no guessing at intent — the trail just picks up where 
 | Mid-flight scope change | Buried in scrollback, easy to lose | Logged with before/after/why the moment it happens |
 | Switching AI tools or machines | Starts from zero | Any platform reading the file picks up identically |
 | "Why is this written this way?" | Reconstructed from memory of a diff | Task Log's original reasoning, not a retrofit |
-| PR description | Written after the fact from what's left | Pulled straight from the trail — What/Why/Test/Rollback/Dependencies |
+| PR description | Written after the fact from what's left | Pulled straight from the trail — What/Why/Test/Rollback/Dependencies, plus Reviewer focus / Out of scope when earned |
 
 ## How it works
 
