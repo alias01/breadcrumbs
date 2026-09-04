@@ -250,6 +250,39 @@ Step 3.4 never asked for and agents did anyway.
 skill descriptions — ~15k per call on the Cursor setup observed) is outside the skill's
 reach; the README's install section now says where that cost comes from and how to trim it.
 
+**Measured, same day — the rule did not pay for itself on a lite story.** Same seeded
+double-submit bug, same prompt (gates explicitly waived), `claude -p` on claude-sonnet-5,
+two runs each. Billed input = every call's input + cache read + cache write, the number a
+usage dashboard shows:
+
+| Variant | Calls | Billed input | Peak context | Wall |
+|---|---|---|---|---|
+| No breadcrumbs | 15 / 15 | 565k / 637k | 60k / 63k | 39s / 51s |
+| Router before this change | 21 / 16 | 851k / 666k | 69k / 64k | 61s / 50s |
+| Router with Output budget | 21 / 25 | 1,013k / 1,359k | 71k / 73k | 66s / 90s |
+
+What the transcripts show:
+
+- **The fixed cost per call dominates.** The first call is ~44k before any story content
+  (harness system prompt + tool definitions; the router adds ~3k of that). Story content
+  never exceeded ~25k. Total ≈ calls × ~45k, so *call count* is the lever, not read size.
+- **Breadcrumbs adds calls, not bytes.** Every breadcrumbs run spent 1–5 calls on
+  `.breadcrumbs/context/` / `skills/` discovery, 2 on step-file reads, and the bug-fix
+  checks (repro confirmed, regression named) cost the new variant a stash/re-run cycle.
+  Those are the process working as designed; on a two-task story they are pure overhead.
+- **The read half of the rule was ignored.** 0 ranged reads in all six runs; the 900-line
+  form file was read whole every time, including by the router that says not to. The
+  test half was followed (`tail`, single-file runs) and saved ~1k per run — noise.
+- Cost was stable: $0.24–0.28 without, $0.28–0.49 with.
+
+**So:** the rule stays as intent, but it is prose that didn't hold, like the pre-validator
+`Verified:` line. Don't cite it as a saving. The honest pitch for breadcrumbs is
+resumability and the trail, paid for with ~15–100% more tokens on a small story; the
+token lever a user actually has is fewer calls (new chat per story, fewer discovery
+probes) and a smaller per-call base (MCP servers, always-on rules). Open: make the
+discovery probe one call (`ls .breadcrumbs/context/` only), and consider dropping the
+read-range clause rather than carrying a rule the model doesn't follow.
+
 ---
 
 ## Open — the behavioural half is unverified
