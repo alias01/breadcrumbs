@@ -125,14 +125,18 @@ files carry the detail that makes them work.
 `;
 
 const leanBody = `${readOnDemand}${routerBody(REF_DIR)}`;
-// What every target below except AGENTS.md gets, per --profile.
+// What every target below gets, per --profile.
 const body4 = PROFILE === "lean" ? leanBody : fullBody;
 
-// AGENTS.md — portable, instruction-only, no frontmatter. ALWAYS full, both
-// profiles: it's the fallback for any tool that can't read files on demand, and
-// the one place where the guarantee is worth the 13.6k. Everything else has a
-// file-read tool and a committed repo to resolve pointers against.
-write("AGENTS.md", `${banner}# ${name}\n\n${fullBody}\n`);
+// AGENTS.md — portable, instruction-only, no frontmatter. Follows --profile
+// like everything else. It used to stay full under both profiles as "the
+// fallback for tools that can't read files on demand" — but Cursor, Copilot's
+// coding agent, Codex, Amp and Jules all load AGENTS.md from the repo root
+// unconditionally AND have file-read tools, so a full AGENTS.md next to the
+// lean .cursor/rules/ file meant Cursor paid the whole 13.8k on every prompt,
+// story or not. A tool that loads it and ignores pointers is what
+// --profile=full is for. See docs/decisions.md, 2026-09-04.
+write("AGENTS.md", `${banner}# ${name}\n\n${body4}\n`);
 
 // Cursor — .mdc with frontmatter Cursor understands (agent-requested rule).
 // Pointers stay plain relative paths: Cursor's `@file` syntax pulls a file into
@@ -244,7 +248,7 @@ if (INSTALL) {
 
 console.log(`\nprofile: ${PROFILE}  (router ${Math.round(leanBody.length / 1000)}KB vs full ${Math.round(fullBody.length / 1000)}KB)`);
 if (PROFILE === "lean") {
-  console.log("  AGENTS.md stays full — the fallback for tools that can't read files on demand.");
+  console.log("  AGENTS.md is lean too — Cursor and Copilot load it on every prompt, so it must not carry the full text.");
   console.log("  Re-run with --profile=full to inline everything if a platform ignores the pointers.");
 }
 if (!INSTALL) {

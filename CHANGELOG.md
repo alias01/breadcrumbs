@@ -9,6 +9,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bu
 - **platforms:** drop Claude-only `Explore` wording from the shared investigation rule
 - **breadcrumbs:** investigation marker before every gate, counted lookup/graph-query caps, never open the graph report
 - **tests:** scenario 13 pins the routing down on lite, full, and no-graph repos
+- **platforms:** `AGENTS.md` follows `--profile` (lean by default) — Cursor and Copilot load it on every prompt, so the always-full copy was costing ~13.8k tokens per prompt next to the lean rule file
 
 ## [1.6.0] - 2026-08-28
 

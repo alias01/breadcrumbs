@@ -169,6 +169,26 @@ Validating it in the context file was considered and dropped: most stories never
 
 ---
 
+## 2026-09-04 — AGENTS.md follows the profile
+
+**Decision:** `AGENTS.md` is built from `--profile` like every other target — lean (router
+plus pointers) by default. Reverses the 2026-08-28 "stays full under both profiles" call.
+
+**Why:** the premise was "the fallback for any tool that can't read files on demand." The
+tools that actually load `AGENTS.md` from a repo root — Cursor, Copilot's coding agent,
+Codex, Amp, Jules — all have file-read tools, and Cursor and Copilot load it on *every*
+prompt with no trigger. So a repo carrying both the lean `.cursor/rules/breadcrumbs.mdc`
+and a full `AGENTS.md` paid ~13.8k tokens per prompt, story or not, for text the router
+already points at. That is most of the ~25k floor seen on trivial prompts in the usage
+data. The lean profile's whole justification was the per-turn cost on always-loaded
+targets; `AGENTS.md` was the biggest always-loaded target and the one exempted.
+
+**What's kept:** `--profile=full` still inlines everything, including `AGENTS.md`, for a
+tool that loads it and ignores pointers. That's the same escape hatch the other targets
+already had; nothing is lost that wasn't already a flag away.
+
+---
+
 ## Open — the behavioural half is unverified
 
 Everything verified so far is deterministic: validators, build guards, file sizes, TOML

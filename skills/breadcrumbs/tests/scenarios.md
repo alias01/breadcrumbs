@@ -164,7 +164,7 @@ if the agent actually reads the pointed-at files.
 - Every lean file still contains the gates, "never skip a gate", lite-mode rules, verification
   (3.4/3.8), Mid-flight break and User override — the tier that must survive a skipped read.
 - Every pointer reads `skills/breadcrumbs/<file>.md`; zero bare filenames.
-- `AGENTS.md` full under both profiles; `.windsurf/...` lean under both.
+- `AGENTS.md` follows the profile (lean by default — Cursor and Copilot load it on every prompt); `.windsurf/...` lean under both.
 - `.gemini/commands/breadcrumbs.toml` still parses as TOML (the body is embedded in a `"""` string,
   so a stray triple-quote would silently corrupt it).
 

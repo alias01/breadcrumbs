@@ -88,7 +88,7 @@ No package manager — copy the matching rule file from this repo into your proj
 
 ### Everything else
 
-Any tool that reads [`AGENTS.md`](AGENTS.md) from the project root picks up breadcrumbs with no setup — Codex, Amp, Jules, JetBrains Junie (once pointed at the file), and others.
+Any tool that reads [`AGENTS.md`](AGENTS.md) from the project root picks up breadcrumbs with no setup — Codex, Amp, Jules, JetBrains Junie (once pointed at the file), and others. Cursor and GitHub Copilot read it too, on every prompt, which is why it ships as the same lean router as their own rule files rather than a second, full copy.
 
 Works alongside the [ponytail](https://github.com/DietrichGebert/ponytail) skill for how code gets written during the Implement step — breadcrumbs owns the process and the trail, ponytail owns keeping the diff small.
 
@@ -113,7 +113,7 @@ node scripts/build-platforms.mjs --profile=full   # inline everything
 
 Lean is a real trade. A pointer is a soft instruction, and a weaker model may skip it. It's managed by what stays in the router — the four gates, "never skip a gate", lite-mode rules, the verification requirement and the context-file triggers are all inline, so a skipped reference read costs plan *depth*, not a gate. If a platform ignores the pointers outright, rebuild with `--profile=full`.
 
-Two files ignore the flag: [`AGENTS.md`](AGENTS.md) is always full (it's the fallback for tools that can't read files on demand), and `.windsurf/rules/breadcrumbs.md` is always lean (Windsurf enforces a 12,000-char cap and truncates past it silently — the build fails rather than ship a half-skill).
+One file ignores the flag: `.windsurf/rules/breadcrumbs.md` is always lean (Windsurf enforces a 12,000-char cap and truncates past it silently — the build fails rather than ship a half-skill). [`AGENTS.md`](AGENTS.md) used to be always full as a fallback for tools without file access; it now follows the flag, because Cursor and Copilot load it unconditionally on every prompt and a full copy there cost ~13.8k tokens per prompt for text the lean rule already points at.
 
 **Local Claude Code copy.** Claude Code loads skills from `~/.claude/skills/`, not from this repo, so edits here are invisible at runtime until that copy is refreshed. The build never touches it on its own — pass `--install` when you want it synced:
 
