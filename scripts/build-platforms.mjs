@@ -19,6 +19,7 @@ const REFERENCES = [
   "skills/breadcrumbs/step3-implement.md",
   "skills/breadcrumbs/step4-pr.md",
   "skills/breadcrumbs/context-template.md",
+  "skills/breadcrumbs/resume.md",
 ];
 
 function parseSkill(raw) {
@@ -41,17 +42,17 @@ const raw = readFileSync(SOURCE, "utf8");
 const { name, description, frontmatter, body } = parseSkill(raw);
 const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs — edit the source, then re-run the script. -->\n\n`;
 
-// SKILL.md points at the step files, context-file-mechanics.md, and
-// context-template.md, and expects Claude Code to Read each on demand (only
+// SKILL.md points at the step files, context-file-mechanics.md,
+// context-template.md and resume.md, and expects Claude Code to Read each on demand (only
 // when that gate is reached / first context-file write).
 //
 // Two shapes are built from that same source:
 //
 //   lean (default) — the router alone, reference files left as repo-relative
-//     pointers the agent reads at each gate. ~2.1k tokens instead of ~13.6k,
+//     pointers the agent reads at each gate. ~1.9k tokens instead of ~10.8k,
 //     and on the always-loaded targets (Copilot) that saving is per turn, for
 //     the whole session, whether or not a story is in play.
-//   full — everything inlined. ~13.6k tokens, but nothing depends on the agent
+//   full — everything inlined. ~10.8k tokens, but nothing depends on the agent
 //     choosing to follow a pointer.
 //
 // Lean is a real trade, not a free win: a pointer is a soft instruction, and a
@@ -115,6 +116,7 @@ repo root, **at the moment you reach that gate** — not up front:
 | Step 3 (implementing) | \`${REF_DIR}step3-implement.md\` |
 | Step 4 (PR) | \`${REF_DIR}step4-pr.md\` |
 | First context-file write | \`${REF_DIR}context-file-mechanics.md\` + \`${REF_DIR}context-template.md\` |
+| Resume (\`.breadcrumbs/context/\` non-empty) | \`${REF_DIR}resume.md\` |
 
 No file access, or the files aren't present → say so before the first gate rather
 than improvising a step's content. The rules below are the whole contract; the step
@@ -130,7 +132,7 @@ const body4 = PROFILE === "lean" ? leanBody : fullBody;
 
 // AGENTS.md — portable, instruction-only, no frontmatter. ALWAYS full, both
 // profiles: it's the fallback for any tool that can't read files on demand, and
-// the one place where the guarantee is worth the 13.6k. Everything else has a
+// the one place where the guarantee is worth the 10.8k. Everything else has a
 // file-read tool and a committed repo to resolve pointers against.
 write("AGENTS.md", `${banner}# ${name}\n\n${fullBody}\n`);
 
