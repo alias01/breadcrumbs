@@ -1,15 +1,15 @@
 # breadcrumbs context file — template & guardrails
 
-Read once per story, at file creation — whichever trigger fires it (see "The context file" in `SKILL.md`). Not needed again on resume — the file itself has everything by then — nor if no trigger ever fires.
+Read once per story, at file creation. Not on resume, not if no trigger fires.
 
 ## Content style
 
-Read by AI only (this session, a resumed session, another platform) — never the user. `SKILL.md`'s "Communication style" governs chat, not this. Every section: fragments, not sentences. Drop articles/connective words where meaning stays unambiguous. Abbreviate freely. Optimize for a resuming model re-deriving state fast, not human readability.
+Read by AI only — never the user. Fragments, not sentences. Drop articles/connectives where meaning stays unambiguous. Abbreviate freely. Optimize for a resuming model re-deriving state fast.
 
 - Prose: `Why: We added a mutex because there was a race condition between the two writers.`
 - Telegraphic: `Why: race condition (two writers) — added mutex.`
 
-Markdown structure (headers, lists, checkboxes) stays as-is — parsing scaffolding, not prose. Cutting it costs more to re-derive than it saves.
+Markdown structure (headers, lists, checkboxes) stays as-is — parsing scaffolding, not prose.
 
 ## File structure
 
@@ -21,8 +21,8 @@ Status: understanding | planning | implementing | pr-ready | done
 <verbatim paste>
 
 ## Understanding Summary
-<Claude's restated understanding, confirmed by user on <date>>
-Scale target: <volume / rate / latency budget the story is sized for — or "none stated — current scale assumed". Step 2 sizes the plan against it, Step 3.4 judges the diff by it.>
+<restated understanding, confirmed by user on <date>>
+Scale target: <volume / rate / latency budget the story is sized for — or "none stated — current scale assumed">
 
 ## Clarifying Q&A
 - Q: ... — A: ...
@@ -31,11 +31,11 @@ Scale target: <volume / rate / latency budget the story is sized for — or "non
 - <assumption> — reason: <why> — status: unconfirmed | confirmed by <who> on <date>
 
 ## Current Requirements
-<the story's requirements as they stand right now, amended in place as scope changes land — this is the "what's true today" view, kept short and current, never a history log>
+<requirements as they stand right now, amended in place as scope changes land — "what's true today," short, never a history log>
 
 ## Plan
 Story type: <bug fix | copy/config | small feature | refactor | new feature/subsystem | new service/integration | performance>
-<approach discussion, HLD/LLD notes if that depth applies, agreed on <date>>
+<approach, HLD/LLD notes if that depth applies, agreed on <date>>
 <architecture decision(s): chosen option — why, rejected option(s) — why not. Only where 2+ valid approaches existed.>
 <domain-check outcomes / scale-target outcome (holds — how; or open risk) / testing plan / rollout+rollback notes — only the ones that applied, one fragment each.>
 
@@ -43,10 +43,10 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 - <implementation risk — unfamiliar code, possible breakage, needs a spike> — status: open | resolved: <how>
 
 ### Sequencing
-<tasks with no shared dependency (safe to reorder/hand off); smallest independently shippable slice, if one exists. Omit section if neither applies.>
+<tasks with no shared dependency; smallest independently shippable slice, if one exists. Omit if neither applies.>
 
 ## Flow
-<ordered list of files/modules this story is expected to touch, derived from the task breakdown — e.g. "1. src/foo.ts (Task 1)  2. src/bar.ts (Task 2, 3)". Amended only via a Scope Change entry below, never edited in place.>
+<ordered list of files/modules this story is expected to touch, from the task breakdown — e.g. "1. src/foo.ts (Task 1)  2. src/bar.ts (Task 2, 3)". Amended only via a Scope Change entry, never edited in place.>
 
 ## Task Checklist
 - [x] Task 1 — <short description> — files: <list>
@@ -66,7 +66,7 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 - [x] Task 3 — <short description> — files: <list>
 - Check: <correct | issue found — one line, per the manual-edit review>
 - Verified: <as above>
-- Flow: <on plan | off plan — reason if evident. Only present when the edited file isn't on the story's Flow above.>
+- Flow: <on plan | off plan — reason if evident. Only when the edited file isn't on the story's Flow.>
 
 ## Scope Changes / Reimplementation
 ### <date> — <short label>
@@ -80,23 +80,19 @@ Story type: <bug fix | copy/config | small feature | refactor | new feature/subs
 - <gate> — waived by user on <date> — not confirmed: <what went unreviewed>
 
 ## PR Summary
-Last drafted: <date> — full text was shown in chat for the user to copy into GitHub/GitLab/Bitbucket, not duplicated here. Kept only as the anchor for diffing "what changed since last PR" on a later update.
+Last drafted: <date> — full text shown in chat, not duplicated here. Anchor for diffing "what changed since last PR" on a later update.
 ```
 
-Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, and a Risks/Unknowns entry's `status:` field: amended in place as they change. Everything else (Scope Changes, Task Log, Assumptions) = running record, add entries, never rewrite past ones. Split → resuming session sees both "what's true now" (Current Requirements) and "how we got here" (Scope Changes) without re-deriving one from the other.
+Append, never overwrite — except `Status`, Task Checklist checkboxes, Current Requirements, and a Risks/Unknowns entry's `status:`, amended in place. Everything else (Scope Changes, Task Log, Assumptions) is a running record: add entries, never rewrite past ones.
 
-Three Task Log forms — classification per Step 3.5, shown concretely in Task 1/2/3 above. No prose without a decision or a check behind it.
-
-`Verified:` — on all three forms, no exceptions (Step 3.4). What ran and what it showed, one fragment. An entry without it reads to a resuming session as a task nobody proved, which is exactly what it is. "Nothing runnable" is a legitimate value; an absent line isn't.
-
-`Flow` — defined Step 2.6, flagged when violated per Step 3.5. Recorded as a `Flow` line here (Task 3 example above).
+Three Task Log forms — classification per Step 3.5, shown as Task 1/2/3 above. `Verified:` on all three, no exceptions (Step 3.4): what ran and what it showed, one fragment. "Nothing runnable" is a legitimate value; an absent line isn't.
 
 ## What NOT to do
 
-- Don't skip a gate on your own initiative, next step "obvious" or not. Applies in lite mode too. Only an explicit user waiver skips one — see "User override" in `SKILL.md`, and log it under `Gate Waivers` below.
-- Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface those immediately.
-- Don't check a task off without a `Verified:` line, and don't pass the Step 3 gate with a known-failing case. "Tests exist" isn't verification; "tests ran, here's the outcome" is.
+- Don't skip a gate on your own initiative, lite mode included. Only an explicit user waiver skips one ("User override" in `SKILL.md`) — log it under `Gate Waivers`.
+- Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface immediately.
+- Don't check a task off without a `Verified:` line; don't pass the Step 3 gate with a known-failing case. "Tests exist" isn't verification; "tests ran, here's the outcome" is.
 - Don't overwrite past entries — running record, not a snapshot.
 - Don't commit the context file or reference it in the PR diff.
 - Don't delete it unless the user confirms the PR merged.
-- Don't let a lite-mode story silently absorb a scope change or failed test — that's what the escalation trigger (see "The context file" in `SKILL.md`) is for. Escalate to full mode rather than tracking it in chat memory alone.
+- Don't let a lite-mode story silently absorb a scope change or failed test — escalate to full (Mid-flight break trigger in `SKILL.md`) rather than tracking it in chat memory alone.

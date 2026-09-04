@@ -156,7 +156,7 @@ revisiting — not more pointer wording.
 ## 11. Lean profile — pointers get followed, or they don't
 
 Cursor, Cline, Kiro, Copilot and Gemini ship the router with repo-relative pointers instead of the
-inlined text (~2.4k tokens instead of ~13.8k). This scenario exists because that saving is only real
+inlined text (~1.9k tokens instead of ~10.8k). This scenario exists because that saving is only real
 if the agent actually reads the pointed-at files.
 
 **Build checks (deterministic):**
@@ -178,6 +178,7 @@ Paste a small-feature story and watch whether the reference file is read at each
 | Step 3 | `skills/breadcrumbs/step3-implement.md` |
 | Step 4 | `skills/breadcrumbs/step4-pr.md` |
 | First file write | `context-file-mechanics.md` + `context-template.md` |
+| Resume with files present | `skills/breadcrumbs/resume.md` |
 
 **Pass:** the files are read at the gate, and behaviour matches the same story run on Claude Code.
 

@@ -109,7 +109,7 @@ node scripts/build-platforms.mjs                  # lean (default)
 node scripts/build-platforms.mjs --profile=full   # inline everything
 ```
 
-*Lean* ships the router and leaves the step files as repo-relative pointers the agent reads at each gate — ~2.4k tokens per platform file instead of ~13.8k. *Full* inlines everything: bigger, but nothing depends on the agent choosing to follow a pointer.
+*Lean* ships the router and leaves the step files as repo-relative pointers the agent reads at each gate — ~1.9k tokens per platform file instead of ~10.8k. *Full* inlines everything: bigger, but nothing depends on the agent choosing to follow a pointer.
 
 Lean is a real trade. A pointer is a soft instruction, and a weaker model may skip it. It's managed by what stays in the router — the four gates, "never skip a gate", lite-mode rules, the verification requirement and the context-file triggers are all inline, so a skipped reference read costs plan *depth*, not a gate. If a platform ignores the pointers outright, rebuild with `--profile=full`.
 

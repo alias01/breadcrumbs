@@ -169,6 +169,56 @@ Validating it in the context file was considered and dropped: most stories never
 
 ---
 
+## 2026-09-04 — Token pass: rules stay, rationale moves here
+
+**Decision:** the skill files carry rules and the minimum context to apply them; the *why*
+behind a rule lives in this file. Measured with a BPE tokenizer (gpt-tokenizer, cl100k):
+
+| Path (files read) | Before | After |
+|---|---|---|
+| All skill files | 14,497 | 10,751 |
+| Lite story, no file (SKILL + step1 + step3 + step4) | 7,436 | 5,495 |
+| Lite story as previously written (+ step2, pulled by 1.4's pointer) | 10,442 | 5,495 |
+| Full story, no file (SKILL + 4 steps) | 10,442 | 7,728 |
+| Full story + context file (+ mechanics + template) | 14,497 | 10,308 |
+| Resume (SKILL + mechanics for its Resuming section) | 4,765 | 2,048 |
+| Frontmatter description (every Claude Code session) | 171 | 135 |
+
+**What moved, and where it was restated:**
+
+- **Step 1.4 pointed at Step 2.1's table to classify.** Every story, lite included, opened
+  the largest file in the skill at Step 1. The seven type names now sit inline in 1.4.
+- **The constitution check pointed at `context-file-mechanics.md`.** A full-mode story with
+  no file trigger read 2.5k tokens of file mechanics to learn "active lines, check the plan."
+  Step 2.8 and the lite gate now say that themselves; the mechanics file keeps creation,
+  format and retirement.
+- **Resuming lived inside `context-file-mechanics.md`.** Every "continue" loaded the whole
+  file for one section. It's `resume.md` now, ~440 tokens, in the build's REFERENCES.
+- **Scale target** was explained in eleven places with the "current scale assumed is
+  legitimate, not knowing is the failure" rationale repeated four times. Defined once in
+  Step 1; the other sites name it and say what they do with it.
+- **"Never skip a gate"** appeared four times, the constitution's "repo-wide rules don't
+  scale with story size" three times, the bug-fix four checks twice with reasons.
+- **Rationale prose** — "Why the writes pay off," "Per-task, not per-story, on purpose,"
+  "Same shape and reason as the trip marker," "Silent assumption is the failure mode this
+  guards against," the vocabulary-load explanation for not opening `GRAPH_REPORT.md`, the
+  commit-message example. All rules they justified are still in place; the justifications
+  are this file's job. Earlier entries above already hold most of them.
+- **Lite gate now names the `Scale target:` line** — one of the open follow-ups below, four
+  words, closed while the section was open.
+
+**Not done, deliberately:**
+
+- Step 2's domain table (~500 tokens) stays inline rather than behind a depth-gated pointer.
+  The lean-profile entry above is right that pointers are soft; two indirections were added
+  (resume, constitution) only where the old pointer caused a *wrong* read, not a large one.
+- The PR template and example both stay. The example is the cheapest way to fix output
+  shape; cutting it would cost more in bad drafts than it saves in tokens.
+- The telegraphic style stays. `→` and `—` cost a token each but the fragments they join
+  cost fewer than the sentences they replace.
+
+---
+
 ## Open — the behavioural half is unverified
 
 Everything verified so far is deterministic: validators, build guards, file sizes, TOML

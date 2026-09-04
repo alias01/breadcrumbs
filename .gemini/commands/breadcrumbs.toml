@@ -1,4 +1,4 @@
-description = "Run a user story from a pasted ticket all the way to a PR-ready implementation through four gated steps — clarify, plan, implement, PR — while keeping a persistent context file so the work can resume in a different session or even a different AI platform without losing decisions, assumptions, or progress. Use this whenever a user pastes a user story, ticket, or feature request and wants it implemented, whenever they say \"continue\" or \"resume\" on an existing story, whenever scope changes or a test fails mid-implementation and the story needs to be reworked, and whenever they ask for a PR or PR summary. Also trigger if the user says a story got too big to explain, or asks why a past decision was made. Works alongside the ponytail skill for the implementation step."
+description = "Run a user story from a pasted ticket to a PR-ready implementation through four gated steps — clarify, plan, implement, PR — keeping a persistent context file so the work resumes in another session or AI platform without losing decisions, assumptions, or progress. Trigger when a user pastes a story, ticket, or feature request to implement; says \"continue\" or \"resume\" on a story; changes scope or hits a failing test mid-implementation; asks for a PR or PR summary; says a story got too big; or asks why a past decision was made. Works alongside the ponytail skill for implementation."
 
 prompt = """
 <!-- GENERATED from skills/breadcrumbs/SKILL.md by scripts/build-platforms.mjs — edit the source, then re-run the script. -->
@@ -16,6 +16,7 @@ repo root, **at the moment you reach that gate** — not up front:
 | Step 3 (implementing) | `skills/breadcrumbs/step3-implement.md` |
 | Step 4 (PR) | `skills/breadcrumbs/step4-pr.md` |
 | First context-file write | `skills/breadcrumbs/context-file-mechanics.md` + `skills/breadcrumbs/context-template.md` |
+| Resume (`.breadcrumbs/context/` non-empty) | `skills/breadcrumbs/resume.md` |
 
 No file access, or the files aren't present → say so before the first gate rather
 than improvising a step's content. The rules below are the whole contract; the step
@@ -25,66 +26,58 @@ files carry the detail that makes them work.
 
 ## Core Philosophy
 
-A story never survives reality unchanged: assumptions filled in, scope grows, tests surface edge cases. Fine in isolation → breaks down when nobody (future session, different AI) can reconstruct what was decided, why, what's left.
+A story never survives reality unchanged: assumptions filled in, scope grows, tests surface edge cases. What breaks is that nobody later (next session, different AI) can reconstruct what was decided, why, what's left.
 
-Four gates (Understand → Plan → Implement → PR), confirmed with the user each time, backed by one persistent file → any session resumes mid-story.
-
-**Why the writes pay off:** reasoning captured at decision-time = cheap. Reconstructed later (reviewer asks why / scope shifts) = expensive, often inaccurate by then. Task Log "Why" = original reasoning, not a retrofit. Scope Changes = only what changed, not the full history re-derived.
+Four gates (Understand → Plan → Implement → PR), each confirmed with the user, backed by one persistent file → any session resumes mid-story. Reasoning is captured at decision time (Task Log "Why", Scope Changes) — reconstructed later it's expensive and usually wrong.
 
 ## Communication style
 
-Chat only — context file has its own denser style ("Content style" in `skills/breadcrumbs/context-template.md`). Don't conflate.
-
-Terse, bullet/fragment, glanceable. Senior/expert audience → jargon freely, no hedging, no restating known context, no multi-paragraph narration. Expand only if asked / confusion signaled, then step down in complexity.
+Chat only — the context file has its own denser style (`skills/breadcrumbs/context-template.md`). Terse, bullet/fragment, glanceable. Senior audience → jargon freely, no hedging, no restating known context, no multi-paragraph narration. Expand only if asked or confusion is signaled.
 
 ## Investigation scope
 
-Understanding a story needs enough repo context to ask good questions and plan real tasks — not a full-repo read. Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) rather than surveying the tree.
+Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) — never a full-repo read or tree survey.
 
-**One retrieval path per question — never stack them.** Two kinds of question, two tools:
-- **"Where is X / what does this file do"** — most of Step 1's taxonomy, all of lite mode → the platform's native code search: semantic index if the platform has one, grep/ripgrep if not. Open only the file it points at. No graph involved.
-- **"What relates to what"** — Step 1's dependencies row, Step 2's Flow / blast radius → `graphify` `query` / `path` / `explain`, only if `graphify-out/` already exists. An installed skill without a built graph doesn't count — never build mid-story. No graph → native search, then follow imports/calls by hand.
+**One retrieval path per question — never stack them:**
+- **"Where is X / what does this file do"** (most of Step 1, all of lite) → the platform's native code search: semantic index if it has one, else grep/ripgrep. Open only the file it points at.
+- **"What relates to what"** (Step 1 dependencies, Step 2 Flow / blast radius) → `graphify` `query` / `path` / `explain`, only if `graphify-out/` already exists — never build mid-story. No graph → native search, follow imports/calls by hand.
 
-**Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON — that vocabulary load is what makes a query cost more than a grep. Cap hit, category still open → ask, don't keep reading.
+**Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON. Cap hit, category still open → ask, don't keep reading. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified; widen only for a specific remaining unknown.
 
-Graph dump + search hits + full reads on one question = the wasteful pattern. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified — widen only for a specific remaining unknown, never "let's see what's here."
-
-**Investigation marker:** one line before every gate message (Step 1, Step 2, lite collapsed gate) counting what this gate spent: `[investigation: native search ×3 · graph ×0]`. Same shape and reason as the trip marker — a visible count is the only "cheapest path" check that works on every platform. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
+**Investigation marker:** one line before every gate message counting what the gate spent: `[investigation: native search ×3 · graph ×0]`. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
 
 ## The context file
 
-**Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
-- **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
-- **Mid-flight break** — test fails, an assumption breaks, scope changes, a perf/scale regression surfaces (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
-- **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
+**Created only on trigger, never by default.** Every story starts stateless: gates run in chat, nothing on disk. Triggers:
+- **Stop signal** — "let's continue tomorrow," "pause here" → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation at the current step. Mode unchanged.
+- **Mid-flight break** — test fails, assumption breaks, scope changes, perf/scale regression (Step 3.7) → create if missing, backfill, log the Scope Change. Lite escalates to full here.
+- **Topic shift** — conversation moves off the story mid-flight with no stop signal or break → ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Yes → as Stop signal. No → don't create, don't ask again for this detour.
 
-No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
+No trigger, all four gates finish in one sitting → no file, ever. Expected path.
 
-**Trip marker:** write happens → one line before the gate message naming what was written, e.g. `[context file: wrote Understanding Summary + Assumptions]`. No file yet → no marker, content just shown in chat.
+**Trip marker:** a write happens → one line before the gate message naming what was written: `[context file: wrote Understanding Summary + Assumptions]`. No file → no marker.
 
-**Resuming — the one read that isn't trigger-gated.** Story start, or "continue"/"resume"/"where were we" → list `.breadcrumbs/context/` (repo root) before any story work. Empty or missing → nothing to resume, start stateless as above. Anything there → read "Resuming" in `skills/breadcrumbs/context-file-mechanics.md` and follow it (match → read the file, summarize status, pick up at the next unchecked task; several candidates → list, ask). Skip this and a saved trail is invisible — the file only pays off if it's looked for.
+**Resuming — the one read that isn't trigger-gated.** Story start, or "continue"/"resume"/"where were we" → list `.breadcrumbs/context/` (repo root) before any story work. Empty or missing → start stateless. Anything there → read `skills/breadcrumbs/resume.md` and follow it.
 
-**Mechanics (location, not committed, cleanup, efficiency):** see `skills/breadcrumbs/context-file-mechanics.md`. Read once, the first time a trigger above actually fires — not before. (The Resuming section is the exception, per the paragraph above.)
+**Mechanics** (location, exclusion, cleanup, validators): `skills/breadcrumbs/context-file-mechanics.md` — read once, the first time a trigger fires. **File structure + guardrails:** `skills/breadcrumbs/context-template.md` — read once, at first creation. Neither on resume, neither otherwise.
 
-**Project constitution** — a separate, optional, committed file of standing repo-wide rules (distinct from the per-story file above). See "Project constitution" in `skills/breadcrumbs/context-file-mechanics.md` for when it's created and how Step 2 checks against it.
-
-**File structure & guardrails:** see `skills/breadcrumbs/context-template.md`. Read once, first creation only — not on resume, not if no trigger fires. One guardrail without opening that file: **never skip a gate**, file or no file.
+**Project constitution** — optional, committed `.breadcrumbs/constitution.md` of standing repo-wide rules, separate from per-story files. Checked at Step 2.8 (full) or the lite gate below; creation and retirement rules in `skills/breadcrumbs/context-file-mechanics.md`.
 
 ## Lite mode
 
-Auto-detected Step 1.4: `Bug fix` / `Copy/config/content change` → lite. Everything else → full mode, per the four steps below. Single source of truth for what lite changes — step files aren't separately annotated.
+Auto-detected at Step 1.4: `Bug fix` / `Copy/config/content change` → lite; everything else → full. Single source of truth for lite — step files aren't separately annotated.
 
-- Step 1 gate + all of Step 2 collapse into one, unconditionally (lite types are always simple enough, no Material/Cosmetic check needed): state approach ("no design" depth) + task list (max 2) + the check that will prove it works, one message ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
-- **Two Step 2 checks survive the collapse.** Neither scales with story size, and lite is where both get skipped most often:
-  - `Bug fix` → Step 2.3's bug-fix domain row, inline, one fragment each: root cause understood (not the symptom), repro confirmed, same defect looked for elsewhere before patching one spot, regression case named. Four fragments, not a design doc. Dropping them is how a lite fix ships as a patch over a symptom.
-  - Either lite type → Step 2.8's constitution check (`.breadcrumbs/constitution.md`). Standing repo-wide rules have no story-type exemption — "it's only a copy change" is exactly the story that violates one quietly. No file → skip silently.
-- Step 3: one wrap-up message after all tasks, not per-task. **Verification isn't collapsed** — 3.4 still runs per task, 3.8 still runs the named check before the wrap-up.
-- Step 4: PR draft as usual, from the conversation.
-- File creation: same triggers as "The context file" above, no lite exception. Scope change / test failure / perf regression mid-flight → escalates lite → full too, same moment the file's created. Say so in one line.
+- Step 1 gate + all of Step 2 collapse into one message: approach ("no design" depth) + task list (max 2) + the check that will prove it works + the `Scale target:` line, ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
+- **Two Step 2 checks survive the collapse**, inline:
+  - `Bug fix` → one fragment each: root cause (not the symptom), repro confirmed, same defect looked for elsewhere, regression case named.
+  - Either type → constitution check: `.breadcrumbs/constitution.md` exists → check the plan against its `status: active` lines; conflict → surface, resolve before continuing. No file → skip silently.
+- Step 3: one wrap-up message after all tasks, not per-task. **Verification isn't collapsed** — 3.4 per task, 3.8 before the wrap-up.
+- Step 4: PR draft as usual.
+- File creation: same triggers, no lite exception. Mid-flight break → escalates lite → full, said in one line.
 
 ## The four steps
 
-Read the step's file when you actually reach that gate — don't preload the others up front, that's the point of splitting them out.
+Read the step's file when you reach that gate — don't preload the others.
 
 | Step | File | Gate |
 |---|---|---|
@@ -95,9 +88,9 @@ Read the step's file when you actually reach that gate — don't preload the oth
 
 ## What NOT to do
 
-Never skip a gate on your own initiative, even in lite mode — lite collapses which gates exist, never waives confirmation.
+Never skip a gate on your own initiative, file or no file, lite included — lite collapses which gates exist, never waives confirmation.
 
-**User override:** the user can waive a gate, but only by saying so explicitly ("skip the confirm," "just build it," "don't ask me between tasks"). Then: proceed without stopping, and say in one line which gate was waived and what wasn't confirmed. File exists → record it under `Gate Waivers` (`skills/breadcrumbs/context-template.md`) — a resuming session must not read unconfirmed content as agreed. Waiver covers the gate the user meant, for this story only; it doesn't generalize to the remaining gates or carry into the next story. Never infer a waiver from impatience, terseness, or a fast "yes" — only from an explicit ask.
+**User override:** only an explicit ask waives a gate ("skip the confirm," "just build it," "don't ask me between tasks") — never inferred from impatience, terseness, or a fast "yes." Then proceed without stopping, say in one line which gate was waived and what wasn't confirmed; file exists → record under `Gate Waivers`. Covers that gate, this story only.
 
-Full guardrail list: `skills/breadcrumbs/context-template.md`, read alongside the template on first write.
+Full guardrail list: `skills/breadcrumbs/context-template.md`.
 """
