@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Compiles skills/breadcrumbs/Skill.md (the canonical source) into
-// platform-specific instruction files. Re-run after editing Skill.md.
+// Compiles skills/breadcrumbs/SKILL.md (the canonical source) into
+// platform-specific instruction files. Re-run after editing SKILL.md.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, basename } from "node:path";
 import { homedir } from "node:os";
 
-const SOURCE = "skills/breadcrumbs/Skill.md";
+const SOURCE = "skills/breadcrumbs/SKILL.md";
 const VERSION = readFileSync("VERSION", "utf8").trim();
 const SCRIPTS = [
   "skills/breadcrumbs/scripts/validate-context-file.mjs",
@@ -41,7 +41,7 @@ const raw = readFileSync(SOURCE, "utf8");
 const { name, description, frontmatter, body } = parseSkill(raw);
 const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs — edit the source, then re-run the script. -->\n\n`;
 
-// Skill.md points at the step files, context-file-mechanics.md, and
+// SKILL.md points at the step files, context-file-mechanics.md, and
 // context-template.md, and expects Claude Code to Read each on demand (only
 // when that gate is reached / first context-file write).
 //
@@ -145,7 +145,7 @@ if (byteLen(windsurf) > WINDSURF_CAP - WINDSURF_HEADROOM) {
   throw new Error(
     `.windsurf/rules/breadcrumbs.md is ${byteLen(windsurf)} bytes — over the ${WINDSURF_CAP} cap ` +
       `minus ${WINDSURF_HEADROOM} headroom. Windsurf truncates past the cap SILENTLY, so this ` +
-      `must fail the build rather than ship a half-skill. Trim Skill.md or move content into a ` +
+      `must fail the build rather than ship a half-skill. Trim SKILL.md or move content into a ` +
       `reference file under ${REF_DIR}.`
   );
 }
@@ -177,6 +177,8 @@ write(
 );
 
 // Claude Code plugin manifest — wraps the existing skill, doesn't duplicate it.
+// The marketplace catalog (.claude-plugin/marketplace.json) is hand-maintained;
+// it only names this plugin and its source, nothing here to regenerate.
 write(
   ".claude-plugin/plugin.json",
   JSON.stringify(
@@ -186,6 +188,21 @@ write(
       version: VERSION,
       license: "MIT",
       skills: ["./skills/breadcrumbs"],
+      // The story-detection hook ships WITH the plugin, resolved against the
+      // plugin's install dir — not the cwd-relative path in .claude/settings.json,
+      // which only works for a checkout of this repo run from its root.
+      hooks: {
+        UserPromptSubmit: [
+          {
+            hooks: [
+              {
+                type: "command",
+                command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/detect-story.mjs",
+              },
+            ],
+          },
+        ],
+      },
     },
     null,
     2
@@ -218,4 +235,4 @@ if (PROFILE === "lean") {
   console.log("  AGENTS.md stays full — the fallback for tools that can't read files on demand.");
   console.log("  Re-run with --profile=full to inline everything if a platform ignores the pointers.");
 }
-console.log("\nDone. skills/breadcrumbs/Skill.md remains the canonical source.");
+console.log("\nDone. skills/breadcrumbs/SKILL.md remains the canonical source.");

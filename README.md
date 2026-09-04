@@ -72,7 +72,7 @@ Once a file exists, it also tracks the story's **Flow**, the set of files the pl
 ```
 (two separate prompts — the second won't find the marketplace until the first completes)
 
-Breadcrumbs also plugs into a `UserPromptSubmit` hook ([`hooks/detect-story.mjs`](hooks/detect-story.mjs)) that recognizes ticket-shaped prompts and nudges toward the skill automatically, instead of relying on you to invoke it.
+The plugin also registers a `UserPromptSubmit` hook ([`hooks/detect-story.mjs`](hooks/detect-story.mjs)) that recognizes ticket-shaped prompts and nudges toward the skill automatically, instead of relying on you to invoke it. Working from a checkout of this repo instead of the plugin → the same hook is wired in [`.claude/settings.json`](.claude/settings.json).
 
 ### Cursor / Windsurf / Cline / Kiro / GitHub Copilot
 
@@ -94,7 +94,7 @@ Works alongside the [ponytail](https://github.com/DietrichGebert/ponytail) skill
 
 ## Development
 
-[`skills/breadcrumbs/Skill.md`](skills/breadcrumbs/Skill.md) is the canonical source. Every other platform file is generated from it — edit `Skill.md`, then re-run:
+[`skills/breadcrumbs/SKILL.md`](skills/breadcrumbs/SKILL.md) is the canonical source. Every other platform file is generated from it — edit `SKILL.md`, then re-run:
 
 ```bash
 node scripts/build-platforms.mjs

@@ -1,6 +1,6 @@
 # Context file mechanics
 
-Read once, the first time a file-creation trigger fires (see "The context file" in `Skill.md` for the triggers themselves). Not needed before that.
+Read once, the first time a file-creation trigger fires (see "The context file" in `SKILL.md` for the triggers themselves). Not needed before that.
 
 **Location once created:** `.breadcrumbs/context/<story-slug>.md` — `<story-slug>` = short kebab-case id from ticket ID/title.
 
@@ -59,7 +59,7 @@ Two implicit triggers besides something the user says out loud:
 
 Both go through the same confirmation as a stated rule — never appended silently. A one-off correction specific to this task isn't a rule; it's an Assumption or a Task Log `Why` in this story's file. The bar is repo-wide *and* standing, and a single ambiguous correction doesn't clear it.
 
-**Read:** once per story, if the file exists. Full mode → Step 2 (Plan), point 8, last, after the plan is complete (`step2-plan.md`). Lite mode → the collapsed Step 1+2 gate ("Lite mode" in `Skill.md`), since lite skips Step 2 entirely and these rules are repo-wide, not scaled to story size. Not re-read every gate.
+**Read:** once per story, if the file exists. Full mode → Step 2 (Plan), point 8, last, after the plan is complete (`step2-plan.md`). Lite mode → the collapsed Step 1+2 gate ("Lite mode" in `SKILL.md`), since lite skips Step 2 entirely and these rules are repo-wide, not scaled to story size. Not re-read every gate.
 
 **Checked, not just read:** Step 2's plan gets checked against its active rules before presenting to the user. Conflict → same handling as the Step 2.2 tripwire (a missed Material unknown): surface it, resolve before continuing, don't build around it.
 

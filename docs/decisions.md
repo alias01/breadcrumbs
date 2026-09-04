@@ -38,7 +38,7 @@ exact story type they exist for. Same for the constitution: "it's only a copy ch
 precisely the story that violates a standing rule quietly. Neither check scales with story
 size, so neither belongs behind a size-based gate.
 
-**Why inline in `Skill.md` rather than routing to `step2-plan.md`:** that file is the largest
+**Why inline in `SKILL.md` rather than routing to `step2-plan.md`:** that file is the largest
 in the skill (~3.1k tokens). Pulling it into the cheapest, most frequent path to gain four
 fragments would have raised lite-story cost ~50%. The +217 tokens on the router is the price
 of not doing that, and it's paid by every story instead of that one.
@@ -66,7 +66,7 @@ guard back to `.length`.
 
 **Open:** the cap number has conflicting reports (docs say 12,000 workspace / 6,000 global;
 some sources claim 6,000 per file). `WINDSURF_HEADROOM` buys 1,000 bytes of margin. 6,000 is
-not reachable without splitting the router itself — `Skill.md` alone is 8,230 bytes — so if
+not reachable without splitting the router itself — `SKILL.md` alone is 8,230 bytes — so if
 that turns out to be the real limit it's a bigger change than a constant.
 
 ---

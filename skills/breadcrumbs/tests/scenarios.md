@@ -1,6 +1,6 @@
 # breadcrumbs regression scenarios
 
-Not an automated suite — this is a prompt-following skill, there's no deterministic output to assert on. Run these by hand (in a scratch repo) after any edit to `Skill.md` or a step file, before trusting the change. Each scenario lists the prompt to give and what a correct run looks like — if actual behavior diverges, the edit broke something.
+Not an automated suite — this is a prompt-following skill, there's no deterministic output to assert on. Run these by hand (in a scratch repo) after any edit to `SKILL.md` or a step file, before trusting the change. Each scenario lists the prompt to give and what a correct run looks like — if actual behavior diverges, the edit broke something.
 
 ## 1. Lite mode, single sitting — no context file expected
 
@@ -63,7 +63,7 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Expect:**
 - Recognized as a Step 3.7 trigger (owner invalidates a requirement/assumption, scope changes mid-flight) — context file created now if it doesn't exist yet.
-- Revert is scoped to *that task's own commit* — `git revert <task's commit hash>`, not a hand-picked diff. Only possible cleanly because Step 3.6 commits one task per commit; a story implemented as one big commit would force picking lines out of a mixed diff instead.
+- Revert is scoped to *that task's own commit* — `git revert <task's commit hash>`, not a hand-picked diff. Commit header rewritten to `revert(<scope>): ...` (the `revert` type in Step 3.6) so it passes `validate-commit-message.mjs`; git's default `Revert "..."` header fails it. Only possible cleanly because Step 3.6 commits one task per commit; a story implemented as one big commit would force picking lines out of a mixed diff instead.
 - Structured Scope Changes entry logged: trigger (owner decided X unnecessary), before (had X), after (X removed), affected tasks, why.
 - Current Requirements amended in place — drops X, doesn't leave it contradicting the Task Log.
 - Task Checklist updated for the dropped task — **not silently deleted**: the Task Log keeps the record that X was built, then explicitly reverted, and why. A later reader (different session, teammate, different AI) sees a deliberate decision, not a gap that looks like something got forgotten.
@@ -129,9 +129,9 @@ inlined build was 52,480 chars against a 12,000 cap, so Windsurf received roughl
 Step 1 — no gates, no Step 3, no template — with no error anywhere. Windsurf therefore ships as a
 router plus repo-relative pointers.
 
-**Build check (deterministic, run on every edit to `Skill.md`):**
+**Build check (deterministic, run on every edit to `SKILL.md`):**
 - `node scripts/build-platforms.mjs` → `.windsurf/rules/breadcrumbs.md` is under 11,000 chars.
-- Pad `Skill.md` past the cap and re-run → **build throws**, naming the size and the cap. A silent
+- Pad `SKILL.md` past the cap and re-run → **build throws**, naming the size and the cap. A silent
   pass here is the original bug returning; the whole point of the guard is that it's loud.
 - Every reference pointer inside the file reads `skills/breadcrumbs/<file>.md`, not a bare filename —
   Windsurf has no skill-directory resolution, so a bare name resolves to nothing.
