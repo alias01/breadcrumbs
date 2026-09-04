@@ -35,7 +35,9 @@ No trigger fires, all four gates finish in one sitting → no file, ever. Expect
 
 **Trip marker:** write happens → one line before the gate message naming what was written, e.g. `[context file: wrote Understanding Summary + Assumptions]`. No file yet → no marker, content just shown in chat.
 
-**Mechanics (location, not committed, resuming, cleanup, efficiency):** see `context-file-mechanics.md`. Read once, the first time a trigger above actually fires — not before.
+**Resuming — the one read that isn't trigger-gated.** Story start, or "continue"/"resume"/"where were we" → list `.breadcrumbs/context/` (repo root) before any story work. Empty or missing → nothing to resume, start stateless as above. Anything there → read "Resuming" in `context-file-mechanics.md` and follow it (match → read the file, summarize status, pick up at the next unchecked task; several candidates → list, ask). Skip this and a saved trail is invisible — the file only pays off if it's looked for.
+
+**Mechanics (location, not committed, cleanup, efficiency):** see `context-file-mechanics.md`. Read once, the first time a trigger above actually fires — not before. (The Resuming section is the exception, per the paragraph above.)
 
 **Project constitution** — a separate, optional, committed file of standing repo-wide rules (distinct from the per-story file above). See "Project constitution" in `context-file-mechanics.md` for when it's created and how Step 2 checks against it.
 

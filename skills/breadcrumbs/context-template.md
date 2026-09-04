@@ -1,10 +1,10 @@
 # breadcrumbs context file — template & guardrails
 
-Read once per story, at file creation — whichever trigger fires it (see "The context file" in `Skill.md`). Not needed again on resume — the file itself has everything by then — nor if no trigger ever fires.
+Read once per story, at file creation — whichever trigger fires it (see "The context file" in `SKILL.md`). Not needed again on resume — the file itself has everything by then — nor if no trigger ever fires.
 
 ## Content style
 
-Read by AI only (this session, a resumed session, another platform) — never the user. `Skill.md`'s "Communication style" governs chat, not this. Every section: fragments, not sentences. Drop articles/connective words where meaning stays unambiguous. Abbreviate freely. Optimize for a resuming model re-deriving state fast, not human readability.
+Read by AI only (this session, a resumed session, another platform) — never the user. `SKILL.md`'s "Communication style" governs chat, not this. Every section: fragments, not sentences. Drop articles/connective words where meaning stays unambiguous. Abbreviate freely. Optimize for a resuming model re-deriving state fast, not human readability.
 
 - Prose: `Why: We added a mutex because there was a race condition between the two writers.`
 - Telegraphic: `Why: race condition (two writers) — added mutex.`
@@ -93,10 +93,10 @@ Three Task Log forms — classification per Step 3.5, shown concretely in Task 1
 
 ## What NOT to do
 
-- Don't skip a gate on your own initiative, next step "obvious" or not. Applies in lite mode too. Only an explicit user waiver skips one — see "User override" in `Skill.md`, and log it under `Gate Waivers` below.
+- Don't skip a gate on your own initiative, next step "obvious" or not. Applies in lite mode too. Only an explicit user waiver skips one — see "User override" in `SKILL.md`, and log it under `Gate Waivers` below.
 - Don't ask the user questions during Step 3 task execution — decide, log, move on. Exception: scope-changing issues, surface those immediately.
 - Don't check a task off without a `Verified:` line, and don't pass the Step 3 gate with a known-failing case. "Tests exist" isn't verification; "tests ran, here's the outcome" is.
 - Don't overwrite past entries — running record, not a snapshot.
 - Don't commit the context file or reference it in the PR diff.
 - Don't delete it unless the user confirms the PR merged.
-- Don't let a lite-mode story silently absorb a scope change or failed test — that's what the escalation trigger (see "The context file" in `Skill.md`) is for. Escalate to full mode rather than tracking it in chat memory alone.
+- Don't let a lite-mode story silently absorb a scope change or failed test — that's what the escalation trigger (see "The context file" in `SKILL.md`) is for. Escalate to full mode rather than tracking it in chat memory alone.

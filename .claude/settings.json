@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node hooks/detect-story.mjs"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/hooks/detect-story.mjs"
           }
         ]
       }

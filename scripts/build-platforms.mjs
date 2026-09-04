@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Compiles skills/breadcrumbs/Skill.md (the canonical source) into
-// platform-specific instruction files. Re-run after editing Skill.md.
+// Compiles skills/breadcrumbs/SKILL.md (the canonical source) into
+// platform-specific instruction files. Re-run after editing SKILL.md.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, basename } from "node:path";
 import { homedir } from "node:os";
 
-const SOURCE = "skills/breadcrumbs/Skill.md";
+const SOURCE = "skills/breadcrumbs/SKILL.md";
 const VERSION = readFileSync("VERSION", "utf8").trim();
 const SCRIPTS = [
   "skills/breadcrumbs/scripts/validate-context-file.mjs",
@@ -41,7 +41,7 @@ const raw = readFileSync(SOURCE, "utf8");
 const { name, description, frontmatter, body } = parseSkill(raw);
 const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs — edit the source, then re-run the script. -->\n\n`;
 
-// Skill.md points at the step files, context-file-mechanics.md, and
+// SKILL.md points at the step files, context-file-mechanics.md, and
 // context-template.md, and expects Claude Code to Read each on demand (only
 // when that gate is reached / first context-file write).
 //
@@ -60,6 +60,11 @@ const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs —
 // verification requirement and the context-file triggers all stay inline, so a
 // skipped reference read costs plan *depth*, not a gate. Build with
 // `--profile=full` to fall back per-run if a platform proves unreliable.
+const KNOWN_FLAGS = /^--(profile=.+|install)$/;
+const unknown = process.argv.slice(2).filter((a) => !KNOWN_FLAGS.test(a));
+if (unknown.length > 0) {
+  throw new Error(`unknown argument(s): ${unknown.join(" ")} (expected --profile=lean|full and/or --install)`);
+}
 const PROFILE = (process.argv.find((a) => a.startsWith("--profile=")) ?? "--profile=lean").split("=")[1];
 if (!["lean", "full"].includes(PROFILE)) {
   throw new Error(`unknown --profile=${PROFILE} (expected "lean" or "full")`);
@@ -145,7 +150,7 @@ if (byteLen(windsurf) > WINDSURF_CAP - WINDSURF_HEADROOM) {
   throw new Error(
     `.windsurf/rules/breadcrumbs.md is ${byteLen(windsurf)} bytes — over the ${WINDSURF_CAP} cap ` +
       `minus ${WINDSURF_HEADROOM} headroom. Windsurf truncates past the cap SILENTLY, so this ` +
-      `must fail the build rather than ship a half-skill. Trim Skill.md or move content into a ` +
+      `must fail the build rather than ship a half-skill. Trim SKILL.md or move content into a ` +
       `reference file under ${REF_DIR}.`
   );
 }
@@ -177,6 +182,8 @@ write(
 );
 
 // Claude Code plugin manifest — wraps the existing skill, doesn't duplicate it.
+// The marketplace catalog (.claude-plugin/marketplace.json) is hand-maintained;
+// it only names this plugin and its source, nothing here to regenerate.
 write(
   ".claude-plugin/plugin.json",
   JSON.stringify(
@@ -186,6 +193,21 @@ write(
       version: VERSION,
       license: "MIT",
       skills: ["./skills/breadcrumbs"],
+      // The story-detection hook ships WITH the plugin, resolved against the
+      // plugin's install dir — not the cwd-relative path in .claude/settings.json,
+      // which only works for a checkout of this repo run from its root.
+      hooks: {
+        UserPromptSubmit: [
+          {
+            hooks: [
+              {
+                type: "command",
+                command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/detect-story.mjs",
+              },
+            ],
+          },
+        ],
+      },
     },
     null,
     2
@@ -199,18 +221,25 @@ write(
 // Claude Code DOES support on-demand reads, so this sync preserves that:
 // SKILL.md stays a lean router, reference files land in references/ verbatim,
 // and pointers in the router body get rewritten to the references/ path.
+//
+// Opt-in via --install. Writing outside the repo is a side effect a plain
+// build must not have: CI runners and contributors regenerating the platform
+// files shouldn't get a skill silently installed into their home directory.
+const INSTALL = process.argv.includes("--install");
 const CLAUDE_SKILL_DIR = join(homedir(), ".claude", "skills", "breadcrumbs");
-let routerForInstall = body;
-for (const refPath of REFERENCES) {
-  const file = basename(refPath);
-  routerForInstall = routerForInstall.replaceAll(`\`${file}\``, `\`references/${file}\``);
-}
-write(join(CLAUDE_SKILL_DIR, "SKILL.md"), `---\n${frontmatter}\n---\n\n${routerForInstall}\n`);
-for (const refPath of REFERENCES) {
-  write(join(CLAUDE_SKILL_DIR, "references", basename(refPath)), readFileSync(refPath, "utf8"));
-}
-for (const scriptPath of SCRIPTS) {
-  write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+if (INSTALL) {
+  let routerForInstall = body;
+  for (const refPath of REFERENCES) {
+    const file = basename(refPath);
+    routerForInstall = routerForInstall.replaceAll(`\`${file}\``, `\`references/${file}\``);
+  }
+  write(join(CLAUDE_SKILL_DIR, "SKILL.md"), `---\n${frontmatter}\n---\n\n${routerForInstall}\n`);
+  for (const refPath of REFERENCES) {
+    write(join(CLAUDE_SKILL_DIR, "references", basename(refPath)), readFileSync(refPath, "utf8"));
+  }
+  for (const scriptPath of SCRIPTS) {
+    write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+  }
 }
 
 console.log(`\nprofile: ${PROFILE}  (router ${Math.round(leanBody.length / 1000)}KB vs full ${Math.round(fullBody.length / 1000)}KB)`);
@@ -218,4 +247,7 @@ if (PROFILE === "lean") {
   console.log("  AGENTS.md stays full — the fallback for tools that can't read files on demand.");
   console.log("  Re-run with --profile=full to inline everything if a platform ignores the pointers.");
 }
-console.log("\nDone. skills/breadcrumbs/Skill.md remains the canonical source.");
+if (!INSTALL) {
+  console.log(`  Local Claude Code copy (${CLAUDE_SKILL_DIR}) NOT touched — pass --install to refresh it.`);
+}
+console.log("\nDone. skills/breadcrumbs/SKILL.md remains the canonical source.");

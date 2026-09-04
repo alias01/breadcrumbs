@@ -1,6 +1,6 @@
 # Step 1 — Understand & Clarify
 
-1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions. Any repo look-up needed to do this stays scoped to the story's own terms — see "Investigation scope" in `Skill.md`, not a full-repo read.
+1. Read the story. **State back your understanding first**, own words, before asking anything → surfaces most misunderstandings with zero questions. Any repo look-up needed to do this stays scoped to the story's own terms — see "Investigation scope" in `SKILL.md`, not a full-repo read.
 2. Only then: follow-ups, only on what's genuinely vague — not everything askable in theory. Scan against a fixed taxonomy rather than open-ended guessing, so a Material gap doesn't slip through because nobody thought to ask:
    - Who/what/why: specific persona (not just "user"), what they're trying to accomplish, why it matters to them
    - Scope: what's explicitly in, what's explicitly out, whether this is one story or several bundled together

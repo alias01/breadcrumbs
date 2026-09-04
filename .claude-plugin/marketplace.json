@@ -1,0 +1,13 @@
+{
+  "name": "breadcrumbs",
+  "owner": {
+    "name": "alias01"
+  },
+  "plugins": [
+    {
+      "name": "breadcrumbs",
+      "source": "./",
+      "description": "Run a user story from a pasted ticket to a PR-ready implementation through four gated steps, with a persistent context file so the work resumes across sessions and platforms."
+    }
+  ]
+}

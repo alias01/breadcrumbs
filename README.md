@@ -72,7 +72,7 @@ Once a file exists, it also tracks the story's **Flow**, the set of files the pl
 ```
 (two separate prompts — the second won't find the marketplace until the first completes)
 
-Breadcrumbs also plugs into a `UserPromptSubmit` hook ([`hooks/detect-story.mjs`](hooks/detect-story.mjs)) that recognizes ticket-shaped prompts and nudges toward the skill automatically, instead of relying on you to invoke it.
+The plugin also registers a `UserPromptSubmit` hook ([`hooks/detect-story.mjs`](hooks/detect-story.mjs)) that recognizes ticket-shaped prompts and nudges toward the skill automatically, instead of relying on you to invoke it. Working from a checkout of this repo instead of the plugin → the same hook is wired in [`.claude/settings.json`](.claude/settings.json).
 
 ### Cursor / Windsurf / Cline / Kiro / GitHub Copilot
 
@@ -94,7 +94,7 @@ Works alongside the [ponytail](https://github.com/DietrichGebert/ponytail) skill
 
 ## Development
 
-[`skills/breadcrumbs/Skill.md`](skills/breadcrumbs/Skill.md) is the canonical source. Every other platform file is generated from it — edit `Skill.md`, then re-run:
+[`skills/breadcrumbs/SKILL.md`](skills/breadcrumbs/SKILL.md) is the canonical source. Every other platform file is generated from it — edit `SKILL.md`, then re-run:
 
 ```bash
 node scripts/build-platforms.mjs
@@ -114,6 +114,12 @@ node scripts/build-platforms.mjs --profile=full   # inline everything
 Lean is a real trade. A pointer is a soft instruction, and a weaker model may skip it. It's managed by what stays in the router — the four gates, "never skip a gate", lite-mode rules, the verification requirement and the context-file triggers are all inline, so a skipped reference read costs plan *depth*, not a gate. If a platform ignores the pointers outright, rebuild with `--profile=full`.
 
 Two files ignore the flag: [`AGENTS.md`](AGENTS.md) is always full (it's the fallback for tools that can't read files on demand), and `.windsurf/rules/breadcrumbs.md` is always lean (Windsurf enforces a 12,000-char cap and truncates past it silently — the build fails rather than ship a half-skill).
+
+**Local Claude Code copy.** Claude Code loads skills from `~/.claude/skills/`, not from this repo, so edits here are invisible at runtime until that copy is refreshed. The build never touches it on its own — pass `--install` when you want it synced:
+
+```bash
+node scripts/build-platforms.mjs --install
+```
 
 ### Releasing
 
