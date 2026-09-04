@@ -60,6 +60,11 @@ const banner = `<!-- GENERATED from ${SOURCE} by scripts/build-platforms.mjs —
 // verification requirement and the context-file triggers all stay inline, so a
 // skipped reference read costs plan *depth*, not a gate. Build with
 // `--profile=full` to fall back per-run if a platform proves unreliable.
+const KNOWN_FLAGS = /^--(profile=.+|install)$/;
+const unknown = process.argv.slice(2).filter((a) => !KNOWN_FLAGS.test(a));
+if (unknown.length > 0) {
+  throw new Error(`unknown argument(s): ${unknown.join(" ")} (expected --profile=lean|full and/or --install)`);
+}
 const PROFILE = (process.argv.find((a) => a.startsWith("--profile=")) ?? "--profile=lean").split("=")[1];
 if (!["lean", "full"].includes(PROFILE)) {
   throw new Error(`unknown --profile=${PROFILE} (expected "lean" or "full")`);
@@ -216,23 +221,33 @@ write(
 // Claude Code DOES support on-demand reads, so this sync preserves that:
 // SKILL.md stays a lean router, reference files land in references/ verbatim,
 // and pointers in the router body get rewritten to the references/ path.
+//
+// Opt-in via --install. Writing outside the repo is a side effect a plain
+// build must not have: CI runners and contributors regenerating the platform
+// files shouldn't get a skill silently installed into their home directory.
+const INSTALL = process.argv.includes("--install");
 const CLAUDE_SKILL_DIR = join(homedir(), ".claude", "skills", "breadcrumbs");
-let routerForInstall = body;
-for (const refPath of REFERENCES) {
-  const file = basename(refPath);
-  routerForInstall = routerForInstall.replaceAll(`\`${file}\``, `\`references/${file}\``);
-}
-write(join(CLAUDE_SKILL_DIR, "SKILL.md"), `---\n${frontmatter}\n---\n\n${routerForInstall}\n`);
-for (const refPath of REFERENCES) {
-  write(join(CLAUDE_SKILL_DIR, "references", basename(refPath)), readFileSync(refPath, "utf8"));
-}
-for (const scriptPath of SCRIPTS) {
-  write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+if (INSTALL) {
+  let routerForInstall = body;
+  for (const refPath of REFERENCES) {
+    const file = basename(refPath);
+    routerForInstall = routerForInstall.replaceAll(`\`${file}\``, `\`references/${file}\``);
+  }
+  write(join(CLAUDE_SKILL_DIR, "SKILL.md"), `---\n${frontmatter}\n---\n\n${routerForInstall}\n`);
+  for (const refPath of REFERENCES) {
+    write(join(CLAUDE_SKILL_DIR, "references", basename(refPath)), readFileSync(refPath, "utf8"));
+  }
+  for (const scriptPath of SCRIPTS) {
+    write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+  }
 }
 
 console.log(`\nprofile: ${PROFILE}  (router ${Math.round(leanBody.length / 1000)}KB vs full ${Math.round(fullBody.length / 1000)}KB)`);
 if (PROFILE === "lean") {
   console.log("  AGENTS.md stays full — the fallback for tools that can't read files on demand.");
   console.log("  Re-run with --profile=full to inline everything if a platform ignores the pointers.");
+}
+if (!INSTALL) {
+  console.log(`  Local Claude Code copy (${CLAUDE_SKILL_DIR}) NOT touched — pass --install to refresh it.`);
 }
 console.log("\nDone. skills/breadcrumbs/SKILL.md remains the canonical source.");

@@ -131,6 +131,7 @@ router plus repo-relative pointers.
 
 **Build check (deterministic, run on every edit to `SKILL.md`):**
 - `node scripts/build-platforms.mjs` → `.windsurf/rules/breadcrumbs.md` is under 11,000 chars.
+- Same run leaves `~/.claude/skills/breadcrumbs/` untouched (mtimes unchanged); only `--install` writes there. An unknown flag (`--instal`, `--profile lean`) throws instead of silently building defaults.
 - Pad `SKILL.md` past the cap and re-run → **build throws**, naming the size and the cap. A silent
   pass here is the original bug returning; the whole point of the guard is that it's loud.
 - Every reference pointer inside the file reads `skills/breadcrumbs/<file>.md`, not a bare filename —
