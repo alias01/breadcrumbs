@@ -172,7 +172,7 @@ manual-edit review. Not broken, so deferred. Each is small; none blocks a releas
   `git add -A`, or never lands. Give it its own `chore` commit when written.
 - **`Status: done` is never set.** Step 4.7 sets `pr-ready`; cleanup offers deletion on
   merge. Either set `done` on merge confirmation or drop it from the template + validator.
-- **Step 4 says "fixed five sections" then lists a sixth** ("What changed since last PR").
+- ~~**Step 4 says "fixed five sections" then lists a sixth**~~ — resolved 2026-09-04: five core + two optional one-liners + the re-draft addendum, counted honestly. Same pass fixed the PARK-482 example, whose What/Why were swapped against their own definitions.
 - **Lite mode's `Scale target:` line isn't in the router.** Scenario 12 expects it at the
   collapsed lite gate; the Lite mode section of `SKILL.md` never mentions it, and
   lean-profile platforms only see the router there.
