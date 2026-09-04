@@ -24,9 +24,13 @@ Understanding a story needs enough repo context to ask good questions and plan r
 
 **One retrieval path per question — never stack them.** Two kinds of question, two tools:
 - **"Where is X / what does this file do"** — most of Step 1's taxonomy, all of lite mode → the platform's native code search: semantic index if the platform has one, grep/ripgrep if not. Open only the file it points at. No graph involved.
-- **"What relates to what"** — Step 1's dependencies row, Step 2's Flow / blast radius → `graphify` `query` / `path` / `explain`, with a tight `--budget`, and only if `graphify-out/` already exists. An installed skill without a built graph doesn't count — never build mid-story. No graph → native search, then follow imports/calls by hand.
+- **"What relates to what"** — Step 1's dependencies row, Step 2's Flow / blast radius → `graphify` `query` / `path` / `explain`, only if `graphify-out/` already exists. An installed skill without a built graph doesn't count — never build mid-story. No graph → native search, then follow imports/calls by hand.
 
-Graph dump + search hits + full reads on the same question is the wasteful pattern. Full-file reads are last resort, for whatever the chosen path didn't settle. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
+**Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON — that vocabulary load is what makes a query cost more than a grep. Cap hit, category still open → ask, don't keep reading.
+
+Graph dump + search hits + full reads on one question = the wasteful pattern. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified — widen only for a specific remaining unknown, never "let's see what's here."
+
+**Investigation marker:** one line before every gate message (Step 1, Step 2, lite collapsed gate) counting what this gate spent: `[investigation: native search ×3 · graph ×0]`. Same shape and reason as the trip marker — a visible count is the only "cheapest path" check that works on every platform. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
 
 ## The context file
 

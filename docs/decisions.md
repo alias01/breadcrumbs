@@ -159,6 +159,14 @@ platform it's on.
 means building one before the first gate — free for code, LLM tokens for docs, a detour
 either way.
 
+**Why a marker and counted caps, not just the routing rule:** the routing is prose, and prose
+is what failed last time. "Tight budget" and "stop once answered" are adjectives a model can
+satisfy without changing behaviour. Caps (≤4 / ≤3 native lookups, ≤2 graph queries, budget
+1500, lite → 0) are countable, and the `[investigation: …]` marker before each gate puts the
+count where the user sees it — the same trick the trip marker already uses for file writes.
+It's the only enforcement that ships to all eight platforms; a hook would be Claude Code only.
+Validating it in the context file was considered and dropped: most stories never write one.
+
 ---
 
 ## Open — the behavioural half is unverified

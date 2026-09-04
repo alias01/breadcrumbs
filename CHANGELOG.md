@@ -7,6 +7,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bu
 ### Changes
 - **breadcrumbs:** route investigation by question type — native search for lookups, graphify only for relationship/Flow questions and only when a graph exists; lite mode skips the graph
 - **platforms:** drop Claude-only `Explore` wording from the shared investigation rule
+- **breadcrumbs:** investigation marker before every gate, counted lookup/graph-query caps, never open the graph report
+- **tests:** scenario 13 pins the routing down on lite, full, and no-graph repos
 
 ## [1.6.0] - 2026-08-28
 
