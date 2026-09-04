@@ -22,7 +22,7 @@ Search outward from the story's own keywords/entities (feature name, endpoint, t
 
 **Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON. Cap hit, category still open → ask, don't keep reading. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified; widen only for a specific remaining unknown.
 
-**Output budget — every tool result is re-sent on every later call, so cap bytes, not just lookups.** Open the line range a search pointed at, never the whole file; never re-open a file already in context; never open lockfiles, generated or vendored output. Test/typecheck/lint runs → quiet reporter, scoped to what the task touched, failures only (`tail`); the full suite runs once, at the Step 3.8 gate, still quiet. A result over ~100 lines → narrow the command, don't page through it.
+**Output budget.** Test/typecheck/lint runs → quiet reporter, scoped to what the task touched, failures only (`tail`); the full suite once, at the Step 3.8 gate. Never open lockfiles, generated or vendored output.
 
 **Investigation marker:** one line before every gate message counting what the gate spent: `[investigation: native search ×3 · graph ×0]`. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
 
@@ -37,7 +37,7 @@ No trigger, all four gates finish in one sitting → no file, ever. Expected pat
 
 **Trip marker:** a write happens → one line before the gate message naming what was written: `[context file: wrote Understanding Summary + Assumptions]`. No file → no marker.
 
-**Resuming — the one read that isn't trigger-gated.** Story start, or "continue"/"resume"/"where were we" → list `.breadcrumbs/context/` (repo root) before any story work. Empty or missing → start stateless. Anything there → read `resume.md` and follow it.
+**Resuming — the one read that isn't trigger-gated.** Story start, or "continue"/"resume"/"where were we" → one `ls .breadcrumbs/context/` (repo root), nothing else, before any story work. Empty or missing → start stateless; don't look for the skill files, the constitution, or anything else up front. Anything there → read `resume.md` and follow it.
 
 **Mechanics** (location, exclusion, cleanup, validators): `context-file-mechanics.md` — read once, the first time a trigger fires. **File structure + guardrails:** `context-template.md` — read once, at first creation. Neither on resume, neither otherwise.
 
@@ -51,13 +51,13 @@ Auto-detected at Step 1.4: `Bug fix` / `Copy/config/content change` → lite; ev
 - **Two Step 2 checks survive the collapse**, inline:
   - `Bug fix` → one fragment each: root cause (not the symptom), repro confirmed, same defect looked for elsewhere, regression case named.
   - Either type → constitution check: `.breadcrumbs/constitution.md` exists → check the plan against its `status: active` lines; conflict → surface, resolve before continuing. No file → skip silently.
-- Step 3: one wrap-up message after all tasks, not per-task. **Verification isn't collapsed** — 3.4 per task, 3.8 before the wrap-up.
+- Step 3: one wrap-up message after all tasks, not per-task. **Verification isn't collapsed** — 3.4 per task, 3.8 before the wrap-up. One commit per task, `<type>(<scope>): <imperative summary>` (`fix`/`feat`/`test`/`docs`/`refactor`/`chore`), checked with `scripts/validate-commit-message.mjs` if present — don't search for it.
 - Step 4: PR draft as usual.
 - File creation: same triggers, no lite exception. Mid-flight break → escalates lite → full, said in one line.
 
 ## The four steps
 
-Read the step's file when you reach that gate — don't preload the others.
+Read the step's file when you reach that gate — don't preload the others. **Lite, or every gate waived by user override → read no step files at all**: the router carries lite, and the step files exist for the gate messages.
 
 | Step | File | Gate |
 |---|---|---|
@@ -293,7 +293,7 @@ Lighter depth but the story genuinely carries the risk (a "small feature" writin
 
    Scope change mid-task → still one commit once it lands; type reflects what actually shipped.
 
-   Before `git commit`, check the header with `validate-commit-message.mjs` (resolve per "Validator scripts" in `context-file-mechanics.md`); not found → check by hand against the table, don't block.
+   Before `git commit`, check the header with `validate-commit-message.mjs` — it sits in `scripts/` beside this file; not there → check by hand against the table, don't search, don't block.
 7. Test fails / owner invalidates an assumption / scope changes / **perf or scale regression surfaces** (a planned case slows, or point 4's scan finds a pattern that won't hold) → Mid-flight break trigger (`SKILL.md`). Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update Assumptions/Plan, adjust Task Checklist. Perf case: tell the user immediately, one line — what regressed, against which target, what it would take to hold it — before fixing or working around it. Before/After names the target and the pattern that broke it. Absorb or fix is the user's call — never a silent fix, never a silent ship.
 8. **Gate:** every task checked off → **run the whole planned test set now**: every case Step 2.4 listed (lite → the check named at the collapsed gate), plus the repo's own suite over what the story touched — quiet reporter, failures only. Per-task runs prove tasks in isolation; this proves they compose.
    - Green → summarize what was built *and what proved it* (one line: cases run + outcome), plus the scale target it holds and whether measured or only scanned. Stop, wait for confirmation before PR (`step4-pr.md`).

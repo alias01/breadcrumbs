@@ -99,6 +99,10 @@ function routerBody(prefix) {
     const file = basename(refPath);
     out = out.replaceAll(`\`${file}\``, `\`${prefix}${file}\``);
   }
+  for (const scriptPath of SCRIPTS) {
+    const file = basename(scriptPath);
+    out = out.replaceAll(`\`scripts/${file}\``, `\`${prefix}scripts/${file}\``);
+  }
   return out;
 }
 
@@ -118,9 +122,9 @@ repo root, **at the moment you reach that gate** — not up front:
 | First context-file write | \`${REF_DIR}context-file-mechanics.md\` + \`${REF_DIR}context-template.md\` |
 | Resume (\`.breadcrumbs/context/\` non-empty) | \`${REF_DIR}resume.md\` |
 
-No file access, or the files aren't present → say so before the first gate rather
-than improvising a step's content. The rules below are the whole contract; the step
-files carry the detail that makes them work.
+Don't check that these files exist up front — open one when its row applies, and if it
+isn't there, say so at that gate rather than improvising its content. The rules below
+are the whole contract; the step files carry the detail that makes them work.
 
 ---
 

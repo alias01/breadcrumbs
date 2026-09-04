@@ -35,7 +35,7 @@
 
    Scope change mid-task → still one commit once it lands; type reflects what actually shipped.
 
-   Before `git commit`, check the header with `validate-commit-message.mjs` (resolve per "Validator scripts" in `context-file-mechanics.md`); not found → check by hand against the table, don't block.
+   Before `git commit`, check the header with `validate-commit-message.mjs` — it sits in `scripts/` beside this file; not there → check by hand against the table, don't search, don't block.
 7. Test fails / owner invalidates an assumption / scope changes / **perf or scale regression surfaces** (a planned case slows, or point 4's scan finds a pattern that won't hold) → Mid-flight break trigger (`SKILL.md`). Once handled: structured Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update Assumptions/Plan, adjust Task Checklist. Perf case: tell the user immediately, one line — what regressed, against which target, what it would take to hold it — before fixing or working around it. Before/After names the target and the pattern that broke it. Absorb or fix is the user's call — never a silent fix, never a silent ship.
 8. **Gate:** every task checked off → **run the whole planned test set now**: every case Step 2.4 listed (lite → the check named at the collapsed gate), plus the repo's own suite over what the story touched — quiet reporter, failures only. Per-task runs prove tasks in isolation; this proves they compose.
    - Green → summarize what was built *and what proved it* (one line: cases run + outcome), plus the scale target it holds and whether measured or only scanned. Stop, wait for confirmation before PR (`step4-pr.md`).
