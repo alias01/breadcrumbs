@@ -10,7 +10,7 @@ A story never survives reality unchanged: assumptions filled in, scope grows, te
 
 Four gates (Understand → Plan → Implement → PR), confirmed with the user each time, backed by one persistent file → any session resumes mid-story.
 
-**Why the writes pay off:** reasoning captured at decision-time = cheap. Reconstructed later (reviewer asks why / scope shifts) = expensive, often inaccurate by then. Task Log "Why" = original reasoning, not a retrofit. Scope Changes = only what changed, not the full history re-derived.
+**Why the writes pay off:** reasoning captured at decision-time = cheap; reconstructed later = expensive, often wrong by then. Task Log "Why" = original reasoning, not a retrofit. Scope Changes = only what changed.
 
 ## Communication style
 
@@ -28,24 +28,25 @@ Understanding a story needs enough repo context to ask good questions and plan r
 
 **Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON — that vocabulary load is what makes a query cost more than a grep. Cap hit, category still open → ask, don't keep reading.
 
-Graph dump + search hits + full reads on one question = the wasteful pattern. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified — widen only for a specific remaining unknown, never "let's see what's here."
+Graph dump + search hits + full reads on one question = the wasteful pattern; full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified — widen only for a specific remaining unknown.
 
-**Investigation marker:** one line before every gate message (Step 1, Step 2, lite collapsed gate) counting what this gate spent: `[investigation: native search ×3 · graph ×0]`. Same shape and reason as the trip marker — a visible count is the only "cheapest path" check that works on every platform. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
+**Investigation marker:** one line before every gate message (Step 1, Step 2, lite collapsed gate) counting what this gate spent: `[investigation: native search ×3 · graph ×0]`. A visible count is the only "cheapest path" check that works on every platform. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
 
 ## The context file
 
-**Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Three triggers create the file:
+**Created only on trigger, never by default.** Every story starts stateless: gates run in chat only, nothing on disk. Four triggers create the file:
 - **Stop signal** — "let's continue tomorrow," "pause here," or similar → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation, at whatever step you're at. Mode/design depth unchanged — this trigger alone doesn't escalate lite → full.
-- **Mid-flight break** — test fails, an assumption breaks, scope changes, a perf/scale regression surfaces (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite mode also escalates to full here (more rigor now warranted).
-- **Topic shift** — conversation moves off the current story to something clearly different, mid-story, with no explicit stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal: create if it doesn't exist, backfill Understanding/Plan/Task Checklist at whatever step you're at, mode/design depth unchanged. Declined → don't create, don't ask again for this same detour, continue normally.
+- **Mid-flight break** — test fails, an assumption breaks, scope changes, a perf/scale regression surfaces (Step 3.7) → create if it doesn't exist yet, backfill same way, log the Scope Change entry. Lite escalates to full here.
+- **Topic shift** — conversation moves off the current story, mid-story, with no stop signal or mid-flight break → don't silently create/write. Ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Confirmed → same as Stop signal. Declined → don't create, don't ask again for this same detour, continue normally.
+- **Budget checkpoint** — cost, not state: every tool round-trip resends the whole chat; the file makes cutting that history lossless. Full mode only. Fires at the Step 2 gate (written *before* the gate message, `Status: planning`) and after every third task checked off. Backfill as above, never stops or asks — one `[checkpoint: …]` line says a new chat + "continue" picks up here. Detail: "Budget checkpoint" in `context-file-mechanics.md`.
 
-No trigger fires, all four gates finish in one sitting → no file, ever. Expected path, not a skipped step.
+Lite mode, no trigger fires → no file, ever. Expected path, not a skipped step. Full mode always has one from the Step 2 gate on (budget checkpoint).
 
 **Trip marker:** write happens → one line before the gate message naming what was written, e.g. `[context file: wrote Understanding Summary + Assumptions]`. No file yet → no marker, content just shown in chat.
 
-**Resuming — the one read that isn't trigger-gated.** Story start, or "continue"/"resume"/"where were we" → list `.breadcrumbs/context/` (repo root) before any story work. Empty or missing → nothing to resume, start stateless as above. Anything there → read "Resuming" in `context-file-mechanics.md` and follow it (match → read the file, summarize status, pick up at the next unchecked task; several candidates → list, ask). Skip this and a saved trail is invisible — the file only pays off if it's looked for.
+**Resuming — the one read that isn't trigger-gated.** Story start, or "continue"/"resume"/"where were we" → list `.breadcrumbs/context/` (repo root) before any story work. Empty or missing → nothing to resume, start stateless as above. Anything there → read "Resuming" in `context-file-mechanics.md` and follow it (match → read the file, summarize status, pick up at the next unchecked task; several candidates → list, ask). Skip this and a saved trail is invisible.
 
-**Mechanics (location, not committed, cleanup, efficiency):** see `context-file-mechanics.md`. Read once, the first time a trigger above actually fires — not before. (The Resuming section is the exception, per the paragraph above.)
+**Mechanics (location, not committed, cleanup, efficiency):** see `context-file-mechanics.md`. Read once, the first time a trigger above fires — not before (Resuming excepted, per above).
 
 **Project constitution** — a separate, optional, committed file of standing repo-wide rules (distinct from the per-story file above). See "Project constitution" in `context-file-mechanics.md` for when it's created and how Step 2 checks against it.
 
@@ -55,7 +56,7 @@ No trigger fires, all four gates finish in one sitting → no file, ever. Expect
 
 Auto-detected Step 1.4: `Bug fix` / `Copy/config/content change` → lite. Everything else → full mode, per the four steps below. Single source of truth for what lite changes — step files aren't separately annotated.
 
-- Step 1 gate + all of Step 2 collapse into one, unconditionally (lite types are always simple enough, no Material/Cosmetic check needed): state approach ("no design" depth) + task list (max 2) + the check that will prove it works, one message ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
+- Step 1 gate + all of Step 2 collapse into one, unconditionally: state approach ("no design" depth) + task list (max 2) + the check that will prove it works, one message ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
 - **Two Step 2 checks survive the collapse.** Neither scales with story size, and lite is where both get skipped most often:
   - `Bug fix` → Step 2.3's bug-fix domain row, inline, one fragment each: root cause understood (not the symptom), repro confirmed, same defect looked for elsewhere before patching one spot, regression case named. Four fragments, not a design doc. Dropping them is how a lite fix ships as a patch over a symptom.
   - Either lite type → Step 2.8's constitution check (`.breadcrumbs/constitution.md`). Standing repo-wide rules have no story-type exemption — "it's only a copy change" is exactly the story that violates one quietly. No file → skip silently.

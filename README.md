@@ -40,10 +40,10 @@ flowchart LR
     S1 -.-> G
     S2 -.-> G
     S3 -.-> G
-    G[(context file<br/>only if a trigger fires)]
+    G[(context file<br/>only if a trigger fires —<br/>full mode: at the Step 2 gate)]
 ```
 
-Nothing hits disk until it has to — a story that wraps up in one sitting never gets a file at all, which is the normal case, not something falling through the cracks. A context file only shows up once the work needs to outlast the current conversation:
+Nothing hits disk until it has to — a lite story (bug fix, copy change) that wraps up in one sitting never gets a file at all. A context file shows up once the work needs to outlast the current conversation, or once the conversation itself has become the expensive part:
 
 ```mermaid
 flowchart TD
@@ -53,10 +53,13 @@ flowchart TD
     Trig -- "conversation drifts elsewhere" --> Ask{"Checkpoint first?<br/>(asked once)"}
     Ask -- yes --> C
     Ask -- no --> W
-    Trig -- none, story finishes --> None([No file, ever])
+    Trig -- "Step 2 gate / every 3rd task (full mode)" --> C
+    Trig -- none, lite story finishes --> None([No file, ever])
 
     C --> R["Next session, same or different platform:<br/>read file → resume where it left off"]
 ```
+
+The last trigger is the **budget checkpoint**, and it's about tokens rather than memory. Every tool call an agent makes resends the whole conversation, so a long chat with many reads costs history × calls — that's how a single prompt reaches a million tokens. Once the plan is confirmed, everything above it is dead weight the file already holds in distilled form; the checkpoint writes the file at the Step 2 gate and after every third task, and says so in one line: `[checkpoint: 3/5 on disk + committed — a new chat with "continue" picks up at task 4]`. It never stops or asks. Take the offer and the next chat starts at a few thousand tokens instead of a few hundred thousand; ignore it and nothing changes.
 
 Once a file exists, it also tracks the story's **Flow**, the set of files the plan expects to touch, decided once up front at planning. A hand-edit that lands somewhere the plan didn't expect gets flagged rather than quietly folded in.
 
@@ -149,7 +152,7 @@ git push origin main v1.1.0
 ## FAQ
 
 **Does every story get a context file?**
-No — most stories finish in one sitting and never touch disk.
+Lite stories (bug fixes, copy/config changes) don't — they finish in one sitting and never touch disk. Full-mode stories get one at the Step 2 gate, the budget checkpoint: it's what lets you start a fresh chat for implementation instead of carrying the whole planning conversation into every tool call.
 
 **What if I'm running several stories at once?**
 Resuming checks `.breadcrumbs/context/` for existing files. More than one candidate and your prompt doesn't clearly point to one → it lists them (filename, title, status — a cheap partial read, not a full one) and asks which.

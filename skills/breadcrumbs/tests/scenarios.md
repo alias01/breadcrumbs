@@ -22,7 +22,7 @@ Not an automated suite — this is a prompt-following skill, there's no determin
 
 **Expect (session 1):**
 - Classified `full` (small feature), Step 1 and Step 2 gated separately (unless zero Material unknowns).
-- Context file created at the stop signal — trip marker shown, backfilled Understanding/Plan/Task Checklist/Task Log for the one completed task.
+- Context file created at the Step 2 gate (budget checkpoint, `Status: planning`), before the plan is presented — trip marker plus the `[checkpoint: …]` line closing the gate message. Confirmation flips it to `implementing` with task 1's Task Log write. The stop signal then finds a file already there and only updates it.
 - One commit made for the completed task, Conventional Commits format.
 
 **Prompt B (session 2, fresh context):** "let's continue the CSV export story."
@@ -239,6 +239,39 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 **Contrast check across platforms:** run B on a platform with a semantic index (Cursor, Windsurf, Copilot) and one without (Cline, Codex, Gemini CLI). The counts should be the same shape; only the tool behind "native search" differs. A platform whose run bypasses its own index for graphify on a "where is X" question has regressed.
 
 **The failure this exists to catch:** the pre-change rule said "graphify first, it's cheaper than grep" — true of the build, false of a query (vocabulary load + subgraph dump + the file reads that follow anyway). Nothing made the extra cost visible, so it landed silently on every story, lite ones most of all. The marker is the only cross-platform evidence that the cheaper path was actually taken.
+
+## 14. Budget checkpoint — the file exists before the chat gets expensive
+
+The trigger that targets token cost. A story's per-prompt bill is history × tool calls, so the
+skill writes the file at the two points where the history has just become dead weight, and says
+in one line that a new chat can pick up from disk.
+
+**Prompt A:** a full-mode story (small feature, 5 tasks). Watch the Step 2 gate message.
+
+**Expect:**
+- The context file exists *before* the plan is presented, `Status: planning`, Understanding/Assumptions/Plan/Task Checklist backfilled. Trip marker shown.
+- The gate message closes with `[checkpoint: plan on disk — confirm here, or in a new chat with "continue"]`.
+- Fires even if the user waives the gate ("just build it") — waiver recorded, file still written.
+
+**Prompt B (new chat):** "continue".
+
+**Expect:**
+- Resume finds the file at `Status: planning`, presents the plan for confirmation — does **not** start task 1 from an unconfirmed plan.
+- Confirmed → task 1 runs; its Task Log write flips `Status: implementing`.
+
+**Prompt C:** let tasks 1-3 complete.
+
+**Expect:**
+- After task 3's trip marker, one extra line: `[checkpoint: 3/5 on disk + committed — a new chat with "continue" picks up at task 4]`.
+- The agent does **not** stop or ask — task 4 starts in the same message flow unless the user interjects.
+- Task 3's commit exists before the line is printed (the line is only true if it does).
+
+**Contrast check:** a lite story (bug fix, 2 tasks) → no checkpoint line anywhere, no file unless a
+stop signal / mid-flight break / topic shift fires. A lite story that prints `[checkpoint: …]`, or a
+full story whose Step 2 gate message has no checkpoint line, are both regressions.
+
+**Fail:** the checkpoint line appears but no file was written (the line lies), or the agent pauses
+for confirmation at the third-task checkpoint (a fifth gate — the opposite of the point).
 
 ## Cross-cutting checks (verify on any scenario)
 

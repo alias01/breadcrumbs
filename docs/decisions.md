@@ -169,6 +169,43 @@ Validating it in the context file was considered and dropped: most stories never
 
 ---
 
+## 2026-09-04 — Budget checkpoint: the file exists before the chat gets expensive
+
+**Decision:** a fourth context-file trigger, full mode only. The file is written at the
+Step 2 gate (before the gate message, `Status: planning`) and after every third task in
+Step 3, each time with one `[checkpoint: …]` line saying a new chat plus "continue" picks
+up from disk. It never stops or asks. Full-mode stories therefore always have a file from
+Step 2 on; lite stories still never do unless another trigger fires.
+
+**Why:** usage data from Cursor showed single prompts at 1.3M–2.1M tokens against a ~25k
+floor. The multiplier is history × tool calls — every read, edit and test run resends the
+whole conversation — and the runaway prompts were all late in long chats. The skill already
+had the cure (a file that makes a fresh chat lossless) but only wrote it on a stop signal,
+a break, or a topic shift, i.e. when *state* was at risk, never when *cost* was. Three
+prompts in one afternoon cost more than the rest of the month.
+
+**Why these two points and not an interval:** Step 2 confirmation is the moment all of
+Step 1–2's investigation becomes dead weight the file holds in distilled form, and Step 3 is
+where the tool-heavy work lives — so that boundary is where a fresh context pays most.
+Three tasks of diffs, test output and commits is the next visible outgrowth. Both are
+countable, same reasoning as the investigation caps; "checkpoint when the chat feels long"
+is an adjective.
+
+**Why `Status: planning`, written before the gate:** writing after confirmation means the
+agent has already started Step 3 in the old chat by the time the user reads the offer.
+Writing before lets confirmation itself happen in the new chat. `planning` is the guard —
+Resuming re-presents the plan and never starts a task from it, so an unconfirmed plan is
+never read as agreed.
+
+**Why it doesn't stop:** a pause would be a fifth gate. The commit and Task Log entry are
+already on disk when the line prints, so stopping there is lossless without asking.
+
+**What it changes upstream:** "no trigger → no file, ever" now applies to lite only; README,
+scenario 2 and the FAQ say so. The Windsurf cap forced ~600 bytes of trims elsewhere in
+`SKILL.md` to fit the trigger — the detail lives in `context-file-mechanics.md`.
+
+---
+
 ## 2026-09-04 — AGENTS.md follows the profile
 
 **Decision:** `AGENTS.md` is built from `--profile` like every other target — lean (router

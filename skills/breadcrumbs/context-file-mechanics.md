@@ -18,7 +18,7 @@ On creation, exclude it — but **in `.git/info/exclude`, not `.gitignore`**. Sa
 
 User explicitly wants it committed / shared with teammates → that's their call, they'll say so; move the entry to `.gitignore` then, not before.
 
-**Resuming:** before any story work, check `.breadcrumbs/context/` for existing files. One match, name/slug clearly matches what the user's asking about → read it, summarize status back ("Here's where this stood: ... currently at Step X"), resume. Zero matches → nothing to resume; story hasn't started, or it's mid-way/finished in an unbroken conversation with no trigger fired yet. More than one file present and the user's request doesn't unambiguously point to one (generic "let's continue," or a new/vague prompt while other stories sit mid-flight) → don't guess. List the candidates cheaply: filename (slug) + first two lines of each (title, `Status:`) — never a full read at this stage, cost shouldn't scale with how many stories are open or how long they've grown. Present that list, ask which one. Once picked, proceed as the one-match case (full read, then resume).
+**Resuming:** before any story work, check `.breadcrumbs/context/` for existing files. One match, name/slug clearly matches what the user's asking about → read it, summarize status back ("Here's where this stood: ... currently at Step X"), resume. `Status: planning` → the plan is proposed, not agreed (budget checkpoint below): present it for confirmation, the Step 2 gate, then Step 3 — never start a task from it. `implementing` → next unchecked task. Zero matches → nothing to resume; story hasn't started, or it's mid-way/finished in an unbroken conversation with no trigger fired yet. More than one file present and the user's request doesn't unambiguously point to one (generic "let's continue," or a new/vague prompt while other stories sit mid-flight) → don't guess. List the candidates cheaply: filename (slug) + first two lines of each (title, `Status:`) — never a full read at this stage, cost shouldn't scale with how many stories are open or how long they've grown. Present that list, ask which one. Once picked, proceed as the one-match case (full read, then resume).
 
 **Staleness check (piggybacks on the scan above, no separate pass):** the directory listing itself — filenames + mtimes — is already free at this point regardless of match count. While scanning, note any file with `Status: pr-ready` (first two lines, same cheap read as the listing case) and mtime older than 7 days — that combination means the PR draft went out and nobody came back to confirm merge/delete. Collect these across the whole directory, not just the story being resumed or started. Any found → after resolving the current story's resume/start, mention them once in one line: "N context file(s) sitting at pr-ready for 7+ days: <slugs> — merged? want these deleted?" Confirmed per-file or in bulk → delete. Same rule as ordinary cleanup: never delete unprompted, this only surfaces the offer sooner instead of waiting for someone to reopen that specific story.
 
@@ -29,6 +29,28 @@ User explicitly wants it committed / shared with teammates → that's their call
 **Cleanup:** PR merged (user-confirmed) → offer to delete. Never delete unprompted.
 
 **Efficiency:** file exists → one write per gate, every section update batched into one pass, no read-then-write round trips. Don't re-read to confirm a write landed — trust it.
+
+## Budget checkpoint
+
+The one trigger (`SKILL.md`, "The context file") that exists for token cost rather than lost state. Every tool round-trip resends the entire chat, so a story's bill is roughly history × tool calls — a 100K-token chat with 15 reads in one turn costs 1.5M. Everything above the current task is dead weight once it's distilled into the file; the file is what makes starting a new chat lossless. Full mode only — lite has no separate Step 2 gate and a two-task ceiling, so neither point below is ever reached.
+
+**Point 1 — Step 2 gate.** Write *before* the gate message: Original Story, Understanding Summary, Assumptions, Plan, Task Checklist, `Status: planning`. First creation → same mechanics as any other trigger (exclude, template, trip marker). The gate message then ends with one line:
+
+```
+[checkpoint: plan on disk — confirm here, or in a new chat with "continue"]
+```
+
+`planning` means proposed, not agreed. A resuming session re-presents the plan for confirmation and never starts a task from it (see Resuming). Confirmed in this chat → `Status: implementing` flips with task 1's Task Log write, not a separate write. Fires whether or not the user waives the gate — the waiver goes under Gate Waivers as usual.
+
+**Point 2 — every third task checked off.** The Task Log write for that task already happens (Step 3.5); after its trip marker, one more line:
+
+```
+[checkpoint: 3/5 on disk + committed — a new chat with "continue" picks up at task 4]
+```
+
+Don't stop, don't ask. The next task proceeds unless the user takes the offer — the commit and the Task Log entry are already on disk, so stopping at that line loses nothing. Not stopping is deliberate: a pause would be a fifth gate, and the point is fewer tokens, not more turns.
+
+**Why here and not a user-set interval:** Step 2 confirmation is the moment all of Step 1 and 2's investigation becomes dead weight, and three tasks of diffs, test output and commits is the next time the history has visibly outgrown the file. Both are countable, like the investigation caps; "checkpoint when the chat feels long" is an adjective a model can satisfy without doing anything.
 
 ## Project constitution (optional, separate from per-story files)
 

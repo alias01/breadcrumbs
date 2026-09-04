@@ -9,7 +9,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bu
 - **platforms:** drop Claude-only `Explore` wording from the shared investigation rule
 - **breadcrumbs:** investigation marker before every gate, counted lookup/graph-query caps, never open the graph report
 - **tests:** scenario 13 pins the routing down on lite, full, and no-graph repos
+- **breadcrumbs:** budget checkpoint — full-mode stories write the context file at the Step 2 gate and after every third task, with a one-line offer to continue in a fresh chat, so long conversations stop multiplying every tool call's cost
 - **platforms:** `AGENTS.md` follows `--profile` (lean by default) — Cursor and Copilot load it on every prompt, so the always-full copy was costing ~13.8k tokens per prompt next to the lean rule file
+- **tests:** scenario 14 covers the budget checkpoint; scenario 2 updated for the file now existing from the Step 2 gate
 
 ## [1.6.0] - 2026-08-28
 
