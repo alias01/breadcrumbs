@@ -2,6 +2,12 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bumped manually — see VERSION.
 
+## [Unreleased]
+
+### Changes
+- **breadcrumbs:** route investigation by question type — native search for lookups, graphify only for relationship/Flow questions and only when a graph exists; lite mode skips the graph
+- **platforms:** drop Claude-only `Explore` wording from the shared investigation rule
+
 ## [1.6.0] - 2026-08-28
 
 ### Features

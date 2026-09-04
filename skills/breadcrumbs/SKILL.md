@@ -22,7 +22,11 @@ Terse, bullet/fragment, glanceable. Senior/expert audience → jargon freely, no
 
 Understanding a story needs enough repo context to ask good questions and plan real tasks — not a full-repo read. Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) rather than surveying the tree.
 
-**`graphify` first.** If a knowledge graph exists for this repo (`graphify-out/` present) or the skill is installed, query it for the story's keywords/entities before touching the filesystem directly — it's cheaper than grep/Explore and answers "what relates to what" questions a raw text search can't. Fall back to targeted lookups (grep for the term, `Explore` agent at "quick" or "medium" breadth) only for what graphify's query/path/explain tools don't resolve, or when graphify isn't present at all. Full-file reads are last resort, for whatever neither graphify nor a targeted lookup settles. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
+**One retrieval path per question — never stack them.** Two kinds of question, two tools:
+- **"Where is X / what does this file do"** — most of Step 1's taxonomy, all of lite mode → the platform's native code search: semantic index if the platform has one, grep/ripgrep if not. Open only the file it points at. No graph involved.
+- **"What relates to what"** — Step 1's dependencies row, Step 2's Flow / blast radius → `graphify` `query` / `path` / `explain`, with a tight `--budget`, and only if `graphify-out/` already exists. An installed skill without a built graph doesn't count — never build mid-story. No graph → native search, then follow imports/calls by hand.
+
+Graph dump + search hits + full reads on the same question is the wasteful pattern. Full-file reads are last resort, for whatever the chosen path didn't settle. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
 
 ## The context file
 
