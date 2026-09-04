@@ -134,6 +134,41 @@ in `.breadcrumbs/constitution.md`, which Step 2.8 and lite already enforce.
 
 ---
 
+## 2026-09-04 — Graphify answers relationship questions only
+
+**Decision:** "Investigation scope" routes by question type, not by whether graphify is
+present. "Where is X" → the platform's native code search (semantic index or grep), one
+path, then the file it points at. "What relates to what" (Step 1 dependencies, Step 2 Flow)
+→ `graphify` `query`/`path`/`explain` with a tight `--budget`, only when `graphify-out/`
+already exists. Lite mode never touches the graph. Never build a graph mid-story.
+
+**Why:** 1.4.0 said "graphify first, it's cheaper than grep" — true of the build (AST, no
+LLM tokens), false of a query. Each query loads the graph vocabulary, injects a subgraph
+dump, and the agent still reads the real files after. Graph-then-grep-then-read on every
+story is the dual-retrieval pattern that costs more than either path alone, and it landed
+hardest on lite stories, which are "where is X" by definition. The graph's real edge is
+call/import edges grep can't see — exactly the Flow question, so that's where it stays.
+
+**Why platform-neutral wording:** the section ships verbatim to eight platforms. The old
+text named Claude Code's `Explore` agent, meaningless on the other seven, and told Cursor,
+Windsurf and Copilot to bypass their own indexes, the cheapest lookup they have. "Native
+code search" lets each platform take its own cheapest path without the rule knowing which
+platform it's on.
+
+**Why `graphify-out/` present, not "skill installed":** an installed skill with no graph
+means building one before the first gate — free for code, LLM tokens for docs, a detour
+either way.
+
+**Why a marker and counted caps, not just the routing rule:** the routing is prose, and prose
+is what failed last time. "Tight budget" and "stop once answered" are adjectives a model can
+satisfy without changing behaviour. Caps (≤4 / ≤3 native lookups, ≤2 graph queries, budget
+1500, lite → 0) are countable, and the `[investigation: …]` marker before each gate puts the
+count where the user sees it — the same trick the trip marker already uses for file writes.
+It's the only enforcement that ships to all eight platforms; a hook would be Claude Code only.
+Validating it in the context file was considered and dropped: most stories never write one.
+
+---
+
 ## Open — the behavioural half is unverified
 
 Everything verified so far is deterministic: validators, build guards, file sizes, TOML

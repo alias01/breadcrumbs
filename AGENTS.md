@@ -20,7 +20,15 @@ Terse, bullet/fragment, glanceable. Senior/expert audience → jargon freely, no
 
 Understanding a story needs enough repo context to ask good questions and plan real tasks — not a full-repo read. Search outward from the story's own keywords/entities (feature name, endpoint, table, component, error message) rather than surveying the tree.
 
-**`graphify` first.** If a knowledge graph exists for this repo (`graphify-out/` present) or the skill is installed, query it for the story's keywords/entities before touching the filesystem directly — it's cheaper than grep/Explore and answers "what relates to what" questions a raw text search can't. Fall back to targeted lookups (grep for the term, `Explore` agent at "quick" or "medium" breadth) only for what graphify's query/path/explain tools don't resolve, or when graphify isn't present at all. Full-file reads are last resort, for whatever neither graphify nor a targeted lookup settles. Stop once Step 1's taxonomy categories are answered or Step 2's Flow is identified — widen only when a specific remaining unknown demands it, never on a general "let's see what's here."
+**One retrieval path per question — never stack them.** Two kinds of question, two tools:
+- **"Where is X / what does this file do"** — most of Step 1's taxonomy, all of lite mode → the platform's native code search: semantic index if the platform has one, grep/ripgrep if not. Open only the file it points at. No graph involved.
+- **"What relates to what"** — Step 1's dependencies row, Step 2's Flow / blast radius → `graphify` `query` / `path` / `explain`, only if `graphify-out/` already exists. An installed skill without a built graph doesn't count — never build mid-story. No graph → native search, then follow imports/calls by hand.
+
+**Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON — that vocabulary load is what makes a query cost more than a grep. Cap hit, category still open → ask, don't keep reading.
+
+Graph dump + search hits + full reads on one question = the wasteful pattern. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified — widen only for a specific remaining unknown, never "let's see what's here."
+
+**Investigation marker:** one line before every gate message (Step 1, Step 2, lite collapsed gate) counting what this gate spent: `[investigation: native search ×3 · graph ×0]`. Same shape and reason as the trip marker — a visible count is the only "cheapest path" check that works on every platform. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
 
 ## The context file
 
@@ -179,7 +187,7 @@ None of them resolve — the skill was pasted in as rules text, or the platform 
 3. User can't answer either (owner unavailable / genuinely undecided) → don't block. Log under Assumptions w/ reasoning, mark `unconfirmed`. Tell the user it needs owner confirmation before final; proceed anyway.
 4. Classify story type now (table in Step 2.1 of `step2-plan.md`, don't wait for Step 2). `Bug fix` / `Copy/config/content change` = **lite**; everything else = **full**. State the mode, one line.
 5. **Tag every open question/assumption**: Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, API/contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count — **not** step 4's type/size classification — decides the gate below. 10-task "New feature/subsystem," all-Cosmetic → gate merges. "Small feature," one Material unknown → gate stays separate. Task/file count belongs to Step 2.7, not here.
-6. **Gate:** file exists → write Understanding Summary + Assumptions to it in one pass, trip marker. No file → present the same content in chat only. Understanding Summary always ends with one `Scale target:` line (point 2) — the assumed "current scale" form included, so a resuming session and the PR reviewer both know what the story was sized for.
+6. **Gate:** investigation marker first (see "Investigation scope" in `SKILL.md`), then: file exists → write Understanding Summary + Assumptions to it in one pass, trip marker. No file → present the same content in chat only. Understanding Summary always ends with one `Scale target:` line (point 2) — the assumed "current scale" form included, so a resuming session and the PR reviewer both know what the story was sized for.
    - **Zero Material unknowns** → fold Step 2 in: do Step 2's work silently (read `step2-plan.md`), present Understanding Summary + Plan together, one combined confirmation, both quoted verbatim. Regardless of story type/task count.
    - **Any Material unknown remains** (even `unconfirmed`) → summary alone, quoted verbatim, stop. No Step 2 until confirmed.
 
@@ -265,7 +273,7 @@ Story sits at a lighter depth but genuinely carries the risk (a "small feature" 
 8. **Constitution check:** `.breadcrumbs/constitution.md` exists (see "Project constitution" in `context-file-mechanics.md`) → read it once here and check the *whole* plan against it — approach, domain checks, testing, rollout, tasks — before presenting. Runs last on purpose: the rules it holds ("retries carry an idempotency key," "migrations must be reversible") match content that doesn't exist until points 3-5. Conflict → same handling as the point-2 tripwire, resolve before continuing. No file → nothing to check, skip silently. Lite mode skips Step 2 but *not* this check — it runs inline at the collapsed Step 1+2 gate instead (see "Lite mode" in `SKILL.md`), because these rules are repo-wide and don't scale with story size.
 
 9. File exists → one pass, writing: story type, design depth, HLD/LLD notes, architecture decisions, **Risks/Unknowns** (point 2), domain-check outcomes, scale-target outcome (point 3), testing plan, rollout/rollback notes, Flow, **Sequencing** (point 6), Task Checklist — each only where it applied. Risks and Sequencing are the two most expensive things to re-derive on resume; they don't get left in chat. No file → stays in chat.
-10. **Gate:** trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
+10. **Gate:** investigation marker (see "Investigation scope" in `SKILL.md`), then trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
 
 ---
 

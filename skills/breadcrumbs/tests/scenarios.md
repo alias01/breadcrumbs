@@ -212,7 +212,37 @@ not a failure — record it and decide per platform whether the token saving is 
 
 **The failure this exists to catch:** the pre-change skill mentioned performance in three places and enforced it in none — ponytail's "simplest thing that works" could ship an N+1 loop that works on the dev fixture, and no trigger surfaced it. The scan is what makes "let me know when it hurts performance" a rule rather than a hope.
 
+## 13. Investigation routing — the cheapest path, shown as a count
+
+Three prompts, one setup: a scratch repo with the graphify skill installed. Cases A and B also need a built graph (`graphify-out/` present); case C must **not** have one.
+
+**Prompt A (graph present):** paste a lite story, e.g. "change the checkout button label from 'Buy now' to 'Place order'."
+
+**Expect:**
+- Collapsed Step 1+2 gate opens with `[investigation: native search ×N · graph ×0]`, N ≤ 4.
+- Every lookup is a native search (grep / the platform's index) for the label text, then the one file it points at. No `graphify` call of any kind, no `GRAPH_REPORT.md` opened. A lite gate showing `graph ×1` has regressed.
+
+**Prompt B (graph present):** paste a small-feature story with real blast radius, e.g. "add a `cancelled_at` timestamp to orders and surface it on the admin order list."
+
+**Expect:**
+- Step 1 gate: marker shows `graph ×0` — who/what/why, scope, acceptance criteria and data model are all "where is X" lookups. Only the dependencies row may earn a graph query, and then it shows in the marker.
+- Step 2 gate: marker shows `graph query ×1` or `×2` at most, each `--budget 1500`, spent on the Flow (what imports/calls the order model). Native lookups at this gate ≤ 3.
+- **Never** a graph query followed by a grep for the same term followed by opening the same files — the dual-retrieval stack is the regression this scenario exists to catch.
+
+**Prompt C (skill installed, no `graphify-out/`):** same story as B.
+
+**Expect:**
+- No `graphify .` / `graphify update` run at any point — the graph is not built mid-story.
+- Both markers show `graph ×0`; Flow is derived from native search plus following imports by hand.
+- Same caps apply. A run that builds the graph "so it can query it" has regressed.
+
+**Contrast check across platforms:** run B on a platform with a semantic index (Cursor, Windsurf, Copilot) and one without (Cline, Codex, Gemini CLI). The counts should be the same shape; only the tool behind "native search" differs. A platform whose run bypasses its own index for graphify on a "where is X" question has regressed.
+
+**The failure this exists to catch:** the pre-change rule said "graphify first, it's cheaper than grep" — true of the build, false of a query (vocabulary load + subgraph dump + the file reads that follow anyway). Nothing made the extra cost visible, so it landed silently on every story, lite ones most of all. The marker is the only cross-platform evidence that the cheaper path was actually taken.
+
 ## Cross-cutting checks (verify on any scenario)
+
+- Every Step 1, Step 2 and lite-collapsed gate opens with an `[investigation: …]` marker; lite gates show `graph ×0`; no gate exceeds the caps in "Investigation scope".
 
 - Chat responses stay terse/bullet-fragment, not multi-paragraph.
 - No gate skipped, even when lite-collapsed — confirmation still required before moving on.
