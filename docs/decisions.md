@@ -149,3 +149,43 @@ That matters most for the lean profile. Scenario 11 defines the check and the th
 | Fail | improvised from router alone | that platform → `--profile=full` |
 
 Worth running on one platform before relying on it anywhere. Cursor is the fastest to test.
+
+---
+
+## Open — review follow-ups, 2026-09-04
+
+Found in the same review that fixed the install path, resume, `revert` commits and the
+manual-edit review. Not broken, so deferred. Each is small; none blocks a release.
+
+**Process gaps (skill text):**
+
+- **Branch guidance.** Step 3.6 commits per task but nothing says to create a story branch
+  first — a user on `main` gets N commits on `main`, then Step 4 drafts a PR for a branch
+  that doesn't exist. One line before Step 3: confirm or create the branch, named from the
+  story slug.
+- **Resume never reconciles against git.** Step 3.6 claims the Task Log and `git log` are
+  reconstructable from each other, but resume trusts the checklist alone. After a rebase,
+  branch switch or teammate revert, the file says "3/5 done" and the branch disagrees.
+  Cross-check checked-off tasks against commits on resume; mismatch → say so.
+- **Constitution commits are unspecified.** `.breadcrumbs/constitution.md` is "meant to be
+  committed" but no step commits it, so it's swept into whichever task commit runs
+  `git add -A`, or never lands. Give it its own `chore` commit when written.
+- **`Status: done` is never set.** Step 4.7 sets `pr-ready`; cleanup offers deletion on
+  merge. Either set `done` on merge confirmation or drop it from the template + validator.
+- **Step 4 says "fixed five sections" then lists a sixth** ("What changed since last PR").
+- **Lite mode's `Scale target:` line isn't in the router.** Scenario 12 expects it at the
+  collapsed lite gate; the Lite mode section of `SKILL.md` never mentions it, and
+  lean-profile platforms only see the router there.
+
+**Enforcement / tooling:**
+
+- **Validator doesn't check `Scale target:`.** The 2026-09-02 decision argues prose alone
+  doesn't hold, yet the Understanding Summary's `Scale target:` line got prose only. Add it
+  to `validate-context-file.mjs`.
+- **No automated tests for the deterministic parts.** Two validators, a build guard that
+  must throw, TOML validity, the Windsurf byte cap — and no `package.json`/`node --test`.
+  Scenarios 10–11 already list the checks; wire them into CI. Would have caught the
+  `Revert "..."` header failing the validator.
+- **Hook regex is narrow.** `hooks/detect-story.mjs` misses Given/When/Then, `AC:`, ticket
+  keys like `PARK-482`, and a bare "let's continue". It also re-nudges on every matching
+  prompt mid-story.
