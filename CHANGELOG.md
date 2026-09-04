@@ -9,7 +9,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bu
 - **platforms:** drop Claude-only `Explore` wording from the shared investigation rule
 - **breadcrumbs:** investigation marker before every gate, counted lookup/graph-query caps, never open the graph report
 - **tests:** scenario 13 pins the routing down on lite, full, and no-graph repos
-- **breadcrumbs:** output budget — line-range reads, no re-reads, quiet scoped test runs; the full suite once at the Step 3.8 gate
+- **breadcrumbs:** fewer calls per story — one resume probe, no step files in lite or under a waiver, validator path stated, quiet scoped test runs, regression test first on bug fixes; measured in docs/decisions.md
 
 ## [1.6.0] - 2026-08-28
 

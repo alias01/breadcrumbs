@@ -281,7 +281,50 @@ resumability and the trail, paid for with ~15–100% more tokens on a small stor
 token lever a user actually has is fewer calls (new chat per story, fewer discovery
 probes) and a smaller per-call base (MCP servers, always-on rules). Open: make the
 discovery probe one call (`ls .breadcrumbs/context/` only), and consider dropping the
-read-range clause rather than carrying a rule the model doesn't follow.
+read-range clause rather than carrying a rule the model doesn't follow. (Both done —
+next entry.)
+
+---
+
+## 2026-09-04 — Fewer calls, not fewer bytes
+
+**Decision:** after the Output-budget measurement above, the router was reworked to cut
+*calls*: the resume check is one `ls .breadcrumbs/context/` and nothing else; lite mode
+and waived gates read no step files (commit rule inlined so Step 3 isn't needed); the
+validator path is stated, never searched; the ranged-read clause is dropped; and a bug
+fix writes its regression test first and sees it red, instead of stashing the fix later to
+prove the test. The build no longer tells the agent to check that the reference files exist.
+
+**Measured, same bench, same prompt, claude-sonnet-5.** Calls / billed input (k) / wall:
+
+| Variant | Run 1 | Run 2 | Run 3 |
+|---|---|---|---|
+| No breadcrumbs | 15 / 565 / 39s | 15 / 637 / 51s | — |
+| Router before today | 21 / 851 / 61s | 16 / 666 / 50s | — |
+| + Output budget (first cut) | 21 / 1,013 / 66s | 25 / 1,359 / 90s | — |
+| + one probe, no step files, no search | 24 / 1,250 / 70s | 16 / 721 / 57s | 27 / 1,347 / 70s |
+| + regression test first (current) | 17 / 905 / 50s | 26 / 1,325 / 78s | 15 / 784 / 64s |
+
+All twelve runs fixed the bug, added the test, went green. What changed and what didn't:
+
+- **The three mechanical sinks are gone.** Every current-router run made exactly one
+  discovery call, read zero step files, and never searched for the validator. That is
+  the difference between the first cut and now: two runs at the baseline's call count.
+- **The stash dance is the remaining sink, and prose only halved it.** Runs that stash
+  the fix to prove the test cost 8–10 extra calls (v3a, v3c, v4b). The test-first rule
+  stopped it in two runs of three. Same lesson as `Verified:` — a rule the model follows
+  two times in three is not a rule.
+- **Variance is the size of the effect.** Same router, same prompt: 784k to 1,325k. Two
+  or three runs per variant can rank the mechanical fixes, not the ±30% behavioural ones.
+  Do not read the table as "current beats old"; read it as "current is back to old's
+  cost with test-first and per-task commits kept."
+- **The floor is the harness.** ~44k per call before any story content, in every run.
+  On a two-task story breadcrumbs cannot beat "nothing" on tokens; the best it can do is
+  not add calls, and it now mostly doesn't.
+
+**Bench:** a seeded double-submit bug in a 900-line form file, 132-test suite, prompt
+naming both files and waiving every gate; `claude -p` with a fixed tool allowlist; billed
+input = input + cache read + cache write over every call, from `modelUsage`.
 
 ---
 
