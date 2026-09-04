@@ -213,6 +213,19 @@ write(
             ],
           },
         ],
+        // Large files are readable only as a line range — the router asks for
+        // it, the agent ignored it every time, so the hook makes it the only path.
+        PreToolUse: [
+          {
+            matcher: "Read|Bash",
+            hooks: [
+              {
+                type: "command",
+                command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/guard-read.mjs",
+              },
+            ],
+          },
+        ],
       },
     },
     null,

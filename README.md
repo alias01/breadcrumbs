@@ -72,7 +72,7 @@ Once a file exists, it also tracks the story's **Flow**, the set of files the pl
 ```
 (two separate prompts — the second won't find the marketplace until the first completes)
 
-The plugin also registers a `UserPromptSubmit` hook ([`hooks/detect-story.mjs`](hooks/detect-story.mjs)) that recognizes ticket-shaped prompts and nudges toward the skill automatically, instead of relying on you to invoke it. Working from a checkout of this repo instead of the plugin → the same hook is wired in [`.claude/settings.json`](.claude/settings.json).
+The plugin also registers two hooks: a `UserPromptSubmit` hook ([`hooks/detect-story.mjs`](hooks/detect-story.mjs)) that recognizes ticket-shaped prompts and nudges toward the skill automatically, and a `PreToolUse` guard ([`hooks/guard-read.mjs`](hooks/guard-read.mjs)) that denies whole-file reads of files over 300 lines, with the ranged alternative in the denial. The guard exists because the router's ranged-read rule was ignored in every measured run; thresholds via `BREADCRUMBS_READ_MAX_LINES` / `BREADCRUMBS_READ_MAX_RANGE`. Working from a checkout of this repo instead of the plugin → the same hook is wired in [`.claude/settings.json`](.claude/settings.json).
 
 ### Cursor / Windsurf / Cline / Kiro / GitHub Copilot
 
