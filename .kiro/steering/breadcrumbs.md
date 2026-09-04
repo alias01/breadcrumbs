@@ -46,6 +46,8 @@ Search outward from the story's own keywords/entities (feature name, endpoint, t
 
 **Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON. Cap hit, category still open → ask, don't keep reading. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified; widen only for a specific remaining unknown.
 
+**Output budget — every tool result is re-sent on every later call, so cap bytes, not just lookups.** Open the line range a search pointed at, never the whole file; never re-open a file already in context; never open lockfiles, generated or vendored output. Test/typecheck/lint runs → quiet reporter, scoped to what the task touched, failures only (`tail`); the full suite runs once, at the Step 3.8 gate, still quiet. A result over ~100 lines → narrow the command, don't page through it.
+
 **Investigation marker:** one line before every gate message counting what the gate spent: `[investigation: native search ×3 · graph ×0]`. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
 
 ## The context file

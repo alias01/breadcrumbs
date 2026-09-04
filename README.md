@@ -92,6 +92,17 @@ Any tool that reads [`AGENTS.md`](AGENTS.md) from the project root picks up brea
 
 Works alongside the [ponytail](https://github.com/DietrichGebert/ponytail) skill for how code gets written during the Implement step — breadcrumbs owns the process and the trail, ponytail owns keeping the diff small.
 
+### Where the tokens go
+
+The rule file is a router: ~2k tokens, loaded only when a story is in play (agent-requested on Cursor, model-decision on Windsurf, manual on Kiro). Each step file is read once, at its gate. That is the whole cost breadcrumbs adds to a turn.
+
+A usage dashboard that shows lakhs of tokens for one request is not showing context size — it sums input over *every model call in the agentic loop*, and each call re-sends the full context. Thirty tool calls at 60k context is 1.8M billed tokens while the context meter never moves past 60k. Two things drive that number:
+
+- **Fixed cost per call**, paid on every tool call whether or not a story is running: the platform's tool definitions, every MCP server's tools, every always-apply rule, every skill description. On a typical Cursor setup this is 10–15k per call — trim MCP servers you're not using and keep rules agent-requested rather than always-on. Breadcrumbs is already the latter.
+- **Growth per call**, which is what the skill can bound: whole-file reads, verbose test output, big diffs. The router's *Output budget* rule keeps reads to the line range a search found, runs tests quiet and scoped per task, and saves the full suite for the Step 3.8 gate.
+
+Neither helps a chat that has already grown. Start a new chat per story and let the context file carry what the next one needs — that is the point of the trail.
+
 ## Development
 
 [`skills/breadcrumbs/SKILL.md`](skills/breadcrumbs/SKILL.md) is the canonical source. Every other platform file is generated from it — edit `SKILL.md`, then re-run:
@@ -109,7 +120,7 @@ node scripts/build-platforms.mjs                  # lean (default)
 node scripts/build-platforms.mjs --profile=full   # inline everything
 ```
 
-*Lean* ships the router and leaves the step files as repo-relative pointers the agent reads at each gate — ~1.9k tokens per platform file instead of ~10.8k. *Full* inlines everything: bigger, but nothing depends on the agent choosing to follow a pointer.
+*Lean* ships the router and leaves the step files as repo-relative pointers the agent reads at each gate — ~2k tokens per platform file instead of ~10.9k. *Full* inlines everything: bigger, but nothing depends on the agent choosing to follow a pointer.
 
 Lean is a real trade. A pointer is a soft instruction, and a weaker model may skip it. It's managed by what stays in the router — the four gates, "never skip a gate", lite-mode rules, the verification requirement and the context-file triggers are all inline, so a skipped reference read costs plan *depth*, not a gate. If a platform ignores the pointers outright, rebuild with `--profile=full`.
 

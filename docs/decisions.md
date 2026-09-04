@@ -219,6 +219,39 @@ behind a rule lives in this file. Measured with a BPE tokenizer (gpt-tokenizer, 
 
 ---
 
+## 2026-09-04 — Output budget: cap bytes per tool call, not just lookups
+
+**Decision:** `SKILL.md` "Investigation scope" gains an **Output budget** rule: read the line
+range a search pointed at, never re-open a file already in context, never open lockfiles or
+generated output, and run tests/typecheck/lint quiet, scoped to the task, failures only —
+the whole suite once, at the Step 3.8 gate. Step 3.4 and 3.8 reference it; Step 3.5's
+manual-edit review goes `--stat` first, then only the listed files. +118 tokens on the
+router, +43 on `step3-implement.md`.
+
+**Why:** the caps added on 2026-09-02 count *how often* the agent looks (≤4 lookups, ≤2
+graph queries) and say nothing about *how much* each look returns. Real usage showed the
+gap: on Cursor, one story's requests were billed at 3–20 lakh tokens each while the
+context meter never left 200k. The dashboard sums input over every model call in the
+agentic loop, so a 60k-token context re-sent across 30 tool calls is 1.8M tokens — and
+the things that inflate the context by 20–50k in a single call are exactly what the skill
+asks for most often: a full-file read at Step 1, a verbose test run at 3.4 (once per task)
+and again at 3.8. Bounding the count without bounding the size left the biggest lever
+untouched.
+
+**Why inline in the router rather than in a step file:** the rule applies at every gate
+and to every tool the platform has, not to one step. Same reasoning as the counted caps.
+
+**Why "quiet, failures only" and not "skip the run":** the 2026-08-28 decision stands — a
+task is done when something proves it. This changes what the proof *costs*, not whether it
+runs. The gate-level full suite also stands; it just stops being run per task too, which
+Step 3.4 never asked for and agents did anyway.
+
+**What it doesn't fix:** the per-call fixed cost the platform adds (tool definitions, rules,
+skill descriptions — ~15k per call on the Cursor setup observed) is outside the skill's
+reach; the README's install section now says where that cost comes from and how to trim it.
+
+---
+
 ## Open — the behavioural half is unverified
 
 Everything verified so far is deterministic: validators, build guards, file sizes, TOML
