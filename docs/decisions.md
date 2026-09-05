@@ -328,45 +328,15 @@ input = input + cache read + cache write over every call, from `modelUsage`.
 
 ---
 
-## 2026-09-04 — The ranged-read rule becomes a hook
+## 2026-09-05 — Read guard tried and removed
 
-**Decision:** `hooks/guard-read.mjs`, a `PreToolUse` hook on `Read` and `Bash`, denies a
-whole-file read (or `cat`) of any file over 300 lines and puts the alternative in the
-denial: grep for the symbol, then `Read` with `offset` + `limit` ≤ 200. Ships in
-`.claude/settings.json` for a checkout and in the plugin manifest. Thresholds via
-`BREADCRUMBS_READ_MAX_LINES` / `BREADCRUMBS_READ_MAX_RANGE`.
-
-**Why a hook:** the same rule as prose was followed in 0 of 9 runs (entries above). The
-model isn't wrong to read a named file whole — a range needs a grep first, which is one
-more call, and it doesn't do the arithmetic that says the whole read costs more over the
-story. So the whole-file path is removed rather than argued with, the way
-`validate-context-file.mjs` removed the unverified checkoff.
-
-**Measured, same bench, three runs.** Calls / billed input (k) / peak context (k) / wall:
-
-| Variant | Run 1 | Run 2 | Run 3 |
-|---|---|---|---|
-| No breadcrumbs | 15 / 565 / 60 / 39s | 15 / 637 / 63 / 51s | — |
-| Current router, no hook | 17 / 905 / 66 / 50s | 26 / 1,325 / 69 / 78s | 15 / 784 / 66 / 64s |
-| Current router + read guard | 37 / 1,811 / 64 / 104s | 18 / 616 / 56 / 51s | 21 / 1,007 / 59 / 78s |
-
-- **It works every time.** All three runs: whole read denied → grep → one 45–50 line range.
-  The 865-line file never entered the context. That is the first read-size rule in this
-  repo that held in every run.
-- **Peak context dropped ~10k** (66–69k → 56–64k), which is the file's ~10k no longer
-  re-sent on every later call.
-- **Net tokens on this bench are about break-even.** The denied call still costs a model
-  turn (~45k) and the grep costs another, ~95k; the saving is ~10k × the remaining calls,
-  ~120k on a 15-call story. It pays back with a bigger file or a longer story, and a
-  900-line file is the *small* end of what the guard is for. The best breadcrumbs run of
-  the day (616k) was under the guard, at the no-breadcrumbs baseline.
-- **The stash dance is still the variance.** Run 1 stashed the fix to prove the test
-  (again) and fiddled with the validator: 37 calls. Nothing about the guard caused or
-  prevents that; it is the next thing to make mechanical, not to reword.
-
-**Not covered:** `cd dir && cat file` resolves the path against the hook's cwd, so a
-relative path after a `cd` slips past; `sed -n`/`head`/`tail` pass by design. Cursor has no
-equivalent wired here — its `beforeReadFile` hook could carry the same check.
+A `PreToolUse` hook that denied whole-file reads over 300 lines was added, measured and
+removed the next day. It held in every run (whole read denied → grep → one 50-line range,
+peak context −10k), but the denied call and the grep cost as much as the range saved on a
+900-line file, and the story's total was unchanged inside the run-to-run noise. Removed
+at the owner's request rather than kept as a break-even feature. If a repo has files in
+the thousands of lines the arithmetic flips; the hook is in this branch's history
+(`ccf17a2`) if that day comes.
 
 ---
 
