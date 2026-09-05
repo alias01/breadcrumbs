@@ -274,3 +274,26 @@ manual-edit review. Not broken, so deferred. Each is small; none blocks a releas
 - **Hook regex is narrow.** `hooks/detect-story.mjs` misses Given/When/Then, `AC:`, ticket
   keys like `PARK-482`, and a bare "let's continue". It also re-nudges on every matching
   prompt mid-story.
+
+---
+
+## Open — review follow-ups, 2026-09-05
+
+First live-model run of a trigger (the new Context growth one, via a subagent playing a
+mid-Step-3 checkpoint) — first real dent in "Open — the behavioural half is unverified"
+above, though that entry's own ask (lean-profile pointer-following on a live platform)
+is still untested. Fixed one thing in the same pass (`minimal-context-mode.md`'s Step 3
+cap wrongly implied a baseline cap existed there to reduce — there isn't one; reworded to
+state it as a new cap, not a reduction). Two more are pre-existing, not introduced by that
+file, and touch every trigger that creates a file mid-Step-3 (Mid-flight break included),
+not just Context growth — deferred rather than fixed in the same pass that found them:
+
+- **Trip-marker timing inside Step 3 is unstated.** The trip marker rule says "before the
+  gate message," but Step 3's gate only fires after every task is checked off — a mid-task
+  write (the normal case for Mid-flight break, and now Context growth) doesn't precede any
+  gate message yet. Nothing says whether that write still gets its own marker. The test run
+  emitted one anyway, by guessing the rule's spirit rather than reading an explicit answer.
+- **`context-file-mechanics.md`'s "one write per gate" reads as exhaustive, but isn't.** The
+  template's Task Log is written per task inside Step 3 — necessarily more than once between
+  the Step 3 gate itself. The two documents don't contradict on purpose; nothing marks the
+  mechanics line as "gates, plus every Step 3 task."

@@ -491,7 +491,7 @@ Read when `.breadcrumbs/context/` (repo root) has files and the user is starting
 Read once, the moment the Context growth trigger fires (`SKILL.md`). Stays in effect for the rest of *this session*, on *this story* — a fresh session starts clean, nothing carries over. A later threshold on the same story (50% → 75% → 90%) doesn't escalate this file, only the "suggest a new session" nudge gets more insistent.
 
 **Investigation — lite caps apply regardless of full/lite classification:**
-- Native lookups ≤2 per remaining gate (down from 4 before Step 1 / 3 before Step 2).
+- Still before the Step 2 gate → native lookups ≤2 for the rest of it (down from 3). Already past Step 2, into Step 3 → ≤2 native lookups per remaining task — Step 3 has no baseline cap of its own to reduce, this **is** the cap.
 - Graph queries: 0 for the rest of the story — native search only, follow imports/calls by hand.
 - Already read or opened this session → reuse it, never re-open it "to be sure."
 - No tree survey, no re-listing a directory already listed this session.
