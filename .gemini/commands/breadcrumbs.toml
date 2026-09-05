@@ -71,7 +71,7 @@ Auto-detected at Step 1.4: `Bug fix` / `Copy/config/content change` → lite; ev
 
 - Step 1 gate + all of Step 2 collapse into one message: approach ("no design" depth) + task list (max 2) + the check that will prove it works + the `Scale target:` line, ending "Here's what I understand and how I'd build it — confirm?" → Step 3.
 - **Two Step 2 checks survive the collapse**, inline:
-  - `Bug fix` → one fragment each: root cause (not the symptom), repro confirmed, same defect looked for elsewhere, regression case named. **Regression test first, red; then the fix, green** — that run is the repro. Never stash, revert or copy a fix aside to prove a test fails.
+  - `Bug fix` → one fragment each: root cause (not the symptom), repro confirmed, same defect looked for elsewhere, regression case named. **Regression test first, red; then the fix, green** — that run is the repro. Never stash, revert or copy a fix aside to prove a test fails; on Claude Code the plugin's guard denies `git stash`/`checkout --`/`restore`/`revert` outright.
   - Either type → constitution check: `.breadcrumbs/constitution.md` exists → check the plan against its `status: active` lines; conflict → surface, resolve before continuing. No file → skip silently.
 - Step 3: one wrap-up message after all tasks, not per-task. **Verification isn't collapsed** — 3.4 per task, 3.8 before the wrap-up. One commit per task, `<type>(<scope>): <imperative summary>` (`fix`/`feat`/`test`/`docs`/`refactor`/`chore`), checked with `skills/breadcrumbs/scripts/validate-commit-message.mjs` if present — don't search for it.
 - Step 4: PR draft as usual.

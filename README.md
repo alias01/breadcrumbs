@@ -72,7 +72,7 @@ Once a file exists, it also tracks the story's **Flow**, the set of files the pl
 ```
 (two separate prompts — the second won't find the marketplace until the first completes)
 
-The plugin also registers a `UserPromptSubmit` hook ([`hooks/detect-story.mjs`](hooks/detect-story.mjs)) that recognizes ticket-shaped prompts and nudges toward the skill automatically, instead of relying on you to invoke it. Working from a checkout of this repo instead of the plugin → the same hook is wired in [`.claude/settings.json`](.claude/settings.json).
+The plugin also registers two hooks: a `UserPromptSubmit` hook ([`hooks/detect-story.mjs`](hooks/detect-story.mjs)) that recognizes ticket-shaped prompts and nudges toward the skill automatically, and a `PreToolUse` guard ([`hooks/guard-stash.mjs`](hooks/guard-stash.mjs)) that denies `git stash`, `checkout --`, `restore` and `revert` outright. The guard exists because "write the regression test first, never stash the fix to prove it fails" held as prose in one of three measured runs — the other two shelved the finished fix, reran the suite to see the test go red, then brought it back, at a cost of 6–10 extra calls each time. Working from a checkout of this repo instead of the plugin → the same hooks are wired in [`.claude/settings.json`](.claude/settings.json).
 
 ### Cursor / Windsurf / Cline / Kiro / GitHub Copilot
 

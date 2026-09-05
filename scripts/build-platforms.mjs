@@ -213,6 +213,20 @@ write(
             ],
           },
         ],
+        // Shelving a fix to watch a test fail, then bringing it back, is denied —
+        // prose ("write the test first, never stash to prove it") held in one of
+        // three runs; the hook makes the shelve-and-restore path unavailable.
+        PreToolUse: [
+          {
+            matcher: "Bash",
+            hooks: [
+              {
+                type: "command",
+                command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/guard-stash.mjs",
+              },
+            ],
+          },
+        ],
       },
     },
     null,

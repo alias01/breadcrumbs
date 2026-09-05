@@ -340,6 +340,61 @@ the thousands of lines the arithmetic flips; the hook is in this branch's histor
 
 ---
 
+## 2026-09-05 — The stash dance gets the same treatment as the read guard
+
+**Decision:** `hooks/guard-stash.mjs`, a `PreToolUse` hook on `Bash`, denies `git stash`
+(push/pop/apply/drop — `list`/`show` pass), `git checkout -- <path>`, `git restore <path>`
+without `--staged`, and `git revert`. Wired the same way the read guard was: `.claude/settings.json`,
+the plugin manifest, `scripts/build-platforms.mjs`. The router's bug-fix line already said
+"never stash, revert or copy a fix aside to prove a test fails" — the 2026-09-04 entry above
+measured that as prose holding in one run of three. Same lesson as the read guard: reword it
+again and it's still a coin flip, so the shelve-and-restore path is removed instead.
+
+**Measured, a smaller fixture (double-submit bug, one 90-line file, 30 tests, `claude -p`,
+`claude-sonnet-5`).** The natural runs didn't reproduce the dance:
+
+| Variant | Run 1 | Run 2 | Run 3 |
+|---|---|---|---|
+| No breadcrumbs | 9 calls / 417k | — | — |
+| Router, no guard | 9 calls / 408k | — | — |
+| Router + guard-stash | 9 calls / 371k | 9 calls / 374k | 9 calls / 367k |
+
+All five fixed the bug, added the test, finished green, none touched `git stash`. That's the
+fixture, not the fix: a 90-line file with one clear defect gives the model less reason to
+double-check its own test than a 900-line one did. Two more natural runs were started to build
+sample size; both were lost to a sandbox artifact (the scratch directories weren't in Claude
+Code's trust registry, so custom `permissions.allow` was ignored) rather than measured, so
+they're not counted either way.
+
+**So the mechanism was tested directly instead of waited for.** Same fixture, already fixed and
+committed, one added instruction: *"prove the regression test actually catches the bug — back
+the fix out, rerun the suite to see it fail, then restore it."* That is the exact shape of the
+runs that stashed on 2026-09-04, forced on purpose:
+
+- **No guard:** ran `git checkout -- src/orderForm.js` to restore the fix, unimpeded. 8 calls,
+  343k, correct result.
+- **With guard:** `permission_denials` shows the identical command denied —
+  `git checkout -- src/orderForm.js && git status && npm test …` — with the hook's reason
+  ("discards the file's changes... write the test, run it now... no stash, checkout, restore or
+  revert needed"). The agent didn't stall on the denial: it restored the fix by hand instead
+  (`Edit`, confirmed against the commit with `git diff --stat`), reran the suite, and finished
+  with the same correct result. 10 calls, 478k — one recovery call more than the unguarded path,
+  for this narrowed, worst-case-shaped task alone.
+
+**Reading it straight:** the hook fires precisely on the command it's meant to catch and the
+agent recovers rather than getting stuck — that was the open question, and it's answered. What
+isn't re-established here is the original 2-of-3 natural repro rate; this fixture didn't produce
+it unforced, in the small sample run. The five natural full-story runs above are the number that
+matters for "does this cost more than doing nothing," and on every one of them guard-stash tied
+the call count of baseline and the ungated router while landing lower on tokens — it never had
+to intervene because nothing was stashed.
+
+**Not covered:** an `Edit` call that manually reverts a file's own content back to its prior
+text is indistinguishable from ordinary iteration and isn't blocked — only the git-level shelve
+commands are. Cursor has no equivalent hook wired here.
+
+---
+
 ## Open — the behavioural half is unverified
 
 Everything verified so far is deterministic: validators, build guards, file sizes, TOML
