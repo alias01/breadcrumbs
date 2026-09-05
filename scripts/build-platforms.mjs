@@ -11,6 +11,7 @@ const VERSION = readFileSync("VERSION", "utf8").trim();
 const SCRIPTS = [
   "skills/breadcrumbs/scripts/validate-context-file.mjs",
   "skills/breadcrumbs/scripts/validate-commit-message.mjs",
+  "skills/breadcrumbs/scripts/session-token-stats.mjs",
 ];
 const REFERENCES = [
   "skills/breadcrumbs/context-file-mechanics.md",
