@@ -195,9 +195,9 @@ write(
       version: VERSION,
       license: "MIT",
       skills: ["./skills/breadcrumbs"],
-      // The story-detection hook ships WITH the plugin, resolved against the
-      // plugin's install dir — not the cwd-relative path in .claude/settings.json,
-      // which only works for a checkout of this repo run from its root.
+      // Both hooks ship WITH the plugin, resolved against the plugin's install
+      // dir — not the cwd-relative path in .claude/settings.json, which only
+      // works for a checkout of this repo run from its root.
       hooks: {
         UserPromptSubmit: [
           {
@@ -205,6 +205,10 @@ write(
               {
                 type: "command",
                 command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/detect-story.mjs",
+              },
+              {
+                type: "command",
+                command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/detect-context-growth.mjs",
               },
             ],
           },

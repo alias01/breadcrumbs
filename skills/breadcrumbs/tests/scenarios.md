@@ -241,6 +241,21 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 
 **The failure this exists to catch:** the pre-change rule said "graphify first, it's cheaper than grep" — true of the build, false of a query (vocabulary load + subgraph dump + the file reads that follow anyway). Nothing made the extra cost visible, so it landed silently on every story, lite ones most of all. The marker is the only cross-platform evidence that the cheaper path was actually taken.
 
+## 14. Context growth — checkpoint fires without a chat trigger phrase
+
+Claude Code only (the hook is a `UserPromptSubmit` command, not a chat pattern another platform's rules file could imitate). Needs a real session so the transcript has usage numbers — a scratch repo works, but the session itself must run long enough to accumulate tokens.
+
+**Setup:** start a full-mode story (Step 1 confirm → Step 2 confirm → mid-implementation), then either wait for real usage to cross 50% of `BREADCRUMBS_CONTEXT_WINDOW` (default 200k) or lower the env var for the test (`BREADCRUMBS_CONTEXT_WINDOW=1000` forces a near-immediate cross). Say nothing about pausing, testing, or scope — just keep working.
+
+**Expect:**
+- Next prompt after the threshold crosses: a line appears (from the hook, not you) naming the estimated percentage and pointing at the "Context growth" trigger — no test failed, no scope changed, no stop/topic-shift phrase was said.
+- Context file created if missing (or updated if it already exists from an earlier trigger), backfilled the same as a Stop signal.
+- You tell the user their context is filling up and suggest a fresh session — **don't** just silently keep going as if nothing happened.
+- Lite story crossing this trigger escalates to full, stated in one line, same as Mid-flight break.
+- Immediately send another prompt without doing anything else → **no repeat notice** at the same percentage bucket (50/75/90) — the hook suppresses re-firing until the next bucket. A run that nags every single prompt past 50% has regressed.
+
+**The failure this exists to catch:** every other file-creation trigger depends on something happening in chat — a phrase, a failing test, a scope change. A long, uneventful story (no failures, no drift, nobody remembers to say "let's pause") can run past what the harness itself can hold before any of those fire, and the reasoning trail gets silently compacted away — the exact loss breadcrumbs exists to prevent. This is the one trigger that fires from outside the conversation.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Every Step 1, Step 2 and lite-collapsed gate opens with an `[investigation: …]` marker; lite gates show `graph ×0`; no gate exceeds the caps in "Investigation scope".

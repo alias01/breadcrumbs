@@ -30,6 +30,7 @@ Search outward from the story's own keywords/entities (feature name, endpoint, t
 - **Stop signal** — "let's continue tomorrow," "pause here" → create now, backfill Original Story/Understanding/Plan/Task Checklist from the conversation at the current step. Mode unchanged.
 - **Mid-flight break** — test fails, assumption breaks, scope changes, perf/scale regression (Step 3.7) → create if missing, backfill, log the Scope Change. Lite escalates to full here.
 - **Topic shift** — conversation moves off the story mid-flight with no stop signal or break → ask once: "Looks like we're moving off this story — want me to checkpoint it first?" Yes → as Stop signal. No → don't create, don't ask again for this detour.
+- **Context growth** — a `[context: ~N% ...]`-style notice appears saying session context has crossed a threshold (fired by `hooks/detect-context-growth.mjs`, a UserPromptSubmit hook estimating usage from the transcript — no chat trigger phrase needed) → create if missing, backfill, same as Stop signal, then tell the user context is filling up and suggest a fresh session; `resume.md` picks the story back up there. Lite escalates to full here, same as Mid-flight break.
 
 No trigger, all four gates finish in one sitting → no file, ever. Expected path.
 

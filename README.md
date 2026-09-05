@@ -50,6 +50,7 @@ flowchart TD
     W[Mid-story] --> Trig{Trigger?}
     Trig -- "\"let's continue tomorrow\"" --> C[Create context file]
     Trig -- "test fails / scope changes" --> C
+    Trig -- "context window filling up" --> C
     Trig -- "conversation drifts elsewhere" --> Ask{"Checkpoint first?<br/>(asked once)"}
     Ask -- yes --> C
     Ask -- no --> W
@@ -72,7 +73,7 @@ Once a file exists, it also tracks the story's **Flow**, the set of files the pl
 ```
 (two separate prompts — the second won't find the marketplace until the first completes)
 
-The plugin also registers a `UserPromptSubmit` hook ([`hooks/detect-story.mjs`](hooks/detect-story.mjs)) that recognizes ticket-shaped prompts and nudges toward the skill automatically, instead of relying on you to invoke it. Working from a checkout of this repo instead of the plugin → the same hook is wired in [`.claude/settings.json`](.claude/settings.json).
+The plugin also registers two `UserPromptSubmit` hooks: [`hooks/detect-story.mjs`](hooks/detect-story.mjs) recognizes ticket-shaped prompts and nudges toward the skill automatically, instead of relying on you to invoke it; [`hooks/detect-context-growth.mjs`](hooks/detect-context-growth.mjs) estimates session context usage from the transcript and nudges toward a checkpoint once it crosses 50% (then 75%, 90%), so a long story gets a context file before the harness's own compaction or context limit summarizes the reasoning trail away. Its default assumes a 200k-token context window — set `BREADCRUMBS_CONTEXT_WINDOW` if you're on an extended context tier. Working from a checkout of this repo instead of the plugin → the same hooks are wired in [`.claude/settings.json`](.claude/settings.json).
 
 ### Cursor / Windsurf / Cline / Kiro / GitHub Copilot
 
