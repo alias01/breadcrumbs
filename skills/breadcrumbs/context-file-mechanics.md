@@ -52,7 +52,7 @@ The bar is repo-wide *and* standing; a single ambiguous correction doesn't clear
 
 ## Validator scripts
 
-Two optional scripts: `validate-context-file.mjs` and `validate-commit-message.mjs` (Step 3.6). They live in a `scripts/` directory alongside the skill's files — never hard-code one platform's layout.
+Three optional scripts: `validate-context-file.mjs`, `validate-commit-message.mjs` (Step 3.6), and `session-token-stats.mjs` (Step 4.8, testing). They live in a `scripts/` directory alongside the skill's files — never hard-code one platform's layout.
 
 Resolve by trying `scripts/<name>.mjs` relative to, in order: the directory this file was loaded from → `skills/breadcrumbs/` under the repo root → `.claude/skills/breadcrumbs/` under the repo root → `~/.claude/skills/breadcrumbs/`. First hit wins; run `node <resolved-path> [args]`. Resolve once per session.
 

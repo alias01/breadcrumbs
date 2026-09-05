@@ -128,7 +128,7 @@ The bar is repo-wide *and* standing; a single ambiguous correction doesn't clear
 
 ## Validator scripts
 
-Two optional scripts: `validate-context-file.mjs` and `validate-commit-message.mjs` (Step 3.6). They live in a `scripts/` directory alongside the skill's files — never hard-code one platform's layout.
+Three optional scripts: `validate-context-file.mjs`, `validate-commit-message.mjs` (Step 3.6), and `session-token-stats.mjs` (Step 4.8, testing). They live in a `scripts/` directory alongside the skill's files — never hard-code one platform's layout.
 
 Resolve by trying `scripts/<name>.mjs` relative to, in order: the directory this file was loaded from → `skills/breadcrumbs/` under the repo root → `.claude/skills/breadcrumbs/` under the repo root → `~/.claude/skills/breadcrumbs/`. First hit wins; run `node <resolved-path> [args]`. Resolve once per session.
 
@@ -367,7 +367,7 @@ Lighter depth but the story genuinely carries the risk (a "small feature" writin
 5. **Before showing the draft, re-scan it against rule 4.** Any section with 2+ facts written as flowing prose instead of `-` bullets → split it now. Check this after drafting, not after the user flags it.
 6. **Show the draft directly in chat, stop there.** The chat message *is* the deliverable — the user copies it into the platform's PR field. Nothing written to the context file here.
 7. **Gate:** confirm or request changes, iterate in chat, until happy with what they'll paste.
-8. **[Testing] Session token stats.** Run `node scripts/session-token-stats.mjs` and report the one-line effective-token total under the draft. Add `--by-tool` for a breakdown by category (system prompt, Read, Bash, Edit, chat replies, ...) when the user wants to see where the session's tokens went, e.g. to spot which step of the skill is expensive. Best-effort — reads the transcript's own usage blocks, no separate tracking. Drop this step once it's no longer needed for testing.
+8. **[Testing] Session token stats.** Run `session-token-stats.mjs` (resolve per "Validator scripts" in `context-file-mechanics.md` — don't assume `scripts/` is relative to the target repo's cwd) and report the one-line effective-token total under the draft. Add `--by-tool` for a breakdown by category (system prompt, Read, Bash, Edit, chat replies, ...) when the user wants to see where the session's tokens went, e.g. to spot which step of the skill is expensive. Not found → skip, don't block. Drop this step once it's no longer needed for testing.
 9. Confirmed + file exists → write one line to PR Summary: `Last drafted: <date>` (anchor for diffing Scope Changes later, not a text copy). Update Status to `pr-ready`, same pass. Trip marker. No file → nothing to write.
 
 ---
