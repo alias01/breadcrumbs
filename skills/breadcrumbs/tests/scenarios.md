@@ -253,6 +253,8 @@ Claude Code only (the hook is a `UserPromptSubmit` command, not a chat pattern a
 - You tell the user their context is filling up and suggest a fresh session — **don't** just silently keep going as if nothing happened.
 - Lite story crossing this trigger escalates to full, stated in one line, same as Mid-flight break.
 - Immediately send another prompt without doing anything else → **no repeat notice** at the same percentage bucket (50/75/90) — the hook suppresses re-firing until the next bucket. A run that nags every single prompt past 50% has regressed.
+- From that point on: investigation caps drop to lite levels even in a full-mode story, chat turns terser, no re-reading a file just written, tool output summarized rather than pasted in full — per `minimal-context-mode.md`, read once at first crossing. Give the next task a reason to open a file already read this session, or re-run a lookup already capped out → it reuses what's known instead, or says the cap's been hit.
+- Verification (3.4/3.8) and gate confirmations are **not** shortened by this mode — a task checked off without its stated check still fails this scenario even past the threshold.
 
 **The failure this exists to catch:** every other file-creation trigger depends on something happening in chat — a phrase, a failing test, a scope change. A long, uneventful story (no failures, no drift, nobody remembers to say "let's pause") can run past what the harness itself can hold before any of those fire, and the reasoning trail gets silently compacted away — the exact loss breadcrumbs exists to prevent. This is the one trigger that fires from outside the conversation.
 

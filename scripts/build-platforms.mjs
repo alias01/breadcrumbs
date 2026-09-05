@@ -20,6 +20,7 @@ const REFERENCES = [
   "skills/breadcrumbs/step4-pr.md",
   "skills/breadcrumbs/context-template.md",
   "skills/breadcrumbs/resume.md",
+  "skills/breadcrumbs/minimal-context-mode.md",
 ];
 
 function parseSkill(raw) {
@@ -117,6 +118,7 @@ repo root, **at the moment you reach that gate** — not up front:
 | Step 4 (PR) | \`${REF_DIR}step4-pr.md\` |
 | First context-file write | \`${REF_DIR}context-file-mechanics.md\` + \`${REF_DIR}context-template.md\` |
 | Resume (\`.breadcrumbs/context/\` non-empty) | \`${REF_DIR}resume.md\` |
+| Context growth trigger fires | \`${REF_DIR}minimal-context-mode.md\` |
 
 No file access, or the files aren't present → say so before the first gate rather
 than improvising a step's content. The rules below are the whole contract; the step

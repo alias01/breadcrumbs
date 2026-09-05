@@ -66,10 +66,11 @@ function run(payload) {
   console.log(
     `Context usage is now ~${pct}% (~${usedK}k/${windowK}k tokens estimated). ` +
       `If a breadcrumbs story is in flight, checkpoint it now — the "Context growth" ` +
-      `trigger in SKILL.md applies even with no test failure or scope change. Then tell ` +
-      `the user their session context has crossed ${crossed}% and suggest continuing this ` +
-      `story in a fresh session; resume.md picks it back up automatically. No story in ` +
-      `flight → just mention the context level.`
+      `trigger in SKILL.md applies even with no test failure or scope change — then read ` +
+      `minimal-context-mode.md (first time only) and follow it for the rest of this story ` +
+      `in this session. Tell the user their session context has crossed ${crossed}% and ` +
+      `suggest continuing this story in a fresh session; resume.md picks it back up ` +
+      `automatically. No story in flight → just mention the context level.`
   );
 }
 
