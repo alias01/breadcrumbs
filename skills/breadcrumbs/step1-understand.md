@@ -18,6 +18,8 @@
 
    Skip categories that obviously don't apply. Ask each genuinely vague item as its own question, one at a time, wait for the answer — never batch, even when several look like the same unknown.
 
+   **Plain chat text by default, not a question widget.** A binary or short-answer clarification ("is placement X fine, or do you want it moved to Y?") goes in the message itself. Reach for a structured question tool only when there are genuinely 3+ distinct options worth laying out side by side, or the answer benefits from being picked rather than typed — not for every clarification reflexively.
+
    **Ask order + stop rule:**
    - Classify before asking (point 5): Material first. Cosmetic → assume and log per point 3, don't spend a turn unless the user's still volunteering detail.
    - Stop as soon as the story is buildable and every remaining gap is Cosmetic or safely assumable → remaining items go to Assumptions as `unconfirmed`.

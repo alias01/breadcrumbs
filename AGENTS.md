@@ -20,6 +20,8 @@ Search outward from the story's own keywords/entities (feature name, endpoint, t
 - **"Where is X / what does this file do"** (most of Step 1, all of lite) → the platform's native code search: semantic index if it has one, else grep/ripgrep. Open only the file it points at.
 - **"What relates to what"** (Step 1 dependencies, Step 2 Flow / blast radius) → `graphify` `query` / `path` / `explain`, only if `graphify-out/` already exists — never build mid-story. No graph → native search, follow imports/calls by hand.
 
+**Shell lookups:** quote glob patterns passed to `--include`/`-name` (`--include='*.tsx'`, not `--include=*.tsx`) — an unquoted glob expands in the shell before the tool sees it and fails with "no matches found," costing a second call to fix what should have worked the first time.
+
 **Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON. Cap hit, category still open → ask, don't keep reading. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified; widen only for a specific remaining unknown.
 
 **Investigation marker:** one line before every gate message counting what the gate spent: `[investigation: native search ×3 · graph ×0]`. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
@@ -156,6 +158,8 @@ None resolve (skill pasted as rules text, no filesystem/shell, no `node`) → sk
 
    Skip categories that obviously don't apply. Ask each genuinely vague item as its own question, one at a time, wait for the answer — never batch, even when several look like the same unknown.
 
+   **Plain chat text by default, not a question widget.** A binary or short-answer clarification ("is placement X fine, or do you want it moved to Y?") goes in the message itself. Reach for a structured question tool only when there are genuinely 3+ distinct options worth laying out side by side, or the answer benefits from being picked rather than typed — not for every clarification reflexively.
+
    **Ask order + stop rule:**
    - Classify before asking (point 5): Material first. Cosmetic → assume and log per point 3, don't spend a turn unless the user's still volunteering detail.
    - Stop as soon as the story is buildable and every remaining gap is Cosmetic or safely assumable → remaining items go to Assumptions as `unconfirmed`.
@@ -256,7 +260,7 @@ Lighter depth but the story genuinely carries the risk (a "small feature" writin
 
 # Step 3 — Implement
 
-1. Work the Task Checklist one task at a time. **One chat message per task, sent after everything else for that task is done** — edit, verify, task-log write, commit. Do not narrate intermediate checkpoints ("starting task N", "verifying now", "typecheck clean", "committing") as separate messages; run those steps silently and fold their outcomes into the single end-of-task message (what changed, what verified it, that it's committed). This applies even with no context file, where progress is narrated in chat instead of written to a file — the same one-message-per-task rule holds, it just replaces a file write instead of accompanying one.
+1. Work the Task Checklist one task at a time. **Exactly one chat message per task, and nothing else** — no text before the task's first tool call, none between its tool calls, none after any call but the last. Edit, verify, task-log write, commit all run back to back with zero chat output in between; the first text you emit for a task is its single end-of-task message (what changed, what verified it, that it's committed). This means no lead-in ("starting task N", "same pattern as before"), no running commentary ("verifying now", "typecheck clean", "committing"), and no mid-task check-ins ("found X, checking Y next") — those observations belong inside the one final message if they matter, not as their own turns. Applies with or without a context file — without one, that single message *is* the progress narration.
 2. **Don't ask the user mid-task.** Use best judgment. Genuine judgment call → log in Task Log's "Why." Changes what was agreed (contradicts plan, needs a scope decision) → log under Scope Changes, flag immediately.
 3. Apply `ponytail`: simplest thing that works, stdlib/existing deps before new code, no unrequested abstractions. Never simplify away input validation, error handling, security, accessibility, or holding the story's scale target — "works" means at that scale, not on the dev fixture. "Current scale assumed" → don't make the path worse than today.
 4. **Verify before checking the task off.** A task is done when something demonstrates it works, not when the code is written.

@@ -41,6 +41,8 @@ Search outward from the story's own keywords/entities (feature name, endpoint, t
 - **"Where is X / what does this file do"** (most of Step 1, all of lite) → the platform's native code search: semantic index if it has one, else grep/ripgrep. Open only the file it points at.
 - **"What relates to what"** (Step 1 dependencies, Step 2 Flow / blast radius) → `graphify` `query` / `path` / `explain`, only if `graphify-out/` already exists — never build mid-story. No graph → native search, follow imports/calls by hand.
 
+**Shell lookups:** quote glob patterns passed to `--include`/`-name` (`--include='*.tsx'`, not `--include=*.tsx`) — an unquoted glob expands in the shell before the tool sees it and fails with "no matches found," costing a second call to fix what should have worked the first time.
+
 **Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON. Cap hit, category still open → ask, don't keep reading. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified; widen only for a specific remaining unknown.
 
 **Investigation marker:** one line before every gate message counting what the gate spent: `[investigation: native search ×3 · graph ×0]`. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
