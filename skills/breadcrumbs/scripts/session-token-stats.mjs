@@ -184,6 +184,9 @@ if (detailed) {
     console.log(
       "Effective = input + cache_read*0.1 + cache_write*2 + output*5 (explain-usage's weighting, approximate cost not billed tokens)."
     );
+    console.log(
+      "Cumulative across every turn this session, not a context-window snapshot — it will exceed the model's context size in any long session, because each turn re-pays a cache-read of everything so far. For how full the context window is *right now*, check your IDE/CLI's own context usage panel instead."
+    );
   }
 } else if (asJson) {
   console.log(JSON.stringify(result, null, 2));
@@ -195,4 +198,7 @@ if (detailed) {
   console.log(`Cache write tokens: ${totals.cache_creation_input_tokens.toLocaleString()}`);
   console.log(`Cache read tokens:  ${totals.cache_read_input_tokens.toLocaleString()}`);
   console.log(`Effective (weighted): ~${result.effective_tokens.toLocaleString()}`);
+  console.log(
+    "Cumulative across every turn this session, not a context-window snapshot — check your IDE/CLI's own context usage panel for how full the context window is right now."
+  );
 }
