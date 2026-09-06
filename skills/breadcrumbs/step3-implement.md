@@ -1,6 +1,7 @@
 # Step 3 — Implement
 
-1. One task at a time. **Zero chat per task** — no "starting N", "verifying", "typecheck clean", no summary. Edit, verify, log, next. Nothing committed (6). Everything reaches the user once, at 8's review. Sole exception: 7 — a failure, broken assumption, scope change or scale regression is flagged immediately. Resumed from a checkpoint → the file is the whole state; don't re-read the earlier transcript.
+0. **Checkpoint — before task 1.** Full mode and the confirmed list has ≥4 tasks → no file yet: read `context-file-mechanics.md` + `context-template.md`, create the file, backfill Original Story / Understanding / Assumptions / Plan / Flow / Task Checklist, trip marker, then stop with one line: `Plan saved to .breadcrumbs/context/<slug>.md — run /compact now; I'll resume from the file.` After compact (or resume): the file is the whole state, don't re-read the transcript. <4 tasks or lite → skip.
+1. One task at a time. **No text-only turns.** Between the first edit and the gate, every assistant message contains a tool call; the only text allowed is one line riding on the next call, shape `✓ Task N — <verdict, ≤8 words>`, and only after the task's verification passed. No "starting N", no "now task N+1", no "server started", no "good —". A message with text and no tool call is a point-7 break, nothing else. Nothing committed (6). Re-read this point before the first edit, not at the gate.
 2. **Don't ask mid-task.** Judgment call → Task Log "Why". Contradicts the plan or needs a scope decision → Scope Changes, flag immediately.
 3. `ponytail`: simplest thing that works, existing deps first, no unrequested abstractions. Never simplify away validation, error handling, security, accessibility, or the scale target — "works" means at that scale.
 4. **Verify before checkoff.** Done = something demonstrates it works. **Every verdict below goes to the Task Log or held note, never chat.**
@@ -9,9 +10,10 @@
    - Fails → fix, re-run. Cause is the plan → 7.
    - **Self-review:** diff vs the task's Why — scaffolding, TODO-as-fix, workaround where root cause was the point, unasked abstraction. Fix now.
    - **Scale scan:** query/call per item of a growing collection, unbounded load, new query without pagination/index, sync work on a hot path. Trivial → fix, note in `Verified:`. Not trivial or target can't hold → not a checkoff, 7.
+   - **Full-suite rule:** per task the touched spec only; gate 8 runs *both* the backend suite and the frontend suite, named, even when only one side changed.
    - **UI change → look at it.** Check the tool list (Claude Browser, `run` skill, simulator) before claiming none; SSR grep is the fallback, said as such.
-   - **Dev servers:** `lsof -i :<port>` before the first start; taken → free port + client env in one command. Log filtered to `started|EADDRINUSE|rror`.
-   - **Manual E2E → one script** in the scratchpad, run once, `jq` for the asserted fields, cleanup included. Never one `curl` per turn.
+   - **Dev servers:** `lsof -i :<port>` before the first start; taken → **never kill it** (it's the user's), start on a free port with the client env in the same command. Log filtered to `grep -Ei "started|local:|ready|EADDRINUSE|error"` (Nuxt/Vite print `Local:`, not "started").
+   - **Manual E2E → one script per story**, in the repo's own package dir (so imports resolve), each scenario a function, run once, prints only asserted fields, cleans up, deleted after. Adding a scenario = editing that file, not writing a second one. Never one `curl` per turn.
    - **CLI usage error** → `<cmd> --help | grep <flag>` once, then the fixed call. No second guess, no full help text.
    - Outcome → `Verified:` (what ran, what it showed). Step 4's Test section comes only from this.
 5. **Manual-edit review** — before each task and on resume: `git status` / `git diff HEAD` over the story's files. A change you didn't make → one-line `Check:` (correct, or issue: what/where). File off the Flow (2.6) → say so, non-blocking. Review, not veto: the edit stands unless it breaks something.

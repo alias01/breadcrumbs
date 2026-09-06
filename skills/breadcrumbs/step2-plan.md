@@ -73,5 +73,5 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
 
 8. **Constitution check:** `.breadcrumbs/constitution.md` exists → read once, check the whole plan against `status: active` lines. Conflict → tripwire. No file → skip.
 
-9. File exists, or the long-story checkpoint fires (`SKILL.md`: full, ≥4 tasks) → one write: type, depth, HLD/LLD notes, decisions, Risks/Unknowns, domain/scale outcomes, testing plan, rollout notes, Flow, Sequencing, Task Checklist — only where applied.
-10. **Gate:** investigation marker, trip marker if written. Present plan + tasks verbatim; Understanding Summary not re-quoted unless this is the folded 1.6 gate. Checkpoint fired → the `/compact` line after. Stop for confirmation (`step3-implement.md`).
+9. File exists → one write: type, depth, HLD/LLD notes, decisions, Risks/Unknowns, domain/scale outcomes, testing plan, rollout notes, Flow, Sequencing, Task Checklist — only where applied.
+10. **Gate:** investigation marker, trip marker if written. Present plan + tasks verbatim; Understanding Summary not re-quoted unless this is the folded 1.6 gate. Stop for confirmation (`step3-implement.md`).
