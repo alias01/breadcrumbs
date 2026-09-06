@@ -22,7 +22,7 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 **Cost = turns × context.**
 - Independent lookups → parallel calls in one turn. `sleep; tail` → one command.
 - Editing a file's tail → `wc -l` + `sed -n` on that region, not a full read. Full-file reads last resort.
-- Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -E "started|EADDRINUSE|rror"`, `git rev-list --count` over `git log`.
+- Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`.
 - Quote globs (`--include='*.tsx'`).
 
 **Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered or Step 2's Flow is known.
@@ -35,7 +35,7 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - **Stop signal** ("pause here", "continue tomorrow") → create, backfill from the conversation at the current step.
 - **Mid-flight break** (test fails, assumption breaks, scope changes, scale regression — Step 3.7) → create if missing, backfill, log the Scope Change. Lite escalates to full.
 - **Topic shift** with no stop signal → ask once: "Moving off this story — checkpoint it first?" Yes → as Stop signal. No → don't ask again.
-- **Long story checkpoint** — full mode, ≥4 confirmed tasks → create at the Step 2 gate write (2.9), then after the gate: `Plan saved to .breadcrumbs/context/<slug>.md — run /compact now; Step 3 resumes from the file.`
+- **Long story checkpoint** — full mode, ≥4 tasks → Step 3 point 0 creates it before task 1 and asks for `/compact`.
 
 No trigger → no file. Expected for lite and short stories.
 
@@ -225,14 +225,15 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
 
 8. **Constitution check:** `.breadcrumbs/constitution.md` exists → read once, check the whole plan against `status: active` lines. Conflict → tripwire. No file → skip.
 
-9. File exists, or the long-story checkpoint fires (`SKILL.md`: full, ≥4 tasks) → one write: type, depth, HLD/LLD notes, decisions, Risks/Unknowns, domain/scale outcomes, testing plan, rollout notes, Flow, Sequencing, Task Checklist — only where applied.
-10. **Gate:** investigation marker, trip marker if written. Present plan + tasks verbatim; Understanding Summary not re-quoted unless this is the folded 1.6 gate. Checkpoint fired → the `/compact` line after. Stop for confirmation (`step3-implement.md`).
+9. File exists → one write: type, depth, HLD/LLD notes, decisions, Risks/Unknowns, domain/scale outcomes, testing plan, rollout notes, Flow, Sequencing, Task Checklist — only where applied.
+10. **Gate:** investigation marker, trip marker if written. Present plan + tasks verbatim; Understanding Summary not re-quoted unless this is the folded 1.6 gate. Stop for confirmation (`step3-implement.md`).
 
 ---
 
 # Step 3 — Implement
 
-1. One task at a time. **Zero chat per task** — no "starting N", "verifying", "typecheck clean", no summary. Edit, verify, log, next. Nothing committed (6). Everything reaches the user once, at 8's review. Sole exception: 7 — a failure, broken assumption, scope change or scale regression is flagged immediately. Resumed from a checkpoint → the file is the whole state; don't re-read the earlier transcript.
+0. **Checkpoint — before task 1.** Full mode and the confirmed list has ≥4 tasks → no file yet: read `context-file-mechanics.md` + `context-template.md`, create the file, backfill Original Story / Understanding / Assumptions / Plan / Flow / Task Checklist, trip marker, then stop with one line: `Plan saved to .breadcrumbs/context/<slug>.md — run /compact now; I'll resume from the file.` After compact (or resume): the file is the whole state, don't re-read the transcript. <4 tasks or lite → skip.
+1. One task at a time. **No text-only turns.** Between the first edit and the gate, every assistant message contains a tool call; the only text allowed is one line riding on the next call, shape `✓ Task N — <verdict, ≤8 words>`, and only after the task's verification passed. No "starting N", no "now task N+1", no "server started", no "good —". A message with text and no tool call is a point-7 break, nothing else. Nothing committed (6). Re-read this point before the first edit, not at the gate.
 2. **Don't ask mid-task.** Judgment call → Task Log "Why". Contradicts the plan or needs a scope decision → Scope Changes, flag immediately.
 3. `ponytail`: simplest thing that works, existing deps first, no unrequested abstractions. Never simplify away validation, error handling, security, accessibility, or the scale target — "works" means at that scale.
 4. **Verify before checkoff.** Done = something demonstrates it works. **Every verdict below goes to the Task Log or held note, never chat.**
@@ -241,9 +242,10 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
    - Fails → fix, re-run. Cause is the plan → 7.
    - **Self-review:** diff vs the task's Why — scaffolding, TODO-as-fix, workaround where root cause was the point, unasked abstraction. Fix now.
    - **Scale scan:** query/call per item of a growing collection, unbounded load, new query without pagination/index, sync work on a hot path. Trivial → fix, note in `Verified:`. Not trivial or target can't hold → not a checkoff, 7.
+   - **Full-suite rule:** per task the touched spec only; gate 8 runs *both* the backend suite and the frontend suite, named, even when only one side changed.
    - **UI change → look at it.** Check the tool list (Claude Browser, `run` skill, simulator) before claiming none; SSR grep is the fallback, said as such.
-   - **Dev servers:** `lsof -i :<port>` before the first start; taken → free port + client env in one command. Log filtered to `started|EADDRINUSE|rror`.
-   - **Manual E2E → one script** in the scratchpad, run once, `jq` for the asserted fields, cleanup included. Never one `curl` per turn.
+   - **Dev servers:** `lsof -i :<port>` before the first start; taken → **never kill it** (it's the user's), start on a free port with the client env in the same command. Log filtered to `grep -Ei "started|local:|ready|EADDRINUSE|error"` (Nuxt/Vite print `Local:`, not "started").
+   - **Manual E2E → one script per story**, in the repo's own package dir (so imports resolve), each scenario a function, run once, prints only asserted fields, cleans up, deleted after. Adding a scenario = editing that file, not writing a second one. Never one `curl` per turn.
    - **CLI usage error** → `<cmd> --help | grep <flag>` once, then the fixed call. No second guess, no full help text.
    - Outcome → `Verified:` (what ran, what it showed). Step 4's Test section comes only from this.
 5. **Manual-edit review** — before each task and on resume: `git status` / `git diff HEAD` over the story's files. A change you didn't make → one-line `Check:` (correct, or issue: what/where). File off the Flow (2.6) → say so, non-blocking. Review, not veto: the edit stands unless it breaks something.
@@ -255,7 +257,7 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
 
    After approval: one commit per task, in order, mirroring the Task Log. Conventional Commits `<type>(<scope>): <imperative summary>`; body = short bullets from What/Why. Types: `feat` `fix` `docs` `style` `refactor` `perf` `test` `chore` `revert`. Reverting a landed task (Scope Change after approval) → `git revert <hash>`, header rewritten to `revert(<scope>): <what was undone>`, hash + reason in body. Scope change mid-task → still one commit; type = what shipped. Check headers with `validate-commit-message.mjs` (resolution in `context-file-mechanics.md`); not found → by hand.
 7. Test fails / assumption invalidated / scope changes / **scale regression** → Mid-flight break (`SKILL.md`). Then: Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update Assumptions/Plan/Checklist. Scale case: tell the user immediately — what regressed, against which target, what it takes to hold — before fixing. Absorb or fix is the user's call.
-8. **Gate:** all tasks ticked → self-check: any non-break chat line since the first edit means 1 was broken — say so, one line, top of the review. Then **run the whole planned test set** (every 2.4 case + repo suite over touched areas) against the uncommitted tree.
+8. **Gate:** all tasks ticked → **run the whole planned test set** (every 2.4 case + backend suite + frontend suite, each named with its count) against the uncommitted tree. Any text-only turn since the first edit → one line at the top of the review admits it.
    - Red → fix, re-run; cause is the plan → 7. Never present with a known-failing case.
    - Nothing runnable → say so with what was checked, continue.
    - Green → **one review message, nothing committed:** per task — name, files (`git diff --stat`), and **what to check** (the risky assumption or exact behavior, or "mechanical, low risk").

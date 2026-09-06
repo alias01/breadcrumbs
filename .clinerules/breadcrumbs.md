@@ -43,7 +43,7 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 **Cost = turns × context.**
 - Independent lookups → parallel calls in one turn. `sleep; tail` → one command.
 - Editing a file's tail → `wc -l` + `sed -n` on that region, not a full read. Full-file reads last resort.
-- Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -E "started|EADDRINUSE|rror"`, `git rev-list --count` over `git log`.
+- Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`.
 - Quote globs (`--include='*.tsx'`).
 
 **Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered or Step 2's Flow is known.
@@ -56,7 +56,7 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - **Stop signal** ("pause here", "continue tomorrow") → create, backfill from the conversation at the current step.
 - **Mid-flight break** (test fails, assumption breaks, scope changes, scale regression — Step 3.7) → create if missing, backfill, log the Scope Change. Lite escalates to full.
 - **Topic shift** with no stop signal → ask once: "Moving off this story — checkpoint it first?" Yes → as Stop signal. No → don't ask again.
-- **Long story checkpoint** — full mode, ≥4 confirmed tasks → create at the Step 2 gate write (2.9), then after the gate: `Plan saved to .breadcrumbs/context/<slug>.md — run /compact now; Step 3 resumes from the file.`
+- **Long story checkpoint** — full mode, ≥4 tasks → Step 3 point 0 creates it before task 1 and asks for `/compact`.
 
 No trigger → no file. Expected for lite and short stories.
 

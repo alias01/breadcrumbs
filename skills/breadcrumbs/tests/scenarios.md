@@ -270,7 +270,10 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 - Independent lookups are issued as parallel calls in one turn; a run of one-lookup-per-turn reads is a failure.
 - The manual E2E pass is one scratchpad script run once, printing asserted fields only, cleanup included.
 - Per task only the touched spec runs; the full suite runs once at the Step 3 gate.
-- Full mode with ≥4 confirmed tasks → context file written at the Step 2 gate and a `/compact` prompt follows; Step 3 works from the file.
+- Full mode with ≥4 confirmed tasks → Step 3 point 0 creates the context file before task 1 and stops with the `/compact` line; work resumes from the file.
+- Step 3 has no text-only assistant turns; a `✓ Task N — …` line rides on the next tool call.
+- A port already in use is never killed; the run starts on a free port.
+- Gate 8 names both suites with counts even for a one-sided change.
 - The plan message does not restate the Understanding Summary.
 
 **Counter-prompt:** a story whose concept has no known name ("do we already have anything like tenant scoping anywhere?") → one read-only Explore agent is acceptable, reported as `agent ×1`, its findings re-checked with native search before they appear in the Understanding Summary.
