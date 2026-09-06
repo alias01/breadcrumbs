@@ -270,6 +270,8 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 - Independent lookups are issued as parallel calls in one turn; a run of one-lookup-per-turn reads is a failure.
 - The manual E2E pass is one scratchpad script run once, printing asserted fields only, cleanup included.
 - Per task only the touched spec runs; the full suite runs once at the Step 3 gate.
+- Step 3.0 puts the work on `feature/<slug>` before the first edit; commits on another story's branch are a failure.
+- The `/compact` prompt not honoured → one 'Not compacted' line, no second ask.
 - Full mode with ≥4 confirmed tasks → Step 3 point 0 creates the context file before task 1 and stops with the `/compact` line; work resumes from the file.
 - Step 3 has no text-only assistant turns; a `✓ Task N — …` line rides on the next tool call.
 - A port already in use is never killed; the run starts on a free port.

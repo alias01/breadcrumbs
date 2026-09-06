@@ -49,7 +49,7 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`.
 - Quote globs (`--include='*.tsx'`).
 
-**Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered or Step 2's Flow is known.
+**Caps — counted, not felt.** Native lookups ≤8 before the Step 1 gate, ≤4 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered or Step 2's Flow is known.
 
 **Investigation marker** before every gate: `[investigation: native search ×3 · graph ×0]`. Every content-opening call counts (`grep`, `sed -n`, `cat`, `find`, Read). Undercounting is worse than over-cap. Lite showing `graph ×1`, or any gate over cap → stop, say why.
 
