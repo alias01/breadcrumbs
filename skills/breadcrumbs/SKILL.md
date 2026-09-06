@@ -12,7 +12,7 @@ Four gates (Understand → Plan → Implement → PR), each confirmed with the u
 
 ## Communication style
 
-Chat only — the context file has its own denser style (`context-template.md`). Terse, bullet/fragment, glanceable. Senior audience → jargon freely, no hedging, no restating known context, no multi-paragraph narration. Expand only if asked or confusion is signaled.
+Chat only — the context file has its own denser style (`context-template.md`). Terse, bullet/fragment, glanceable. Senior audience → jargon freely, no hedging, no restating known context, no multi-paragraph narration. Expand only if asked or confusion is signaled. **Exception — Step 1's Understanding Summary and clarifying questions:** plain product language the story's owner can confirm (`step1-understand.md` point 1); jargon resumes at Step 2.
 
 ## Investigation scope
 

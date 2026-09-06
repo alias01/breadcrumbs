@@ -241,6 +241,17 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 
 **The failure this exists to catch:** the pre-change rule said "graphify first, it's cheaper than grep" — true of the build, false of a query (vocabulary load + subgraph dump + the file reads that follow anyway). Nothing made the extra cost visible, so it landed silently on every story, lite ones most of all. The marker is the only cross-platform evidence that the cheaper path was actually taken.
 
+## 14. Step 1 register — layman summary, technical plan
+
+**Prompt:** paste a story in product language that maps onto real code, e.g. "when a parking slot is released early, the next person on the waitlist should be offered it." The repo has a `WaitlistService`, a `slot_releases` table and a `notify-waitlist` job.
+
+**Expect (Step 1):**
+- The Understanding Summary reads like the PO wrote it: who is on the waitlist, what they receive, what the releasing user sees, what happens if nobody accepts. Codebase findings shape the content ("today a released slot just goes back to the open pool — nobody on the waitlist is told") but no symbol, file path, table or job name appears unless the story used it.
+- Clarifying questions are in the same register — "how long does the first person have to accept before it passes to the next?", not "what's the TTL on the reservation hold?".
+- The `Scale target:` line stays, phrased plainly ("a few dozen waitlisted users per lot").
+
+**Expect (Step 2):** the plan names `WaitlistService`, the `slot_releases` schema change and the job, with LLD depth per type. Layman wording persisting into the plan, or symbol names leaking into the Step 1 summary, is a failure.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Every Step 1, Step 2 and lite-collapsed gate opens with an `[investigation: …]` marker; lite gates show `graph ×0`; no gate exceeds the caps in "Investigation scope".
@@ -251,5 +262,6 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 - No task checked off without a stated verification outcome, in chat and (file exists) as a `Verified:` line.
 - Step 3's gate never passes with a known-failing case — fixed and re-run, or escalated as a Mid-flight break.
 - Step 4's **Test** section reports what *ran*, never what was planned.
+- Step 1's Understanding Summary and questions are in plain product language — no symbols/paths/table names unless the story used them; Step 2 goes technical.
 - Every Understanding Summary ends with a `Scale target:` line; a perf/scale regression found at Step 3.4 is told to the user before it is fixed or shipped, never absorbed silently.
 - Every commit header passes `node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`.

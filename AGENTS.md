@@ -10,7 +10,7 @@ Four gates (Understand → Plan → Implement → PR), each confirmed with the u
 
 ## Communication style
 
-Chat only — the context file has its own denser style (`context-template.md`). Terse, bullet/fragment, glanceable. Senior audience → jargon freely, no hedging, no restating known context, no multi-paragraph narration. Expand only if asked or confusion is signaled.
+Chat only — the context file has its own denser style (`context-template.md`). Terse, bullet/fragment, glanceable. Senior audience → jargon freely, no hedging, no restating known context, no multi-paragraph narration. Expand only if asked or confusion is signaled. **Exception — Step 1's Understanding Summary and clarifying questions:** plain product language the story's owner can confirm (`step1-understand.md` point 1); jargon resumes at Step 2.
 
 ## Investigation scope
 
@@ -143,6 +143,8 @@ None resolve (skill pasted as rules text, no filesystem/shell, no `node`) → sk
 # Step 1 — Understand & Clarify
 
 1. Read the story. **State back your understanding first**, own words, before asking anything. Repo look-ups stay scoped to the story's own terms ("Investigation scope" in `SKILL.md`).
+
+   **Layman register — this step only.** The Understanding Summary and every clarifying question are written the way the story's owner (PO/QA/stakeholder) would say it: who does what, what they see, what changes for them, what stays the same. The codebase look-ups feed the *content* — what already exists, what this touches, where the story's words don't match what the code does — but the *wording* stays plain: "the screen where a driver picks a slot", not `SlotPickerView`; "the nightly job that sends reminders", not `ReminderCron.run()`. Symbol names, file paths, table/endpoint names appear only when the story itself uses them or the user asks. The taxonomy below is a scan list for *you*, not a vocabulary for the summary — "Data model/schema changes" surfaces as "does an existing booking keep its old price, or pick up the new one?". Technical depth belongs to Step 2; a Step 1 summary the story's author couldn't confirm line-by-line has failed the gate.
 2. Only then: follow-ups, only on what's genuinely vague. Scan against this taxonomy rather than guessing open-endedly:
    - Who/what/why: specific persona (not just "user"), what they're trying to accomplish, why it matters to them
    - Scope: explicitly in, explicitly out, one story or several bundled
