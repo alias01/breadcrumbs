@@ -2,7 +2,7 @@
 
 1. Read the story. **State back your understanding first**, own words, before asking anything. Repo look-ups stay scoped to the story's own terms ("Investigation scope" in `SKILL.md`).
 
-   **Layman register — this step only.** The Understanding Summary and every clarifying question are written the way the story's owner (PO/QA/stakeholder) would say it: who does what, what they see, what changes for them, what stays the same. The codebase look-ups feed the *content* — what already exists, what this touches, where the story's words don't match what the code does — but the *wording* stays plain: "the screen where a driver picks a slot", not `SlotPickerView`; "the nightly job that sends reminders", not `ReminderCron.run()`. Symbol names, file paths, table/endpoint names appear only when the story itself uses them or the user asks. The taxonomy below is a scan list for *you*, not a vocabulary for the summary — "Data model/schema changes" surfaces as "does an existing booking keep its old price, or pick up the new one?". Technical depth belongs to Step 2; a Step 1 summary the story's author couldn't confirm line-by-line has failed the gate.
+   **Layman register — this step only.** Understanding Summary and every question read the way the story's owner would say it: who does what, what they see, what changes, what stays. Look-ups feed the *content* (what exists, what this touches, where story and code disagree); the *wording* stays plain — "the screen where a driver picks a slot", not `SlotPickerView`. Symbols, paths, tables, endpoints only if the story uses them or the user asks. The taxonomy below is your scan list, not the summary's vocabulary. Test: the story's author could confirm it line by line.
 2. Only then: follow-ups, only on what's genuinely vague. Scan against this taxonomy rather than guessing open-endedly:
    - Who/what/why: specific persona (not just "user"), what they're trying to accomplish, why it matters to them
    - Scope: explicitly in, explicitly out, one story or several bundled
@@ -27,7 +27,7 @@
    My pick: 1a, 2 yes — because <one line>. Reply "ok", or "1b" / "2 no" to change either.
    ```
 
-   Numbered, each part with its options, a stated recommendation, a one-token way to accept. Never a prose paragraph holding two questions — that's what produced the "s" / "a" replies in the US-16 run.
+   Numbered, options per part, a recommendation, a one-token accept. Never a prose paragraph holding two questions.
 
    **Plain chat text by default, not a question widget.** A binary or short-answer clarification ("is placement X fine, or do you want it moved to Y?") goes in the message itself. Reach for a structured question tool only when there are genuinely 3+ distinct options worth laying out side by side, or the answer benefits from being picked rather than typed — not for every clarification reflexively.
 

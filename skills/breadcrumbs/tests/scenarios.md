@@ -266,6 +266,13 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 - A CLI usage error is followed by exactly one `--help | grep` and the fixed call; three retried flag guesses, or the full help text in context, is a failure.
 - A UI task's verification names the browser/preview tool used, or states which tools were checked before falling back to rendered-HTML inspection.
 
+**Expect (cost):**
+- Independent lookups are issued as parallel calls in one turn; a run of one-lookup-per-turn reads is a failure.
+- The manual E2E pass is one scratchpad script run once, printing asserted fields only, cleanup included.
+- Per task only the touched spec runs; the full suite runs once at the Step 3 gate.
+- Full mode with ≥4 confirmed tasks → context file written at the Step 2 gate and a `/compact` prompt follows; Step 3 works from the file.
+- The plan message does not restate the Understanding Summary.
+
 **Counter-prompt:** a story whose concept has no known name ("do we already have anything like tenant scoping anywhere?") → one read-only Explore agent is acceptable, reported as `agent ×1`, its findings re-checked with native search before they appear in the Understanding Summary.
 
 ## Cross-cutting checks (verify on any scenario)

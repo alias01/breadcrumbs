@@ -18,7 +18,7 @@ Order matters: everything that can *add* work (points 3-5) runs before the task 
 
    Type is *what kind of change*; size doesn't classify. Point 7's ceilings catch a story that outgrew its type.
 
-2. Discuss the approach at the depth classification calls for: HLD → components, data flow, integration points. LLD → key functions/classes/schema. "No design" → the fix approach, one-two sentences. Enough to agree the shape before code, not a formal doc. Same scoped-search rule as Step 1.
+2. Discuss the approach at the depth classification calls for — starting *from* the confirmed Understanding Summary, never restating it: HLD → components, data flow, integration points. LLD → key functions/classes/schema. "No design" → the fix approach, one-two sentences. Enough to agree the shape before code, not a formal doc. Same scoped-search rule as Step 1.
    - **Tripwire:** plan surfaces a Material unknown Step 1 missed → stop, resolve there (ask, or log `unconfirmed` per 1.3) before continuing. Applies even when 1+2 merged.
    - **Architecture decisions:** 2+ valid approaches → pick one, state why, write it down (Plan section of the file, or the chat message if no file). Cross-team surface (FE/BE split) → agree the contract (API shape, request/response, error codes) before either side's tasks start.
    - **Risks/unknowns:** *implementation* risk, distinct from Step 1's requirement tags — parts you're unsure how to implement, unfamiliar code, anything needing a spike, anything that could break existing functionality. Genuinely open → same tripwire handling. Recorded (point 9), not just said.
@@ -77,5 +77,5 @@ Lighter depth but the story genuinely carries the risk (a "small feature" writin
 
 8. **Constitution check:** `.breadcrumbs/constitution.md` exists → read it once, check the *whole* plan (approach, domain checks, testing, rollout, tasks) against its `status: active` lines before presenting; ignore superseded/retired lines. Runs last on purpose — its rules match content that doesn't exist until points 3-5. Conflict → point-2 tripwire handling. No file → skip silently.
 
-9. File exists → one pass, writing: story type, design depth, HLD/LLD notes, architecture decisions, **Risks/Unknowns**, domain-check outcomes, scale-target outcome, testing plan, rollout/rollback notes, Flow, **Sequencing**, Task Checklist — each only where it applied. No file → stays in chat.
-10. **Gate:** investigation marker, then trip marker if a write happened. Present plan + task breakdown, quoted verbatim. Stop, wait for confirmation before implementing (`step3-implement.md`).
+9. File exists, or the long-story checkpoint trigger fires (`SKILL.md`: full mode, ≥4 tasks) → one pass, writing: story type, design depth, HLD/LLD notes, architecture decisions, **Risks/Unknowns**, domain-check outcomes, scale-target outcome, testing plan, rollout/rollback notes, Flow, **Sequencing**, Task Checklist — each only where it applied. No file → stays in chat.
+10. **Gate:** investigation marker, then trip marker if a write happened. Present plan + task breakdown, quoted verbatim — the Understanding Summary is not re-quoted unless this gate is the folded 1.6 one. Checkpoint trigger fired → the `/compact` line after the gate. Stop, wait for confirmation before implementing (`step3-implement.md`).
