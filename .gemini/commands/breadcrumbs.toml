@@ -75,7 +75,7 @@ Auto-detected at Step 1.4: `Bug fix` / `Copy/config/content change` → lite; ev
 - **Two Step 2 checks survive the collapse**, inline:
   - `Bug fix` → one fragment each: root cause (not the symptom), repro confirmed, same defect looked for elsewhere, regression case named.
   - Either type → constitution check: `.breadcrumbs/constitution.md` exists → check the plan against its `status: active` lines; conflict → surface, resolve before continuing. No file → skip silently.
-- Step 3: one wrap-up message after all tasks, not per-task, and **no task-wise review** — lite's 2-task ceiling (bug fix, copy/config) is low-risk enough that full mode's per-task replay (3.8) isn't worth the extra round trip; go straight to the wrap-up. **Verification isn't collapsed** — 3.4 per task, 3.8 before the wrap-up.
+- Step 3: one wrap-up message after all tasks, not per-task, and **commit as you go, no pre-commit review** — lite's 2-task ceiling (bug fix, copy/config) is low-risk enough that full mode's review-before-commit (3.6/3.8) isn't worth the extra round trip; go straight to the wrap-up. **Verification isn't collapsed** — 3.4 per task, 3.8 before the wrap-up.
 - Step 4: PR draft as usual.
 - File creation: same triggers, no lite exception. Mid-flight break → escalates lite → full, said in one line.
 
@@ -87,7 +87,7 @@ Read the step's file when you reach that gate — don't preload the others.
 |---|---|---|
 | 1 — Understand & Clarify | `skills/breadcrumbs/step1-understand.md` | Understanding + Assumptions confirmed (or folded into Step 2 if zero Material unknowns) |
 | 2 — Plan | `skills/breadcrumbs/step2-plan.md` | Plan + task breakdown confirmed (skipped in lite mode) |
-| 3 — Implement | `skills/breadcrumbs/step3-implement.md` | Every task checked off, tests green, each task reviewed and approved task-wise |
+| 3 — Implement | `skills/breadcrumbs/step3-implement.md` | Every task checked off, tests green, task list reviewed and approved *before* anything is committed |
 | 4 — PR | `skills/breadcrumbs/step4-pr.md` | PR draft confirmed in chat |
 
 ## What NOT to do
