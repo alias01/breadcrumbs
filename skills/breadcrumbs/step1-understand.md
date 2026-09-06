@@ -18,7 +18,16 @@
    - Backward compatibility
    - Existing pattern to follow, or net-new
 
-   Skip categories that obviously don't apply. Ask each genuinely vague item as its own question, one at a time, wait for the answer — never batch, even when several look like the same unknown.
+   Skip categories that obviously don't apply. Ask each genuinely vague item as its own question, one at a time, wait for the answer. Two *independent* unknowns never share a message, even when they look like the same topic. **Coupled sub-questions** — where one answer constrains the other (transport of the active store *and* whether it survives reload; which screen *and* what it's called) — go in one message, formatted so each part is answerable on its own:
+
+   ```
+   Two linked decisions:
+   1. <part one, plain language> — options: (a) … (b) …
+   2. <part two> — depends on 1: if (a) then …
+   My pick: 1a, 2 yes — because <one line>. Reply "ok", or "1b" / "2 no" to change either.
+   ```
+
+   Numbered, each part with its options, a stated recommendation, a one-token way to accept. Never a prose paragraph holding two questions — that's what produced the "s" / "a" replies in the US-16 run.
 
    **Plain chat text by default, not a question widget.** A binary or short-answer clarification ("is placement X fine, or do you want it moved to Y?") goes in the message itself. Reach for a structured question tool only when there are genuinely 3+ distinct options worth laying out side by side, or the answer benefits from being picked rather than typed — not for every clarification reflexively.
 

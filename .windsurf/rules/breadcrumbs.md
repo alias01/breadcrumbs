@@ -44,13 +44,15 @@ Search outward from the story's own keywords/entities (feature name, endpoint, t
 - **"Where is X / what does this file do"** (most of Step 1, all of lite) → the platform's native code search: semantic index if it has one, else grep/ripgrep. Open only the file it points at.
 - **"What relates to what"** (Step 1 dependencies, Step 2 Flow / blast radius) → `graphify` `query` / `path` / `explain`, only if `graphify-out/` already exists — never build mid-story. No graph → native search, follow imports/calls by hand.
 
+**Subagents are not a retrieval path.** A story-scoped question ("where is X", "what shape is Y", "who reads Z") is answered with native search, never delegated — an agent starts cold, re-derives repo context, returns second-hand summaries that drift (the US-16 run's agent called a Nuxt app "React/Vite"), does its lookups off the books, and Step 2 re-reads every file it cited anyway. Allowed strictly when the *naming* is unknown — a repo-wide "is there any existing concept like X" sweep across unfamiliar directories that native search can't phrase — and then: ≤1 per story, Explore type, read-only, its output treated as leads to verify with native search, never as facts to state at a gate. Marker line records it as `agent ×1`; its lookups count toward the cap.
+
 **Shell lookups:** quote glob patterns passed to `--include`/`-name` (`--include='*.tsx'`, not `--include=*.tsx`) — an unquoted glob expands in the shell before the tool sees it and fails with "no matches found," costing a second call to fix what should have worked the first time.
 
 **Trim command output before it enters context.** A build/install/migrate command's full output (asset manifests, dependency trees, audit warnings) sits in context for the rest of the story and gets re-read on every later turn — the earlier it lands, the more that costs. Pipe to `tail`/`grep`/a quiet flag so only the pass/fail signal survives (`npx nuxt build 2>&1 | tail -5`, `npm install --no-fund --loglevel=error`), and reach for a count over a full dump when only the count is being checked (`git rev-list --count main..feature/x` instead of `git log feature/x --oneline`).
 
 **Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON. Cap hit, category still open → ask, don't keep reading. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified; widen only for a specific remaining unknown.
 
-**Investigation marker:** one line before every gate message counting what the gate spent: `[investigation: native search ×3 · graph ×0]`. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
+**Investigation marker:** one line before every gate message counting what the gate spent: `[investigation: native search ×3 · graph ×0]`. **Every call that opens repo content counts** — `grep`, `sed -n`, `cat`, `find`, Read, a file opened from a search hit — not just the searches. Nine `sed`/`grep` calls reported as `×3` is a false marker, worse than an honest over-cap. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
 
 ## The context file
 

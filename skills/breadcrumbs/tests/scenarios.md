@@ -252,6 +252,22 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 
 **Expect (Step 2):** the plan names `WaitlistService`, the `slot_releases` schema change and the job, with LLD depth per type. Layman wording persisting into the plan, or symbol names leaking into the Step 1 summary, is a failure.
 
+## 15. Investigation honesty — no agent for scoped lookups, every read counted
+
+**Prompt:** paste a story whose entities are all nameable from the ticket ("store selector", "membership", "session", "sidebar") in a repo with an obvious grep trail.
+
+**Expect (Step 1):**
+- No `Agent` call. Every "where is X / what shape is Y" goes through native search; the files it points at are opened directly.
+- The marker counts every `grep`/`sed`/`cat`/Read that opened repo content. Six calls → `×6`, over cap → the gate says so and asks instead of reading on.
+- Two coupled unknowns (e.g. how the active store reaches the server, and whether it survives reload) arrive as one numbered message with options, a recommendation and a one-token accept — not two paragraphs, not two turns.
+
+**Expect (Step 3):**
+- A dev server start is preceded by a port check; a second `EADDRINUSE` is a failure.
+- A CLI usage error is followed by exactly one `--help | grep` and the fixed call; three retried flag guesses, or the full help text in context, is a failure.
+- A UI task's verification names the browser/preview tool used, or states which tools were checked before falling back to rendered-HTML inspection.
+
+**Counter-prompt:** a story whose concept has no known name ("do we already have anything like tenant scoping anywhere?") → one read-only Explore agent is acceptable, reported as `agent ×1`, its findings re-checked with native search before they appear in the Understanding Summary.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Every Step 1, Step 2 and lite-collapsed gate opens with an `[investigation: …]` marker; lite gates show `graph ×0`; no gate exceeds the caps in "Investigation scope".
@@ -262,6 +278,7 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 - No task checked off without a stated verification outcome, in chat and (file exists) as a `Verified:` line.
 - Step 3's gate never passes with a known-failing case — fixed and re-run, or escalated as a Mid-flight break.
 - Step 4's **Test** section reports what *ran*, never what was planned.
+- No subagent for a question native search can phrase; a permitted Explore agent is ≤1 per story, shown in the marker, its output verified before use. Marker counts every content-opening call.
 - Step 1's Understanding Summary and questions are in plain product language — no symbols/paths/table names unless the story used them; Step 2 goes technical.
 - Every Understanding Summary ends with a `Scale target:` line; a perf/scale regression found at Step 3.4 is told to the user before it is fixed or shipped, never absorbed silently.
 - Every commit header passes `node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`.

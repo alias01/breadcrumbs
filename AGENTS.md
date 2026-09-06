@@ -20,13 +20,15 @@ Search outward from the story's own keywords/entities (feature name, endpoint, t
 - **"Where is X / what does this file do"** (most of Step 1, all of lite) → the platform's native code search: semantic index if it has one, else grep/ripgrep. Open only the file it points at.
 - **"What relates to what"** (Step 1 dependencies, Step 2 Flow / blast radius) → `graphify` `query` / `path` / `explain`, only if `graphify-out/` already exists — never build mid-story. No graph → native search, follow imports/calls by hand.
 
+**Subagents are not a retrieval path.** A story-scoped question ("where is X", "what shape is Y", "who reads Z") is answered with native search, never delegated — an agent starts cold, re-derives repo context, returns second-hand summaries that drift (the US-16 run's agent called a Nuxt app "React/Vite"), does its lookups off the books, and Step 2 re-reads every file it cited anyway. Allowed strictly when the *naming* is unknown — a repo-wide "is there any existing concept like X" sweep across unfamiliar directories that native search can't phrase — and then: ≤1 per story, Explore type, read-only, its output treated as leads to verify with native search, never as facts to state at a gate. Marker line records it as `agent ×1`; its lookups count toward the cap.
+
 **Shell lookups:** quote glob patterns passed to `--include`/`-name` (`--include='*.tsx'`, not `--include=*.tsx`) — an unquoted glob expands in the shell before the tool sees it and fails with "no matches found," costing a second call to fix what should have worked the first time.
 
 **Trim command output before it enters context.** A build/install/migrate command's full output (asset manifests, dependency trees, audit warnings) sits in context for the rest of the story and gets re-read on every later turn — the earlier it lands, the more that costs. Pipe to `tail`/`grep`/a quiet flag so only the pass/fail signal survives (`npx nuxt build 2>&1 | tail -5`, `npm install --no-fund --loglevel=error`), and reach for a count over a full dump when only the count is being checked (`git rev-list --count main..feature/x` instead of `git log feature/x --oneline`).
 
 **Caps — counted, not felt.** Native lookups ≤4 before the Step 1 gate, ≤3 more before Step 2. Graph queries ≤2 per story, both at Step 2, each `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or the raw graph JSON. Cap hit, category still open → ask, don't keep reading. Full-file reads last resort. Stop once Step 1's taxonomy is answered or Step 2's Flow is identified; widen only for a specific remaining unknown.
 
-**Investigation marker:** one line before every gate message counting what the gate spent: `[investigation: native search ×3 · graph ×0]`. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
+**Investigation marker:** one line before every gate message counting what the gate spent: `[investigation: native search ×3 · graph ×0]`. **Every call that opens repo content counts** — `grep`, `sed -n`, `cat`, `find`, Read, a file opened from a search hit — not just the searches. Nine `sed`/`grep` calls reported as `×3` is a false marker, worse than an honest over-cap. Lite gate showing `graph ×1`, or any gate over cap → stop, say why.
 
 ## The context file
 
@@ -160,7 +162,16 @@ None resolve (skill pasted as rules text, no filesystem/shell, no `node`) → sk
    - Backward compatibility
    - Existing pattern to follow, or net-new
 
-   Skip categories that obviously don't apply. Ask each genuinely vague item as its own question, one at a time, wait for the answer — never batch, even when several look like the same unknown.
+   Skip categories that obviously don't apply. Ask each genuinely vague item as its own question, one at a time, wait for the answer. Two *independent* unknowns never share a message, even when they look like the same topic. **Coupled sub-questions** — where one answer constrains the other (transport of the active store *and* whether it survives reload; which screen *and* what it's called) — go in one message, formatted so each part is answerable on its own:
+
+   ```
+   Two linked decisions:
+   1. <part one, plain language> — options: (a) … (b) …
+   2. <part two> — depends on 1: if (a) then …
+   My pick: 1a, 2 yes — because <one line>. Reply "ok", or "1b" / "2 no" to change either.
+   ```
+
+   Numbered, each part with its options, a stated recommendation, a one-token way to accept. Never a prose paragraph holding two questions — that's what produced the "s" / "a" replies in the US-16 run.
 
    **Plain chat text by default, not a question widget.** A binary or short-answer clarification ("is placement X fine, or do you want it moved to Y?") goes in the message itself. Reach for a structured question tool only when there are genuinely 3+ distinct options worth laying out side by side, or the answer benefits from being picked rather than typed — not for every clarification reflexively.
 
@@ -273,6 +284,9 @@ Lighter depth but the story genuinely carries the risk (a "small feature" writin
    - Fails → not a checkoff. Fix, re-run. Still fails and the cause is the plan → point 7's Mid-flight break, not a checkoff with a caveat.
    - **Self-review, same pass:** re-read your diff against the task's Why and the plan — leftover scaffolding, a TODO standing in for the fix, a workaround where root cause was the point, an unasked-for abstraction. Fix now, don't present it.
    - **Scale scan, same pass:** read the diff for patterns that break under growth — a query/network call per item of a growing collection, unbounded load into memory, a new query path with no pagination or index, synchronous work on a hot path. Trivial, in scope → fix now, note in `Verified:`. Not trivial, or the diff can't hold the target → **not a checkoff**: point 7's perf regression trigger. Clean → say nothing.
+   - **UI change → look at it.** Before falling back to grepping SSR output, check what the session actually has: the Claude Browser tools, the `run` skill, an iOS simulator tool. Any present → use it and say what was seen. "No browser automation available" is a claim to verify with the tool list, not assume.
+   - **Dev servers:** a server may already be running from the user's own terminal. `lsof -i :<port>` *before* the first start; taken → pick a free port and point the client at it in the same command. One start, not three.
+   - **CLI flags:** an invocation fails on usage → `<cmd> --help | grep <flag>` once, then the corrected call. Never a second guess at the flag, never the full help text into context.
    - Outcome goes into the Task Log as `Verified:` — what ran, what it showed. Step 4's **Test** section comes from this field only.
 5. **Standing manual-edit review** — before each task, and on resume: `git status` / `git diff HEAD` over the story's files. Any change you didn't make is a user hand-edit. Review it, one line (`Check:`): correct against the task's Why and the plan, or issue found (what, where). File not on the story's Flow (Step 2.6) → say so first, one line, non-blocking ("that file's outside this story's planned Flow — [reason if evident]"). A review, not a veto: the edit stands unless it breaks something; say so rather than silently re-editing.
 
