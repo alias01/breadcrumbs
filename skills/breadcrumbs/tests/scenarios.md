@@ -278,6 +278,7 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 - No task checked off without a stated verification outcome, in chat and (file exists) as a `Verified:` line.
 - Step 3's gate never passes with a known-failing case — fixed and re-run, or escalated as a Mid-flight break.
 - Step 4's **Test** section reports what *ran*, never what was planned.
+- Step 3 emits no chat between the first edit and the point-8 review except a point-7 break; verification verdicts are in the Task Log/held note only.
 - No subagent for a question native search can phrase; a permitted Explore agent is ≤1 per story, shown in the marker, its output verified before use. Marker counts every content-opening call.
 - Step 1's Understanding Summary and questions are in plain product language — no symbols/paths/table names unless the story used them; Step 2 goes technical.
 - Every Understanding Summary ends with a `Scale target:` line; a perf/scale regression found at Step 3.4 is told to the user before it is fixed or shipped, never absorbed silently.
