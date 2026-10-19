@@ -43,14 +43,14 @@ flowchart LR
     G[(context file<br/>only if a trigger fires<br/>or a bc command needs it)]
 ```
 
-Nothing hits disk until it has to — a story that wraps up in one sitting under `/breadcrumbs` never gets a file at all, which is the normal case, not something falling through the cracks. The one exception is `bc plan` and `bc build`, which always write it, because the next command may run in a fresh session. A context file only shows up once the work needs to outlast the current conversation:
+Nothing hits disk until it has to — a story that wraps up in one sitting under `/breadcrumbs` never gets a file at all, which is the normal case, not something falling through the cracks. The one exception is `bc understand`, `bc plan` and `bc build`, which always write it, because the next command may run in a fresh session. A context file only shows up once the work needs to outlast the current conversation:
 
 ```mermaid
 flowchart TD
     W[Mid-story] --> Trig{Trigger?}
     Trig -- "\"let's continue tomorrow\"" --> C[Create context file]
     Trig -- "test fails / scope changes" --> C
-    Trig -- "bc plan / bc build" --> C
+    Trig -- "bc understand / plan / build" --> C
     Trig -- "conversation drifts elsewhere" --> Ask{"Checkpoint first?<br/>(asked once)"}
     Ask -- yes --> C
     Ask -- no --> W
@@ -140,7 +140,20 @@ Lean is a real trade. A pointer is a soft instruction, and a weaker model may sk
 | `SKILL.md` + Step 3 (heaviest step) | 3.67k | 3.65k |
 | `SKILL.md` + all four step files | 6.89k | 6.86k |
 
-The step commands load no less than `/breadcrumbs` does per step: both read `SKILL.md` plus that step's file. The possible saving is running each command in a fresh session, which drops the conversation history, the cost that actually grows over a story. That and the extra red run per task are not measured yet. Compare one story's `session-token-stats.mjs --by-tool` output against a v1.6 run before relying on either.
+**Measured on one example** (2026-10-19): story PARK-501, "show remaining credits on the booking screen", in a two-package monorepo. Sonnet, headless, the same scripted "ok, proceed" at every gate, one run per variant:
+
+| | v1.6 auto | v2 auto | v2 `bc` commands |
+|---|---|---|---|
+| Cost | $0.58 | $0.72 | $2.03 |
+| Turns | 29 | 34 | 100 |
+| Sessions | 1 | 1 | 5 |
+| Test written before code | no | yes, both tasks | yes, both tasks |
+| Contract task + fixture | — | not created | not created |
+
+- **v2 costs ~25% more per story** than v1.6. The extra turns are the red test runs, and in exchange every task is test-first.
+- **Running each `bc` command in a fresh session costs ~3.5× more** on a story this small. Each session re-pays the system prompt and re-reads the code, which outweighs the shorter history. For a short story, run all the steps in one session; fresh sessions only pay off when a story is long enough for history to dominate (not measured).
+- **Contract-first wasn't followed in either v2 run**, even though the story touches both backend and frontend. This is open.
+- n=1 per variant, so treat these as direction, not precise numbers. To re-measure, use `session-token-stats.mjs --by-tool` on a real story.
 
 Two files ignore the flag: [`AGENTS.md`](AGENTS.md) is always full (it's the fallback for tools that can't read files on demand), and `.windsurf/rules/breadcrumbs.md` is always lean (Windsurf enforces a 12,000-char cap and truncates past it silently — the build fails rather than ship a half-skill).
 
@@ -178,7 +191,7 @@ git push origin main v1.1.0
 ## FAQ
 
 **Does every story get a context file?**
-No — most stories finish in one sitting and never touch disk. Running `bc plan` or `bc build` always writes one.
+No — most stories finish in one sitting and never touch disk. Running `bc understand`, `bc plan` or `bc build` always writes one.
 
 **What if I'm running several stories at once?**
 Resuming checks `.breadcrumbs/context/` for existing files. More than one candidate and your prompt doesn't clearly point to one → it lists them (filename, title, status — a cheap partial read, not a full one) and asks which.

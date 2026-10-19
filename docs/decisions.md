@@ -223,7 +223,7 @@ behind a rule lives in this file. Measured with a BPE tokenizer (gpt-tokenizer, 
 
 **Decision:** each step gets a `bc` command (`/bc-plan`, `/bc:plan` on Gemini, the phrase "bc plan" elsewhere); `/breadcrumbs` stays the auto-flow. Every task is test-first with one minimal smoke test per endpoint/screen/fix, red before green, assertions frozen after red. BE+FE stories start with a contract task (shared types + one fixture both sides test against). Full design: `docs/redesign-v2.md`.
 
-**Why commands:** the gate becomes an explicit act, and a step can be entered mid-story (`bc pr` on a non-breadcrumbs branch). `bc plan`/`bc build` always write the file because the next command may run in a fresh session.
+**Why commands:** the gate becomes an explicit act, and a step can be entered mid-story (`bc pr` on a non-breadcrumbs branch). `bc understand`/`plan`/`build` always write the file because the next command may run in a fresh session — the 2026-10-19 benchmark showed a fresh `bc plan` after an unwritten `bc understand` had no story at all.
 
 **Why test-first:** 3.4 proved a task *after* the fact, so a test written against finished code could pass without testing anything. A recorded red run, failing for the expected reason, closes that. Freezing assertions stops "fix" by editing the test.
 

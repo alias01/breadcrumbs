@@ -25,7 +25,7 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - Independent lookups → parallel, one turn. `sleep; tail` → one command. File tail → `wc -l` + `sed -n`; full reads last resort.
 - Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`. Quote globs (`--include='*.tsx'`).
 - **Redundant call guard:** fact already established this story (file unchanged since read, suite green since last change, question answered) → cite it, don't re-fetch. A repeat with no new signal is a failure.
-- **Checkpoint, any phase:** ~25 tool calls since the last checkpoint (file created, `/compact`, story start), no gate near → stop, suggest `/compact`; no file → create first (Stop signal). Independent of 3.0's and 3.8's triggers.
+- **Checkpoint, any phase:** ~25 tool calls since the last checkpoint (file created, `/compact`, story start), no gate near → stop, suggest `/compact`; no file → create first (Stop signal). Independent of 3.0/3.8 triggers.
 
 **Caps — counted, not felt.** Native lookups ≤8 before the Step 1 gate, ≤4 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered or Step 2's Flow is known.
 
@@ -38,7 +38,7 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - **Mid-flight break** (test fails, assumption breaks, scope changes, scale regression — 3.7) → create if missing, backfill, log the Scope Change. Lite escalates to full.
 - **Topic shift**, no stop signal → ask once: "Moving off this story — checkpoint it first?" Yes → Stop signal. No → don't re-ask.
 - **Long story** — full mode, ≥4 tasks → 3.0 creates it before task 1, asks for `/compact`.
-- **Step command** — `bc plan` / `bc build` always write it (the next command may be a fresh session).
+- **Step command** — `bc understand` / `plan` / `build` always write it (next may be a fresh session).
 
 No trigger → no file. **Trip marker** before the gate message when written: `[context file: wrote Understanding Summary + Assumptions]`.
 
@@ -66,13 +66,13 @@ Read the step file at its gate — don't preload.
 
 ## Step commands
 
-`/breadcrumbs` runs all four. Each step also has a command: one step, never auto-advances — running the next command *is* the gate confirmation. `/bc-plan` (Claude Code, Cursor, Windsurf), `/bc:plan` (Gemini), else the phrase "bc plan".
+`/breadcrumbs` runs all four. Each step also has a command: one step, never auto-advances; names the next only once its own gate is answered — running it *is* the confirmation. `/bc-plan` (Claude Code, Cursor, Windsurf), `/bc:plan` (Gemini), else say "bc plan".
 
 | Command | Runs | Needs | Next |
 |---|---|---|---|
-| `bc understand` | Step 1 | — | `bc plan` (lite: `bc build`) |
+| `bc understand` | Step 1 + file | — | `bc plan` (lite: `bc build`) |
 | `bc plan` | Step 2 + file | confirmed Understanding | `bc build` |
-| `bc build` | 3.0–3.7 + file | Plan + Checklist | `bc review` (lite: `bc pr`) |
+| `bc build` | 3.0–3.7 + file, no commits | Plan + Checklist | `bc review` (lite: `bc pr`) |
 | `bc review` | 3.8 gate | all tasks ticked | `bc pr` |
 | `bc pr` | Step 4 | story commits (non-breadcrumbs branch ok) | — |
 

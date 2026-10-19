@@ -66,8 +66,7 @@ Proceeding past a missing step is a gate waiver (`SKILL.md` What NOT to do), log
 
 ### Context file — new trigger
 
-Adds one trigger to "Created only on trigger": **`bc plan` and `bc build` always write the file.**
-`bc understand` writes only on the existing triggers. `/breadcrumbs` auto-flow is unchanged
+Adds one trigger to "Created only on trigger": **`bc understand`, `bc plan` and `bc build` always write the file.** `/breadcrumbs` auto-flow is unchanged
 (trigger-only), so lite and short stories still produce no file.
 
 Why: a command can run in a fresh session; without the file `bc build` has no plan to read.
@@ -158,7 +157,7 @@ the user's view, not the table. Avoids backend-first returning the wrong fields.
 | 2 | Command sources + preconditions | `skills/breadcrumbs/commands/*.md` |
 | 3 | Test-first rule, Red line, frozen tests, minimal table | `step2-plan.md` (2.4), `step3-implement.md` (3.4, 3.7), `context-template.md` |
 | 4 | Contract-first | `step1-understand.md`, `step2-plan.md` (2.2, 2.6) |
-| 5 | Context-file trigger for `bc plan`/`bc build`; validator accepts `Red:` | `SKILL.md` core, `context-file-mechanics.md`, `scripts/validate-context-file.mjs` |
+| 5 | Context-file trigger for `bc understand`/`plan`/`build`; validator accepts `Red:` | `SKILL.md` core, `context-file-mechanics.md`, `scripts/validate-context-file.mjs` |
 | 6 | Opt-in freeze hook | `hooks/freeze-tests.mjs`, `.claude-plugin/plugin.json` |
 | 7 | Generate per-platform commands | `scripts/build-platforms.mjs` + regenerated outputs |
 | 8 | Scenarios, rationale, decisions entry, version bump 2.0.0, changelog | `tests/scenarios.md`, `rationale.md`, `docs/decisions.md`, `VERSION`, `plugin.json` |
@@ -176,3 +175,6 @@ Tasks 3–4 (rules) and 1–2 (commands) are independent; 7 depends on 1–2; 8 
 - **No `core.md` split.** `SKILL.md` already is the shared core (~80 lines); commands load it plus their step file. A split only complicated the Windsurf cap and pointer rewriting.
 - **Command list lives in `scripts/build-platforms.mjs`**, not one source file per command: each command is a one-line pointer to the `SKILL.md` Step commands table, which holds Needs and next-command.
 - **Freeze hook protects across tasks, not within one.** The Task Log entry (with `Red:`) is written after the task, so the hook sees a test as frozen from the next task on; within the task the skill rule holds. Unfreeze = the path named in a Scope Changes entry.
+- **`bc understand` writes the file too** (found by benchmark): without it, a fresh-session `bc plan` had no story and every later command stalled.
+- **`bc build` stops before committing** (found by benchmark): it had committed on its own approval, leaving `bc review` nothing to do. A command also names the next one only once its own gate is answered.
+- **Benchmark 2026-10-19** (one story, n=1, Sonnet): v1.6 auto $0.58 / 29 turns; v2 auto $0.72 / 34 turns (test-first followed); v2 `bc` commands in fresh sessions $2.03 / 100 turns. Contract-first was not applied in either v2 run, so it is still open.

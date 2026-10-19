@@ -20,7 +20,7 @@
 
 2. Approach at that depth, starting *from* the summary, never restating it. HLD → components, data flow, integration points. LLD → key functions/classes/schema. No design → the fix in 1-2 sentences.
    - **Tripwire:** Material unknown Step 1 missed → stop, ask or log `unconfirmed` (1.3). Applies when 1+2 merged.
-   - **Architecture decisions:** 2+ valid approaches → pick one, say why, write it down. BE+FE story (monorepo or not) → **contract-first** (6).
+   - **Architecture decisions:** 2+ valid approaches → pick one, say why, write it down. BE+FE story → **contract-first** (6).
    - **Risks:** *implementation* risk — unfamiliar code, needs a spike, may break behavior. Open → tripwire. Recorded (9).
 
 **Depth gate for 3-5:**
@@ -31,7 +31,7 @@
 | LLD only | 3: the one domain, folded into 2. 4: one line. 5: only schema/prod-data/payments. |
 | Full HLD + LLD | All three. |
 
-Light label, real risk (small feature + migration) → the risk decides.
+Light label, real risk (small feature + migration) → risk decides.
 
 3. **Domain checks** — orthogonal to type; skip untouched domains. Findings → 2, work → 6. **No re-asking:** auth, errors, compat, scale were scanned in Step 1 — check against the *plan* silently; questions only via the tripwire.
 
@@ -56,10 +56,10 @@ Light label, real risk (small feature + migration) → the risk decides.
 
 5. **Rollout & rollback** — only prod data, payments, migration/compat: flag?, migration, rollback plan. Flag/migration/backfill work = tasks, not footnotes.
 
-6. Break into tasks along seams: dependency order, then layer (FE/BE/data/integration, touched only) or module. Right size = one What + one Why, ≤3 files; else split. Nothing appended after 7.
+6. Break into tasks along seams: dependency order, then layer (FE/BE/data/integration, touched only) or module. Right size = one What + one Why, ≤3 files; else split. **BE+FE story → task 1 is the contract** (below). Nothing appended after 7.
    - **Flow:** ordered file/module list across tasks. Fixed here; changes only via Scope Change.
    - **Sequencing:** independent tasks; smallest demoable slice. Recorded (9).
-   - **Contract-first** (BE+FE story): task 1 = request/response/error shapes where shared types live (workspace pkg, OpenAPI, zod; else co-located) + **one fixture**, a canonical response; no logic. Then BE tasks (smoke asserts vs fixture), then FE tasks (smoke renders the *same fixture*) — fixture = drift detector. Frozen after task 1; change → Scope Change, re-run both. Counts toward 7. BE- or FE-only → skip.
+   - **Contract-first:** task 1 = request/response/error shapes where shared types live (workspace pkg, OpenAPI, zod; else co-located) + **one fixture**, a canonical response; no logic. Then BE tasks (smoke asserts vs fixture), then FE tasks (smoke renders the *same fixture*) — fixture = drift detector. Frozen after task 1; change → Scope Change, re-run both. Counts toward 7. BE- or FE-only → skip.
 
 7. Task cap by type — ceiling, applied to the finished list:
 

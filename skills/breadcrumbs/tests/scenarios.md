@@ -290,7 +290,7 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 - A: Step 1 only; the gate message ends naming `bc plan` (lite → `bc build`). No plan content unless lite folds it.
 - B: one line naming the missing Plan + `bc plan`; nothing built until an explicit "go", which is logged as a gate waiver.
 - C: PR drafted from the commits, no refusal.
-- `bc plan` and `bc build` leave a context file behind; `bc status` makes no lookups and no write.
+- `bc understand`, `bc plan` and `bc build` each leave a context file behind (a fresh-session `bc plan` after `bc understand` finds the story); `bc status` makes no lookups and no write.
 
 ## 17. Test-first — red for the right reason, frozen after
 
