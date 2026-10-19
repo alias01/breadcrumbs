@@ -1,6 +1,6 @@
 {
   "name": "breadcrumbs",
-  "description": "Run a user story from a pasted ticket to a PR-ready implementation through four gated steps — clarify, plan, implement, PR — keeping a persistent context file so the work resumes in another session or AI platform without losing decisions, assumptions, or progress. Trigger when a user pastes a story, ticket, or feature request to implement; says \"continue\" or \"resume\" on a story; changes scope or hits a failing test mid-implementation; asks for a PR or PR summary; says a story got too big; or asks why a past decision was made. Works alongside the ponytail skill for implementation.",
+  "description": "Run a user story from a pasted ticket to a PR-ready implementation through four gated steps — clarify, plan, implement, PR — keeping a persistent context file so the work resumes in another session or AI platform without losing decisions, assumptions, or progress. Trigger when a user pastes a story, ticket, or feature request to implement; says \"continue\" or \"resume\" on a story; changes scope or hits a failing test mid-implementation; asks for a PR or PR summary; says a story got too big; or asks why a past decision was made.",
   "version": "2.0.0",
   "license": "MIT",
   "skills": [

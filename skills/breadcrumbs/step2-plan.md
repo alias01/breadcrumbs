@@ -1,88 +1,79 @@
 # Step 2 — Plan
 
-*Lite skips this step.* Zero Material unknowns at Step 1 → folded into 1.6, no separate gate.
+*Lite skips this step.* Zero Material unknowns → folded into 1.6.
 
-Points 3-5 (anything that adds work) run before the breakdown (6), so tasks are cut once and 7's cap applies to the real list.
+3-5 (anything adding work) run before 6, so tasks are cut once and 7's cap sees the real list.
 
-1. Classify from the confirmed Understanding Summary (already done at 1.4 for lite types). Ask only if genuinely ambiguous.
+1. Classify from the confirmed summary (lite types: done at 1.4). Ask only if genuinely ambiguous.
 
    | Type | Signal | Design depth |
    |---|---|---|
-   | Bug fix | "should do Y but does Z" | No HLD/LLD — root cause + fix |
-   | Copy/config/content change | text, labels, flags, constants | No design — straight to tasks |
-   | Small feature addition | new behavior, existing architecture, no new component | LLD only |
-   | Refactor/tech debt | no behavior change | LLD only, scoped to what's restructured |
+   | Bug fix | "should do Y but does Z" | Root cause + fix, no HLD/LLD |
+   | Copy/config/content change | text, labels, flags, constants | No design |
+   | Small feature addition | new behavior, existing architecture | LLD only |
+   | Refactor/tech debt | no behavior change | LLD, restructured part only |
    | New feature/subsystem | new capability spanning components | Full HLD + LLD |
-   | New service/integration | new external dependency or cross-system flow | Full HLD + LLD, mandatory |
-   | Performance/optimization | latency, resources, scaling | Profiling findings + targeted fix |
+   | New service/integration | new external dependency / cross-system flow | Full HLD + LLD, mandatory |
+   | Performance/optimization | latency, resources, scaling | Profiling + targeted fix |
 
-   Type is kind of change, not size; 7's ceilings catch a story that outgrew its type.
+   Type = kind of change, not size; 7 catches one that outgrew its type.
 
-2. Approach at that depth, starting *from* the Understanding Summary, never restating it. HLD → components, data flow, integration points. LLD → key functions/classes/schema. No design → the fix, one-two sentences. Same scoped-search rule as Step 1.
-   - **Tripwire:** a Material unknown Step 1 missed → stop, ask or log `unconfirmed` (1.3) before continuing. Applies when 1+2 merged.
-   - **Architecture decisions:** 2+ valid approaches → pick one, say why, write it down. Story touches backend *and* frontend (monorepo or not) → **contract-first**, see 6.
-   - **Risks/unknowns:** *implementation* risk — unfamiliar code, needs a spike, could break existing behavior. Open → tripwire. Recorded (9).
+2. Approach at that depth, starting *from* the summary, never restating it. HLD → components, data flow, integration points. LLD → key functions/classes/schema. No design → the fix in 1-2 sentences.
+   - **Tripwire:** Material unknown Step 1 missed → stop, ask or log `unconfirmed` (1.3). Applies when 1+2 merged.
+   - **Architecture decisions:** 2+ valid approaches → pick one, say why, write it down. BE+FE story (monorepo or not) → **contract-first** (6).
+   - **Risks:** *implementation* risk — unfamiliar code, needs a spike, may break behavior. Open → tripwire. Recorded (9).
 
 **Depth gate for 3-5:**
 
 | Depth | 3-5 |
 |---|---|
-| No design | Skip 3, 4 — one regression case proves the fix. 5 only for prod data/payments/migration. |
-| LLD only | 3: the one domain touched, folded into 2. 4: one line. 5: only if schema/prod-data/payments. |
-| Full HLD + LLD | All three, as written. |
+| No design | Skip 3, 4 — one regression case. 5 only for prod data/payments/migration. |
+| LLD only | 3: the one domain, folded into 2. 4: one line. 5: only schema/prod-data/payments. |
+| Full HLD + LLD | All three. |
 
-Lighter label but real risk (a "small feature" writing a migration) → the risk decides.
+Light label, real risk (small feature + migration) → the risk decides.
 
-3. **Domain checks** — orthogonal to type; skip domains not touched. Findings go into 2 and, if work, into 6. **No re-asking:** auth, errors, compat, scale were scanned in Step 1 — check them against the *plan* silently; a question goes back only via the tripwire.
+3. **Domain checks** — orthogonal to type; skip untouched domains. Findings → 2, work → 6. **No re-asking:** auth, errors, compat, scale were scanned in Step 1 — check against the *plan* silently; questions only via the tripwire.
 
-   **Scale target check** — every depth in full mode, one fragment: walk data-/request-dependent paths against Step 1's target. Holds → say how ("paginated, indexed on `user_id`"). Doesn't or can't tell → tripwire: change approach or log as open risk. "Current scale assumed" → nothing gets worse than today.
+   **Scale target check** — every full-mode depth, one fragment: walk data-/request-dependent paths against Step 1's target. Holds → say how ("paginated, indexed on `user_id`"). Doesn't / can't tell → tripwire: change approach or log open risk. "Current scale assumed" → nothing worse than today.
 
    | Domain | Checks |
    |---|---|
-   | API/backend | Contract (fields, types, status codes) — feeds 2; auth; rate limiting; idempotency; versioning impact; load where it changes design |
-   | Mobile app | Offline; iOS vs Android; store review impact; battery/data for polling/background |
-   | Database/schema | Migration backward-compatible and reversible — feeds 5; existing queries/indexes; backfill; volume at target |
-   | Bug fix (via escalation) | Root cause not symptom; repro confirmed; same defect elsewhere; regression test — feeds 4 |
-   | Infra/DevOps | Downtime; monitoring for new failure modes; cost; scriptable not manual |
-   | Data pipeline/ETL | Source format assumptions; mid-batch failure; reprocessing; downstream consumers |
-   | Third-party integration | Rate limits/pricing; downtime handling; credentials; webhook vs polling |
-   | UI-only/design | Responsive; accessibility (contrast, keyboard, screen reader); design-system components reused |
+   | API/backend | Contract (fields, types, status codes) → 2; auth; rate limits; idempotency; versioning; load where it changes design |
+   | Mobile app | Offline; iOS vs Android; store review; battery/data for background work |
+   | Database/schema | Migration backward-compatible + reversible → 5; existing queries/indexes; backfill; volume at target |
+   | Bug fix (escalated) | Root cause not symptom; repro; same defect elsewhere; regression test → 4 |
+   | Infra/DevOps | Downtime; monitoring new failure modes; cost; scripted not manual |
+   | Data pipeline/ETL | Source format; mid-batch failure; reprocessing; downstream consumers |
+   | Third-party integration | Rate limits/pricing; downtime; credentials; webhook vs polling |
+   | UI-only/design | Responsive; a11y (contrast, keyboard, screen reader); reuse design-system components |
 
-4. **Testing plan — minimal, test-first** (red before green, `step3-implement.md` 4). One smoke case per thing touched, no more:
+4. **Testing plan — minimal, test-first** (`step3-implement.md` 4). One smoke case per thing touched: backend endpoint → happy path, status + shape vs contract fixture (error case only if named) · frontend screen → renders fixture data, key element visible · bug fix → regression, red on unfixed code · refactor → characterization, green on current code, first · copy/config → one assertion on the new value.
 
-   | Touched | Smoke case |
-   |---|---|
-   | Backend endpoint | one per endpoint: happy path, status + response shape vs the contract fixture. Error case only if the story names one |
-   | Frontend screen | one per screen: renders with fixture data, key element visible |
-   | Bug fix | regression test, red on the unfixed code |
-   | Refactor | characterization test, green on current code, written first |
-   | Copy/config | one assertion on the new value |
+   Plus how acceptance criteria get verified. Substantial test work → own task. Scale target measurable (benchmark, query plan, timing) → one case names it; else say so — 3.4's scan is the only check.
 
-   Plus how acceptance criteria get verified (Step 1 edge cases only where the story names them). Substantial test work → its own task. Scale target measurable (benchmark, query plan, timing) → one case names it; else say so — 3.4's diff scan is the only check.
+   **Listed to be run, not filed.** Each case: what runs, what passing looks like, which task(s). Case with no task → missing task; task with no case → weaker repo-check verdict at 3.4 — decide now if acceptable.
 
-   **Listed to be run, not filed.** Each case: what runs, what passing looks like, which task(s) it covers. Case with no task → missing task; task with no case → 3.4 falls back to repo checks, a weaker verdict — decide now if acceptable.
+5. **Rollout & rollback** — only prod data, payments, migration/compat: flag?, migration, rollback plan. Flag/migration/backfill work = tasks, not footnotes.
 
-5. **Rollout & rollback** — only for prod data, payments, migration/compat paths: flag?, migration concerns, rollback plan. Flag/migration/backfill work becomes tasks, not a footnote.
-
-6. Break into tasks along seams: dependency order, then layer (FE/BE/data/integration — only those touched) or module boundary. Right size = one What + one Why, ≤3 files; else split. Nothing appended after 7.
-   - **Flow:** ordered file/module list across all tasks. Fixed here; changed only via Scope Change.
-   - **Sequencing:** tasks with no shared dependency; smallest demoable slice. Recorded (9).
-   - **Contract-first** (story touches backend + frontend): task 1 = contract — request/response/error shapes where the repo keeps shared types (workspace package, OpenAPI, zod; none → co-located types file) + **one fixture file**, a canonical example response. No logic. Then backend task(s) — smoke test asserts against the fixture; then frontend task(s) — smoke test renders the *same fixture* as mock data. Shared fixture = drift detector. Contract frozen after task 1: any change → Scope Change, both smoke tests re-run. Counts toward 7's cap. Backend-only / frontend-only → skip.
+6. Break into tasks along seams: dependency order, then layer (FE/BE/data/integration, touched only) or module. Right size = one What + one Why, ≤3 files; else split. Nothing appended after 7.
+   - **Flow:** ordered file/module list across tasks. Fixed here; changes only via Scope Change.
+   - **Sequencing:** independent tasks; smallest demoable slice. Recorded (9).
+   - **Contract-first** (BE+FE story): task 1 = request/response/error shapes where shared types live (workspace pkg, OpenAPI, zod; else co-located) + **one fixture**, a canonical response; no logic. Then BE tasks (smoke asserts vs fixture), then FE tasks (smoke renders the *same fixture*) — fixture = drift detector. Frozen after task 1; change → Scope Change, re-run both. Counts toward 7. BE- or FE-only → skip.
 
 7. Task cap by type — ceiling, applied to the finished list:
 
    | Type | Max | If exceeded |
    |---|---|---|
-   | Bug fix / copy-config | 2 | flag — likely misclassified |
-   | Small feature | 5 | reconsider — may be new feature/subsystem |
+   | Bug fix / copy-config | 2 | flag — misclassified? |
+   | Small feature | 5 | reconsider — maybe new feature |
    | Refactor | 8 | upper bound |
-   | New feature/subsystem | 10 | **stop, flag** — propose split before Step 3 |
-   | New service/integration | 10 | same |
-   | Performance | 5 | multiple bottlenecks — separate stories |
+   | New feature / service | 10 | **stop, flag** — propose split before Step 3 |
+   | Performance | 5 | several bottlenecks → split |
 
-   Flow near ~30 files → flag, propose split. "Small feature" past ~8 files → possible misclassification.
+   Flow near ~30 files → flag, propose split. "Small feature" past ~8 files → likely misclassified.
 
-8. **Constitution check:** `.breadcrumbs/constitution.md` exists → read once, check the whole plan against `status: active` lines. Conflict → tripwire. No file → skip.
+8. **Constitution:** `.breadcrumbs/constitution.md` exists → read once, check the plan against `status: active` lines. Conflict → tripwire.
 
-9. File exists → one write: type, depth, HLD/LLD notes, decisions, Risks/Unknowns, domain/scale outcomes, testing plan, rollout notes, Flow, Sequencing, Task Checklist — only where applied.
-10. **Gate:** investigation marker, trip marker if written. Present plan + tasks verbatim; Understanding Summary not re-quoted unless this is the folded 1.6 gate. Stop for confirmation (`step3-implement.md`).
+9. File exists → one write: type, depth, design notes, decisions, Risks, domain/scale outcomes, testing plan, rollout, Flow, Sequencing, Checklist — where applied.
+10. **Gate:** investigation marker, trip marker if written. Plan + tasks verbatim; summary not re-quoted unless folded 1.6 gate. Stop for confirmation (`step3-implement.md`).

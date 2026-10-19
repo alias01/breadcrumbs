@@ -1,15 +1,15 @@
 # Step 1 — Understand & Clarify
 
-1. Read the story. **State back your understanding first**, own words, before asking anything. Look-ups stay scoped to the story's terms (`SKILL.md` Investigation scope).
+1. Read the story. **State back your understanding first**, own words, before asking anything. Look-ups scoped per `SKILL.md` Investigation scope.
 
-   **Layman register — this step only.** Summary and questions read as the story's owner would say them: who does what, what they see, what changes, what stays. Look-ups feed the content (what exists, what this touches, where story and code disagree); wording stays plain — "the screen where a driver picks a slot", not `SlotPickerView`. Symbols, paths, tables, endpoints only if the story uses them or the user asks. The taxonomy below is your scan list, not the summary's vocabulary. Test: the story's author could confirm it line by line.
+   **Layman register — this step only.** Summary and questions read as the story's owner would say them: who does what, what they see, what changes, what stays. Look-ups feed the content (what exists, what this touches, where story and code disagree); wording stays plain — "the screen where a driver picks a slot", not `SlotPickerView`. Symbols, paths, tables, endpoints only if the story or user uses them. The taxonomy below is your scan list, not the summary's vocabulary. Test: the story's author could confirm it line by line.
 2. Then follow-ups, only on what's genuinely vague. Scan this taxonomy; skip what doesn't apply:
    - Who/what/why: specific persona, goal, why it matters
    - Scope: in, out, one story or several
    - Acceptance criteria: testable "done", happy path, demo scenario
-   - Dependencies & context: other stories/APIs/systems, mockups, what this blocks
+   - Dependencies: other stories/APIs/systems, mockups, what this blocks
    - Data model/schema, source of truth, existing data
-   - API/contract boundaries. Story touches backend + frontend → ask what the screen shows (plain words), so the contract comes from the user's view, not the table
+   - API/contract boundaries; BE+FE → ask what the screen shows
    - Auth/permissions
    - Error handling & edge cases: error/loading/empty states, empty input, network failure, denied
    - **Scale target:** volume, rate, latency budget. Stated → record verbatim. Silent → Material only if the change sits on a data- or request-dependent path; else Cosmetic → "none stated — current scale assumed", logged per 3. Not knowing is the failure. Step 2 sizes against it, Step 3.4 judges the diff by it.

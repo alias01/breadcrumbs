@@ -1,10 +1,8 @@
 # breadcrumbs context file — template & guardrails
 
-Read once, at file creation.
-
 ## Content style
 
-AI-only reader. Fragments, no articles/connectives, abbreviate freely. `Why: race condition (two writers) — added mutex.` Markdown structure stays intact.
+AI-only reader. Fragments, no articles, abbreviate freely. `Why: race condition (two writers) — added mutex.` Markdown structure stays intact.
 
 ## File structure
 
@@ -16,7 +14,7 @@ Status: understanding | planning | implementing | pr-ready | done
 <verbatim paste>
 
 ## Understanding Summary
-<restated understanding, confirmed by user on <date>>
+<restated understanding, confirmed <date>>
 Scale target: <volume / rate / latency — or "none stated — current scale assumed">
 
 ## Clarifying Q&A
@@ -30,18 +28,18 @@ Scale target: <volume / rate / latency — or "none stated — current scale ass
 
 ## Plan
 Story type: <type>
-<approach, HLD/LLD notes at the applicable depth, agreed on <date>>
+<approach, HLD/LLD at applicable depth, agreed <date>>
 <architecture decisions: chosen — why; rejected — why not>
-<domain/scale outcomes, testing plan, rollout+rollback — only those that applied>
+<domain/scale outcomes, testing plan, rollout+rollback — those that applied>
 
 ### Risks / Unknowns
 - <implementation risk> — status: open | resolved: <how>
 
 ### Sequencing
-<independent tasks; smallest demoable slice. Omit if neither.>
+<independent tasks; smallest demoable slice. Omit if none.>
 
 ## Flow
-<ordered files/modules with task numbers. Changed only via Scope Change.>
+<ordered files/modules + task numbers. Changes only via Scope Change.>
 
 ## Task Checklist
 - [x] Task 1 — <desc> — files: <list>
@@ -51,7 +49,7 @@ Story type: <type>
 ### Task 1 — <date>
 - What: ...
 - Why: ...
-- Red: <test file> › <name> — <failure reason> | n/a — <why>
+- Red: <test path> › <name> — <failure> | n/a — <why>
 - Verified: <what ran / "nothing runnable: <inspected>"> — <outcome>
 
 ### Task 2 — <date> (mechanical)
@@ -63,7 +61,7 @@ Story type: <type>
 - [x] Task 3 — <desc> — files: <list>
 - Check: <correct | issue — one line>
 - Verified: ...
-- Flow: <off plan — reason. Only when the file isn't on the Flow.>
+- Flow: <off plan — reason. Only if the file is off the Flow.>
 
 ## Scope Changes / Reimplementation
 ### <date> — <label>
@@ -74,18 +72,18 @@ Story type: <type>
 - Why: ...
 
 ## Gate Waivers
-- <gate> — waived by user on <date> — not confirmed: <what>
+- <gate> — waived <date> — not confirmed: <what>
 
 ## PR Summary
 Last drafted: <date>
 ```
 
-Append, never overwrite — except `Status`, checkboxes, Current Requirements, a Risk's `status:`. `Red:` on every Task Log form except a user's manual edit; `Verified:` on every form; "nothing runnable" is a value, absence isn't.
+Append, never overwrite — except `Status`, checkboxes, Current Requirements, a Risk's `status:`. `Red:` on every form but a manual edit; `Verified:` on all; "nothing runnable" is a value, absence isn't.
 
 ## What NOT to do
 
-- No gate skipped without an explicit waiver logged under `Gate Waivers`.
-- No questions during Step 3 except scope-changing issues.
-- No implementation edit before the task's `Red:`; no checkoff without `Verified:`; no frozen test edited without a Scope Change; no Step 3 gate with a failing case.
-- Never rewrite past entries; never commit or reference the file in the PR; never delete without merge confirmation.
+- No gate skipped without a waiver logged under `Gate Waivers`.
+- No Step 3 questions except scope-changing ones.
+- No code before `Red:`, no checkoff without `Verified:`, no frozen-test edit without a Scope Change, no Step 3 gate with a failing case.
+- Never rewrite past entries, commit or cite the file in the PR, or delete it before merge confirmation.
 - Lite never absorbs a scope change or failed test silently — escalate to full.
