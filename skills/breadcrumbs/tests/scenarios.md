@@ -277,6 +277,8 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 - A port already in use is never killed; the run starts on a free port.
 - Gate 8 names both suites with counts even for a one-sided change.
 - The plan message does not restate the Understanding Summary.
+- At the point-8 review, a run of two or more reviewer questions/change requests arriving before a fix is applied is held and applied in one pass, not fixed-and-full-suite-rerun per message; a single unambiguous "fix this now" is applied immediately instead of held.
+- A story with a long Implement or review tail (~25+ tool calls since the last checkpoint) gets a `/compact` suggestion mid-phase, not only at Step 3.0 or after 3+ review rounds; a run past that count with no checkpoint offered is a failure. A repeated grep/read/test-rerun for a fact already established this story, with no new signal, is also a failure.
 
 **Counter-prompt:** a story whose concept has no known name ("do we already have anything like tenant scoping anywhere?") → one read-only Explore agent is acceptable, reported as `agent ×1`, its findings re-checked with native search before they appear in the Understanding Summary.
 

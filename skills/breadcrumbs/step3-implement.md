@@ -34,4 +34,8 @@
      - Approved → commit every task in order (6), then summarize what was built and what proved it (cases + outcome, scale target measured or scanned). Stop for PR confirmation (`step4-pr.md`).
      - Issue flagged → fix in place (uncommitted), re-present only the affected task(s).
 
+   **Review round, not a fix-per-message loop.** A question → answer inline, no edit. A requested change → note it; if another question or change lands before you've applied it, hold both and apply together — a single, unambiguous "fix this now" is done immediately, no hold. Re-run only the spec(s) touched by the held batch, never the full suite; full suite reruns once more, right before approval, not per fix. Re-presenting a fix restates only what changed, not the whole point-8 message again.
+
+   **Review running long** (3+ fix rounds, or the user says "pause"/"continue later") → same checkpoint as 3.0: file exists → suggest `/compact`; no file yet → create one first, backfilled to the review state.
+
    Step 4 drafts from these commits; a fix after commits land is its own commit and Log entry (6's revert path).

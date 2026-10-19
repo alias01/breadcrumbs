@@ -48,6 +48,9 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - Editing a file's tail → `wc -l` + `sed -n` on that region, not a full read. Full-file reads last resort.
 - Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`.
 - Quote globs (`--include='*.tsx'`).
+- Step 3.8 review → batch reviewer questions/edits into one pass, not one edit-cycle per message; full suite reruns once, not per fix (`skills/breadcrumbs/step3-implement.md` 8).
+- **Redundant call guard:** before a grep/read/test-rerun, check whether this story already established the same fact — same file unread-since, same suite green since the last change, same question answered earlier this story. Already known → reuse/cite it, don't re-fetch. A repeat with no new signal is a failure, not thoroughness.
+- **Context checkpoint, any phase:** track tool calls since the last checkpoint (context file created, `/compact` run, or story start). ~25 calls with none yet and no gate close by → stop, say so, suggest `/compact` now — file exists → note it; no file yet → create one first (Stop-signal trigger), then suggest. Don't wait for 3.0's task-count or 3.8's fix-round trigger if the raw call count alone already crossed this.
 
 **Caps — counted, not felt.** Native lookups ≤8 before the Step 1 gate, ≤4 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered or Step 2's Flow is known.
 

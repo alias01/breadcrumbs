@@ -24,6 +24,9 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - Editing a file's tail → `wc -l` + `sed -n` on that region, not a full read. Full-file reads last resort.
 - Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`.
 - Quote globs (`--include='*.tsx'`).
+- Step 3.8 review → batch reviewer questions/edits into one pass, not one edit-cycle per message; full suite reruns once, not per fix (`step3-implement.md` 8).
+- **Redundant call guard:** before a grep/read/test-rerun, check whether this story already established the same fact — same file unread-since, same suite green since the last change, same question answered earlier this story. Already known → reuse/cite it, don't re-fetch. A repeat with no new signal is a failure, not thoroughness.
+- **Context checkpoint, any phase:** track tool calls since the last checkpoint (context file created, `/compact` run, or story start). ~25 calls with none yet and no gate close by → stop, say so, suggest `/compact` now — file exists → note it; no file yet → create one first (Stop-signal trigger), then suggest. Don't wait for 3.0's task-count or 3.8's fix-round trigger if the raw call count alone already crossed this.
 
 **Caps — counted, not felt.** Native lookups ≤8 before the Step 1 gate, ≤4 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered or Step 2's Flow is known.
 
@@ -265,6 +268,10 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
    - Green → **one review message, nothing committed:** per task — name, files (`git diff --stat`), and **what to check** (the risky assumption or exact behavior, or "mechanical, low risk").
      - Approved → commit every task in order (6), then summarize what was built and what proved it (cases + outcome, scale target measured or scanned). Stop for PR confirmation (`step4-pr.md`).
      - Issue flagged → fix in place (uncommitted), re-present only the affected task(s).
+
+   **Review round, not a fix-per-message loop.** A question → answer inline, no edit. A requested change → note it; if another question or change lands before you've applied it, hold both and apply together — a single, unambiguous "fix this now" is done immediately, no hold. Re-run only the spec(s) touched by the held batch, never the full suite; full suite reruns once more, right before approval, not per fix. Re-presenting a fix restates only what changed, not the whole point-8 message again.
+
+   **Review running long** (3+ fix rounds, or the user says "pause"/"continue later") → same checkpoint as 3.0: file exists → suggest `/compact`; no file yet → create one first, backfilled to the review state.
 
    Step 4 drafts from these commits; a fix after commits land is its own commit and Log entry (6's revert path).
 

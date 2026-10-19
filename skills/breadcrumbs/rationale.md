@@ -28,3 +28,9 @@ US-16's manual pass was ~35 turns of single `curl`s, three `EADDRINUSE` server s
 
 ## Step 3.4 — touched spec per task, full suite once
 Full backend suite ran three times and vitest four in US-16. Per-task isolation proof needs only the touched spec; composition proof is point 8's job.
+
+## Step 3.8 — review round batching
+RBAC-03 (2026-09-07): two review comments ("why deleted", "make tests black-box") each triggered an immediate fix-and-rerun instead of being batched — the second comment reran both full suites a second time for a fix that touched two spec files. Post-hoc analysis of that session (deduped by real API call, not raw transcript lines) showed the Implement phase alone was 68% of the story's turns and 63% of its cost, with every review question/edit stacking on the full prior context. Batching held edits into one pass, and capping full-suite runs to once at approval, removes the repeated-rerun tax without changing what gets reviewed.
+
+## SKILL.md — context checkpoint, any phase
+Same RBAC-03 session: Step 3.0's checkpoint fires once, before task 1, gated on task count (≥4). After that single `/compact`, Implement ran 73 real API calls (133 raw transcript lines) with no further checkpoint offered — the task-count trigger only fires once per story, so a long Implement phase, or a long review tail after it, had nothing catching per-turn context growth. A raw call-count trigger, independent of which phase or gate is near, catches what the task-count and fix-round triggers structurally can't: growth that happens *between* gates, not at them.
