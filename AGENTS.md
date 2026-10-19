@@ -17,15 +17,15 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 **One retrieval path per question:**
 - "Where is X / what does this do" → native code search (semantic index or grep). Open only the file it points at.
 - "What relates to what" (Step 1 dependencies, Step 2 Flow) → `graphify` `query`/`path`/`explain`, only if `graphify-out/` exists — never build mid-story. No graph → follow imports by hand.
-- **Subagents:** never for a question native search can phrase. Only a repo-wide "anything like X?" sweep, name unknown — ≤1/story, Explore, read-only, output = leads to re-check, not gate facts. Shown as `agent ×1`; its lookups count toward the cap.
+- **Subagents:** only a repo-wide "anything like X?" sweep, name unknown — ≤1/story, Explore, read-only, leads to re-check, not gate facts. Shown as `agent ×1`, counts toward the cap.
 
 **Cost = turns × context.**
 - Independent lookups → parallel, one turn. `sleep; tail` → one command. File tail → `wc -l` + `sed -n`; full reads last resort.
-- Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`. Quote globs (`--include='*.tsx'`).
+- Trim output: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`. Quote globs (`--include='*.tsx'`).
 - **Redundant call guard:** fact already established this story (file unchanged since read, suite green since last change, question answered) → cite it, don't re-fetch. A repeat with no new signal is a failure.
 - **Checkpoint, any phase:** ~25 tool calls since the last checkpoint (file created, `/compact`, story start), no gate near → stop, suggest `/compact`; no file → create first (Stop signal). Independent of 3.0/3.8 triggers.
 
-**Caps — counted, not felt.** Native lookups ≤8 before the Step 1 gate, ≤4 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered or Step 2's Flow is known.
+**Caps — counted, not felt.** Native lookups ≤8 before the Step 1 gate, ≤4 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered / Step 2's Flow known.
 
 **Investigation marker** before every gate: `[investigation: native search ×3 · graph ×0]`. Every content-opening call counts (grep, sed -n, cat, find, Read). Undercounting is worse than over-cap. Lite showing `graph ×1`, or any gate over cap → stop, say why.
 
@@ -35,12 +35,12 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - **Stop signal** ("pause here", "continue tomorrow") → create, backfill at the current step.
 - **Mid-flight break** (test fails, assumption breaks, scope changes, scale regression — 3.7) → create if missing, backfill, log the Scope Change. Lite escalates to full.
 - **Topic shift**, no stop signal → ask once: "Moving off this story — checkpoint it first?" Yes → Stop signal. No → don't re-ask.
-- **Long story** — full mode, ≥4 tasks → 3.0 creates it before task 1, asks for `/compact`.
+- **Long story** — full mode, ≥4 tasks → 3.0 creates it, asks for `/compact`.
 - **Step command** — `bc understand` / `plan` / `build` always write it (next may be a fresh session).
 
 No trigger → no file. **Trip marker** before the gate message when written: `[context file: wrote Understanding Summary + Assumptions]`.
 
-**Resuming** (story start, "continue"/"resume") → list `.breadcrumbs/context/` (repo root) first. Empty → stateless. Files → `resume.md`.
+**Resuming** (story start, "continue"/"resume") → list `.breadcrumbs/context/` (repo root): empty → stateless, files → `resume.md`.
 
 **Mechanics** (location, exclusion, cleanup, validators): `context-file-mechanics.md`, once at first trigger. **Structure:** `context-template.md`, once at first creation. Neither on resume. **Constitution** — optional committed `.breadcrumbs/constitution.md`, standing repo-wide rules; checked at 2.8 or the lite gate (`context-file-mechanics.md`).
 
@@ -48,7 +48,7 @@ No trigger → no file. **Trip marker** before the gate message when written: `[
 
 `Bug fix` / `Copy/config/content change` (1.4) → lite; else full.
 - Step 1 gate + Step 2 = one message: approach + tasks (≤2) + proving check + `Scale target:`, ending "Here's what I understand and how I'd build it — confirm?" → Step 3. Bug fix adds root cause, repro confirmed, same defect elsewhere, regression case; either type → constitution check.
-- Step 3: commit as you go, one wrap-up, no pre-commit review. Verification not collapsed — red/green per task (3.4), 3.8 before wrap-up.
+- Step 3: commit as you go, one wrap-up, no pre-commit review. Verification not collapsed — 3.4 per task, 3.8 before wrap-up.
 - Mid-flight break escalates to full, said in one line.
 
 ## The four steps
@@ -62,6 +62,8 @@ Read the step file at its gate — don't preload.
 | 3 — Implement | `step3-implement.md` | All tasks verified, tests green, reviewed *before* any commit |
 | 4 — PR | `step4-pr.md` | PR draft confirmed in chat |
 
+**Every story:** red before code (3.4). BE+FE → task 1 = contract: committed fixture both smoke tests import (2.6).
+
 ## Step commands
 
 `/breadcrumbs` runs all four. Each step also has a command: one step, never auto-advances; names the next only once its own gate is answered — running it *is* the confirmation. `/bc-plan` (Claude Code, Cursor, Windsurf), `/bc:plan` (Gemini), else say "bc plan".
@@ -74,7 +76,7 @@ Read the step file at its gate — don't preload.
 | `bc review` | 3.8 gate | all tasks ticked | `bc pr` |
 | `bc pr` | Step 4 | story commits (non-breadcrumbs branch ok) | — |
 
-Also: `bc resume` → `resume.md` · `bc status` → one line (story, step, next), no lookups/write · `bc pause` → Stop signal + `/compact` · `bc why <x>` → quote the logged entry · `bc rule <text>` → constitution append. **Needs** from file, else conversation; missing → one line + the command that produces it, proceed only on explicit "go" (= gate waiver).
+Also: `bc resume` → `resume.md` · `bc status` → one line (story, step, next), no lookups/write · `bc pause` → Stop signal + `/compact` · `bc why <x>` → quote the log entry · `bc rule <text>` → constitution append. **Needs** from file, else conversation; missing → one line naming the producing command; proceed only on explicit "go" (= gate waiver).
 
 ## What NOT to do
 
@@ -154,7 +156,7 @@ Append-only; only `status:` amended. **Retire** only on explicit user instructio
 4. Classify: `Bug fix` / `Copy/config/content change` (**lite**) / `Small feature addition` / `Refactor/tech debt` / `New feature/subsystem` / `New service/integration` / `Performance/optimization` (**full**; depth in Step 2.1). State the mode, one line.
 5. **Tag every open question/assumption:** Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count, not type or size, decides the gate.
 6. **Gate:** investigation marker; file exists → write Understanding Summary + Assumptions in one pass, trip marker; else same content in chat. Summary always ends with one `Scale target:` line.
-   - **Zero Material unknowns** → fold Step 2 in: do its work silently (`step2-plan.md`), present Summary + Plan together, one confirmation.
+   - **Zero Material unknowns** → fold Step 2 in: **read `step2-plan.md`**, do its work silently, present Summary + Plan, one confirmation.
    - **Any Material unknown** (even `unconfirmed`) → summary alone, stop. No Step 2 until confirmed.
 
 ---
@@ -177,7 +179,7 @@ Append-only; only `status:` amended. **Retire** only on explicit user instructio
    | New service/integration | new external dependency / cross-system flow | Full HLD + LLD, mandatory |
    | Performance/optimization | latency, resources, scaling | Profiling + targeted fix |
 
-   Type = kind of change, not size; 7 catches one that outgrew its type.
+   Type = kind, not size; 7 catches overgrowth.
 
 2. Approach at that depth, starting *from* the summary, never restating it. HLD → components, data flow, integration points. LLD → key functions/classes/schema. No design → the fix in 1-2 sentences.
    - **Tripwire:** Material unknown Step 1 missed → stop, ask or log `unconfirmed` (1.3). Applies when 1+2 merged.
@@ -196,18 +198,18 @@ Light label, real risk (small feature + migration) → risk decides.
 
 3. **Domain checks** — orthogonal to type; skip untouched domains. Findings → 2, work → 6. **No re-asking:** auth, errors, compat, scale were scanned in Step 1 — check against the *plan* silently; questions only via the tripwire.
 
-   **Scale target check** — every full-mode depth, one fragment: walk data-/request-dependent paths against Step 1's target. Holds → say how ("paginated, indexed on `user_id`"). Doesn't / can't tell → tripwire: change approach or log open risk. "Current scale assumed" → nothing worse than today.
+   **Scale target check** — full mode, one fragment: walk data-/request-dependent paths against Step 1's target. Holds → say how ("paginated, indexed on `user_id`"). Doesn't / can't tell → tripwire: change approach or log open risk. "Current scale assumed" → nothing worse than today.
 
    | Domain | Checks |
    |---|---|
-   | API/backend | Contract (fields, types, status codes) → 2; auth; rate limits; idempotency; versioning; load where it changes design |
-   | Mobile app | Offline; iOS vs Android; store review; battery/data for background work |
+   | API/backend | Contract (fields, types, status codes) → 2; auth; rate limits; idempotency; versioning; load if design-relevant |
+   | Mobile app | Offline; iOS vs Android; store review; battery/data |
    | Database/schema | Migration backward-compatible + reversible → 5; existing queries/indexes; backfill; volume at target |
    | Bug fix (escalated) | Root cause not symptom; repro; same defect elsewhere; regression test → 4 |
    | Infra/DevOps | Downtime; monitoring new failure modes; cost; scripted not manual |
    | Data pipeline/ETL | Source format; mid-batch failure; reprocessing; downstream consumers |
    | Third-party integration | Rate limits/pricing; downtime; credentials; webhook vs polling |
-   | UI-only/design | Responsive; a11y (contrast, keyboard, screen reader); reuse design-system components |
+   | UI-only/design | Responsive; a11y (contrast, keyboard, screen reader); design-system reuse |
 
 4. **Testing plan — minimal, test-first** (`step3-implement.md` 4). One smoke case per thing touched: backend endpoint → happy path, status + shape vs contract fixture (error case only if named) · frontend screen → renders fixture data, key element visible · bug fix → regression, red on unfixed code · refactor → characterization, green on current code, first · copy/config → one assertion on the new value.
 
@@ -220,7 +222,7 @@ Light label, real risk (small feature + migration) → risk decides.
 6. Break into tasks along seams: dependency order, then layer (FE/BE/data/integration, touched only) or module. Right size = one What + one Why, ≤3 files; else split. **BE+FE story → task 1 is the contract** (below). Nothing appended after 7.
    - **Flow:** ordered file/module list across tasks. Fixed here; changes only via Scope Change.
    - **Sequencing:** independent tasks; smallest demoable slice. Recorded (9).
-   - **Contract-first:** task 1 = request/response/error shapes where shared types live (workspace pkg, OpenAPI, zod; else co-located) + **one fixture**, a canonical response; no logic. Then BE tasks (smoke asserts vs fixture), then FE tasks (smoke renders the *same fixture*) — fixture = drift detector. Frozen after task 1; change → Scope Change, re-run both. Counts toward 7. BE- or FE-only → skip.
+   - **Contract-first:** task 1 = request/response/error shapes where shared types live (workspace pkg, OpenAPI, zod; none → skip types) + **one committed fixture file** (`fixtures/<name>.json`), not inline data. No logic, own commit. Then BE tasks (smoke test *imports* the fixture, asserts against it), then FE tasks (smoke test renders *that import*) — fixture = drift detector. Frozen after task 1; change → Scope Change, re-run both. Counts toward 7. One-sided → skip.
 
 7. Task cap by type — ceiling, applied to the finished list:
 
@@ -244,23 +246,23 @@ Light label, real risk (small feature + migration) → risk decides.
 # Step 3 — Implement
 
 0. **Before task 1.**
-   - **Branch:** `git branch --show-current`. Not `feature/<slug>` → `git checkout -b feature/<slug>` from the default branch (from the current one only if this story depends on it unmerged — say so; Step 4 Dependencies names the base). One line: `On feature/<slug> (from main)`. Never commit onto another story's branch.
+   - **Branch:** `git branch --show-current`. Not `feature/<slug>` → `git checkout -b feature/<slug>` from the default branch (from current only if this story depends on it unmerged — say so; Step 4 Dependencies names the base). One line: `On feature/<slug> (from main)`. Never commit onto another story's branch.
    - **Checkpoint:** full mode, ≥4 tasks → read `context-file-mechanics.md` + `context-template.md`, create the file (Original Story, Understanding, Assumptions, Plan, Flow, Checklist), trip marker, stop: `Plan saved to .breadcrumbs/context/<slug>.md — run /compact now; I'll resume from the file.` Next message isn't a compaction → `Not compacted — continuing at ~<N>k context`, proceed, don't re-ask. After compact the file is the whole state; don't re-read the transcript. <4 tasks or lite → skip.
 1. One task at a time. **No text-only turns** between the first edit and the gate: every message carries a tool call. Only allowed text: `✓ Task N — <verdict, ≤8 words>`, *in the same message* as the next task's first call — sent alone, it is the violation. No "starting N", "good —". Text with no tool call = a point-7 break, nothing else. Nothing committed (6). Re-read this point before the first edit.
 2. **Don't ask mid-task.** Judgment call → Task Log "Why". Contradicts the plan / needs a scope decision → Scope Changes, flag now.
 3. `ponytail`: simplest thing that works, existing deps first, no unrequested abstractions. Never simplify away validation, error handling, security, accessibility, or the scale target — "works" means at that scale.
 4. **Test first, verify before checkoff.** Done = something demonstrates it. **Every verdict → Task Log or held note, never chat.**
-   - **Red first — every task, lite included.** Before any implementation edit: write the 2.4 smoke test, run it, confirm it fails *for the expected reason* (missing route/element, wrong value — not syntax/import/setup). → `Red: <repo-relative test path> › <name> — <failure>` (the freeze hook reads the path). Bug fix: red on unfixed code. Refactor: characterization test *green* on current code, own first task (`Red: n/a — characterization`). Nothing executable (types-only contract, docs) → `Red: n/a — <why>`.
+   - **Red first — every task, lite included.** Before any implementation edit: write the 2.4 smoke test, run it, confirm it fails *for the expected reason* (missing route/element, wrong value — not syntax/import/setup). → `Red: <repo-relative test path> › <name> — <failure>` (freeze hook reads it). Bug fix: red on unfixed code. Refactor: characterization test *green* on current code, own first task (`Red: n/a — characterization`). Nothing executable (docs) → `Red: n/a — <why>`. Contract task (2.6): fixture file committed alone, `Red: n/a — contract`; BE/FE smoke not importing it = no checkoff.
    - **Frozen after red:** its assertions and the contract fixture (2.6) are fixed for the story; changing them = 7 Scope Change, never silent. Setup plumbing may change. Opt-in hook: `hooks/freeze-tests.mjs`.
-   - **Green:** implement until it passes — by exit code + stderr, never a printed summary.
+   - **Green:** implement until it passes — exit code + stderr, not a printed summary.
    - Run the 2.4 cases mapped to this task (lite → the named check). None mapped → repo fast checks over what you touched, name which. **Per task: the touched spec only.** Full suite once, at 8.
    - Nothing executable → say so + what was inspected; silence isn't a verdict. Fails → fix, re-run; cause is the plan → 7.
    - **Self-review:** diff vs the task's Why — scaffolding, TODO-as-fix, workaround where root cause was the point, unasked abstraction. A smoke test that passes with the feature deleted doesn't count. Fix now.
-   - **Scale scan:** query/call per item of a growing collection, unbounded load, new query without pagination/index, sync work on a hot path. Trivial → fix, note in `Verified:`. Not trivial or target can't hold → not a checkoff, 7.
+   - **Scale scan:** per-item query on a growing collection, unbounded load, new query without pagination/index, sync work on a hot path. Trivial → fix, note in `Verified:`. Not trivial or target can't hold → not a checkoff, 7.
    - **UI change → look at it** (Claude Browser, `run` skill, simulator — check the tool list before claiming none); SSR grep is the fallback, said as such.
    - **Dev servers:** `lsof -i :<port>` first; taken → **never kill it** (the user's), use a free port, client env in the same command. Log via `grep -Ei "started|local:|ready|EADDRINUSE|error"`.
-   - **Manual E2E → one script per story**, in the repo's package dir (imports resolve), env loaded as the repo's config does (`import 'dotenv/config'` if `prisma.config.ts` does), one function per scenario, run once, prints only asserted fields, cleans up, deleted after. New scenario = edit that file. Never one `curl` per turn.
-   - **CLI usage error** → `<cmd> --help | grep <flag>` once, then the fixed call. No guessing, no full help.
+   - **Manual E2E → one script per story**, in the repo's package dir, env loaded as the repo's config does (`import 'dotenv/config'` if `prisma.config.ts` does), one function per scenario, run once, prints only asserted fields, cleans up, deleted after. New scenario = edit that file. Never one `curl` per turn.
+   - **CLI usage error** → `<cmd> --help | grep <flag>` once, then the fixed call.
    - Outcome → `Verified:` (what ran, what it showed). Step 4's Test section comes only from this.
 5. **Manual-edit review** — before each task and on resume: `git status` / `git diff HEAD` over the story's files. A change you didn't make → one-line `Check:` (correct, or issue: what/where). File off the Flow (2.6) → say so, non-blocking. Review, not veto: the edit stands unless it breaks something.
 
@@ -271,11 +273,11 @@ Light label, real risk (small feature + migration) → risk decides.
 
    After approval: one commit per task, in order, mirroring the Task Log — few Bash calls, no text between commits. Conventional Commits `<type>(<scope>): <imperative summary>`; body = short bullets from What/Why. Types: `feat` `fix` `docs` `style` `refactor` `perf` `test` `chore` `revert`. Reverting a landed task → `git revert <hash>`, header `revert(<scope>): <what was undone>`, hash + reason in body. Scope change mid-task → still one commit; type = what shipped. Check headers with `validate-commit-message.mjs -m "<header>"` (resolution: `context-file-mechanics.md`; a bare argument is read as a file path); not found → by hand.
 7. Test fails / assumption invalidated / scope changes / **scale regression** → Mid-flight break (`SKILL.md`). Then: Scope Changes entry (date, trigger, before/after, affected tasks, why), amend Current Requirements in place, update Assumptions/Plan/Checklist. Scale case: tell the user before fixing — what regressed, which target, what holding it takes. Absorb or fix is their call.
-8. **Gate:** all tasks ticked → **run the whole planned test set** (every 2.4 case + backend suite + frontend suite — both, even if one side changed — each named with its count) against the uncommitted tree. Any text-only turn since the first edit → one line at the top of the review admits it.
+8. **Gate:** all tasks ticked → **run the whole planned test set** (every 2.4 case + backend suite + frontend suite — both, even if one side changed — each named with its count) against the uncommitted tree. Any text-only turn since the first edit → admit it in one line atop the review.
    - Red → fix, re-run; cause is the plan → 7. Never present with a known-failing case.
    - Nothing runnable → say so with what was checked, continue.
    - Green → **one review message, nothing committed:** per task — name, files (`git diff --stat`), and **what to check** (the risky assumption or exact behavior, or "mechanical, low risk").
-     - Approved → commit every task in order (6), then summarize what was built and what proved it (cases + outcome, scale target measured or scanned). Stop for PR confirmation (`step4-pr.md`).
+     - Approved → commit every task in order (6), then summarize what was built + what proved it (cases, scale target measured or scanned). Stop for PR confirmation (`step4-pr.md`).
      - Issue flagged → fix in place (uncommitted), re-present only the affected task(s).
 
    **Review round, not fix-per-message.** Question → answer inline, no edit. Change request → note it; another lands before it's applied → apply both together. A single unambiguous "fix this now" → immediately. Re-run only the specs the batch touched; full suites once more, right before approval. Re-present only what changed.

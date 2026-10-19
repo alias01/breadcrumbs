@@ -39,15 +39,15 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 **One retrieval path per question:**
 - "Where is X / what does this do" → native code search (semantic index or grep). Open only the file it points at.
 - "What relates to what" (Step 1 dependencies, Step 2 Flow) → `graphify` `query`/`path`/`explain`, only if `graphify-out/` exists — never build mid-story. No graph → follow imports by hand.
-- **Subagents:** never for a question native search can phrase. Only a repo-wide "anything like X?" sweep, name unknown — ≤1/story, Explore, read-only, output = leads to re-check, not gate facts. Shown as `agent ×1`; its lookups count toward the cap.
+- **Subagents:** only a repo-wide "anything like X?" sweep, name unknown — ≤1/story, Explore, read-only, leads to re-check, not gate facts. Shown as `agent ×1`, counts toward the cap.
 
 **Cost = turns × context.**
 - Independent lookups → parallel, one turn. `sleep; tail` → one command. File tail → `wc -l` + `sed -n`; full reads last resort.
-- Trim output before it lands: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`. Quote globs (`--include='*.tsx'`).
+- Trim output: `| tail -5`, `--loglevel=error`, server start → `grep -Ei "started|local:|ready|EADDRINUSE|error"`, `git rev-list --count` over `git log`. Quote globs (`--include='*.tsx'`).
 - **Redundant call guard:** fact already established this story (file unchanged since read, suite green since last change, question answered) → cite it, don't re-fetch. A repeat with no new signal is a failure.
 - **Checkpoint, any phase:** ~25 tool calls since the last checkpoint (file created, `/compact`, story start), no gate near → stop, suggest `/compact`; no file → create first (Stop signal). Independent of 3.0/3.8 triggers.
 
-**Caps — counted, not felt.** Native lookups ≤8 before the Step 1 gate, ≤4 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered or Step 2's Flow is known.
+**Caps — counted, not felt.** Native lookups ≤8 before the Step 1 gate, ≤4 more before Step 2. Graph ≤2/story, both at Step 2, `--budget 1500`; lite → 0. Never open `GRAPH_REPORT.md` or raw graph JSON. Cap hit, question open → ask. Stop once Step 1's taxonomy is answered / Step 2's Flow known.
 
 **Investigation marker** before every gate: `[investigation: native search ×3 · graph ×0]`. Every content-opening call counts (grep, sed -n, cat, find, Read). Undercounting is worse than over-cap. Lite showing `graph ×1`, or any gate over cap → stop, say why.
 
@@ -57,12 +57,12 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - **Stop signal** ("pause here", "continue tomorrow") → create, backfill at the current step.
 - **Mid-flight break** (test fails, assumption breaks, scope changes, scale regression — 3.7) → create if missing, backfill, log the Scope Change. Lite escalates to full.
 - **Topic shift**, no stop signal → ask once: "Moving off this story — checkpoint it first?" Yes → Stop signal. No → don't re-ask.
-- **Long story** — full mode, ≥4 tasks → 3.0 creates it before task 1, asks for `/compact`.
+- **Long story** — full mode, ≥4 tasks → 3.0 creates it, asks for `/compact`.
 - **Step command** — `bc understand` / `plan` / `build` always write it (next may be a fresh session).
 
 No trigger → no file. **Trip marker** before the gate message when written: `[context file: wrote Understanding Summary + Assumptions]`.
 
-**Resuming** (story start, "continue"/"resume") → list `.breadcrumbs/context/` (repo root) first. Empty → stateless. Files → `skills/breadcrumbs/resume.md`.
+**Resuming** (story start, "continue"/"resume") → list `.breadcrumbs/context/` (repo root): empty → stateless, files → `skills/breadcrumbs/resume.md`.
 
 **Mechanics** (location, exclusion, cleanup, validators): `skills/breadcrumbs/context-file-mechanics.md`, once at first trigger. **Structure:** `skills/breadcrumbs/context-template.md`, once at first creation. Neither on resume. **Constitution** — optional committed `.breadcrumbs/constitution.md`, standing repo-wide rules; checked at 2.8 or the lite gate (`skills/breadcrumbs/context-file-mechanics.md`).
 
@@ -70,7 +70,7 @@ No trigger → no file. **Trip marker** before the gate message when written: `[
 
 `Bug fix` / `Copy/config/content change` (1.4) → lite; else full.
 - Step 1 gate + Step 2 = one message: approach + tasks (≤2) + proving check + `Scale target:`, ending "Here's what I understand and how I'd build it — confirm?" → Step 3. Bug fix adds root cause, repro confirmed, same defect elsewhere, regression case; either type → constitution check.
-- Step 3: commit as you go, one wrap-up, no pre-commit review. Verification not collapsed — red/green per task (3.4), 3.8 before wrap-up.
+- Step 3: commit as you go, one wrap-up, no pre-commit review. Verification not collapsed — 3.4 per task, 3.8 before wrap-up.
 - Mid-flight break escalates to full, said in one line.
 
 ## The four steps
@@ -84,6 +84,8 @@ Read the step file at its gate — don't preload.
 | 3 — Implement | `skills/breadcrumbs/step3-implement.md` | All tasks verified, tests green, reviewed *before* any commit |
 | 4 — PR | `skills/breadcrumbs/step4-pr.md` | PR draft confirmed in chat |
 
+**Every story:** red before code (3.4). BE+FE → task 1 = contract: committed fixture both smoke tests import (2.6).
+
 ## Step commands
 
 `/breadcrumbs` runs all four. Each step also has a command: one step, never auto-advances; names the next only once its own gate is answered — running it *is* the confirmation. `/bc-plan` (Claude Code, Cursor, Windsurf), `/bc:plan` (Gemini), else say "bc plan".
@@ -96,7 +98,7 @@ Read the step file at its gate — don't preload.
 | `bc review` | 3.8 gate | all tasks ticked | `bc pr` |
 | `bc pr` | Step 4 | story commits (non-breadcrumbs branch ok) | — |
 
-Also: `bc resume` → `skills/breadcrumbs/resume.md` · `bc status` → one line (story, step, next), no lookups/write · `bc pause` → Stop signal + `/compact` · `bc why <x>` → quote the logged entry · `bc rule <text>` → constitution append. **Needs** from file, else conversation; missing → one line + the command that produces it, proceed only on explicit "go" (= gate waiver).
+Also: `bc resume` → `skills/breadcrumbs/resume.md` · `bc status` → one line (story, step, next), no lookups/write · `bc pause` → Stop signal + `/compact` · `bc why <x>` → quote the log entry · `bc rule <text>` → constitution append. **Needs** from file, else conversation; missing → one line naming the producing command; proceed only on explicit "go" (= gate waiver).
 
 ## What NOT to do
 

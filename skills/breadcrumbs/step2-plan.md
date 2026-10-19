@@ -16,7 +16,7 @@
    | New service/integration | new external dependency / cross-system flow | Full HLD + LLD, mandatory |
    | Performance/optimization | latency, resources, scaling | Profiling + targeted fix |
 
-   Type = kind of change, not size; 7 catches one that outgrew its type.
+   Type = kind, not size; 7 catches overgrowth.
 
 2. Approach at that depth, starting *from* the summary, never restating it. HLD → components, data flow, integration points. LLD → key functions/classes/schema. No design → the fix in 1-2 sentences.
    - **Tripwire:** Material unknown Step 1 missed → stop, ask or log `unconfirmed` (1.3). Applies when 1+2 merged.
@@ -35,18 +35,18 @@ Light label, real risk (small feature + migration) → risk decides.
 
 3. **Domain checks** — orthogonal to type; skip untouched domains. Findings → 2, work → 6. **No re-asking:** auth, errors, compat, scale were scanned in Step 1 — check against the *plan* silently; questions only via the tripwire.
 
-   **Scale target check** — every full-mode depth, one fragment: walk data-/request-dependent paths against Step 1's target. Holds → say how ("paginated, indexed on `user_id`"). Doesn't / can't tell → tripwire: change approach or log open risk. "Current scale assumed" → nothing worse than today.
+   **Scale target check** — full mode, one fragment: walk data-/request-dependent paths against Step 1's target. Holds → say how ("paginated, indexed on `user_id`"). Doesn't / can't tell → tripwire: change approach or log open risk. "Current scale assumed" → nothing worse than today.
 
    | Domain | Checks |
    |---|---|
-   | API/backend | Contract (fields, types, status codes) → 2; auth; rate limits; idempotency; versioning; load where it changes design |
-   | Mobile app | Offline; iOS vs Android; store review; battery/data for background work |
+   | API/backend | Contract (fields, types, status codes) → 2; auth; rate limits; idempotency; versioning; load if design-relevant |
+   | Mobile app | Offline; iOS vs Android; store review; battery/data |
    | Database/schema | Migration backward-compatible + reversible → 5; existing queries/indexes; backfill; volume at target |
    | Bug fix (escalated) | Root cause not symptom; repro; same defect elsewhere; regression test → 4 |
    | Infra/DevOps | Downtime; monitoring new failure modes; cost; scripted not manual |
    | Data pipeline/ETL | Source format; mid-batch failure; reprocessing; downstream consumers |
    | Third-party integration | Rate limits/pricing; downtime; credentials; webhook vs polling |
-   | UI-only/design | Responsive; a11y (contrast, keyboard, screen reader); reuse design-system components |
+   | UI-only/design | Responsive; a11y (contrast, keyboard, screen reader); design-system reuse |
 
 4. **Testing plan — minimal, test-first** (`step3-implement.md` 4). One smoke case per thing touched: backend endpoint → happy path, status + shape vs contract fixture (error case only if named) · frontend screen → renders fixture data, key element visible · bug fix → regression, red on unfixed code · refactor → characterization, green on current code, first · copy/config → one assertion on the new value.
 
@@ -59,7 +59,7 @@ Light label, real risk (small feature + migration) → risk decides.
 6. Break into tasks along seams: dependency order, then layer (FE/BE/data/integration, touched only) or module. Right size = one What + one Why, ≤3 files; else split. **BE+FE story → task 1 is the contract** (below). Nothing appended after 7.
    - **Flow:** ordered file/module list across tasks. Fixed here; changes only via Scope Change.
    - **Sequencing:** independent tasks; smallest demoable slice. Recorded (9).
-   - **Contract-first:** task 1 = request/response/error shapes where shared types live (workspace pkg, OpenAPI, zod; else co-located) + **one fixture**, a canonical response; no logic. Then BE tasks (smoke asserts vs fixture), then FE tasks (smoke renders the *same fixture*) — fixture = drift detector. Frozen after task 1; change → Scope Change, re-run both. Counts toward 7. BE- or FE-only → skip.
+   - **Contract-first:** task 1 = request/response/error shapes where shared types live (workspace pkg, OpenAPI, zod; none → skip types) + **one committed fixture file** (`fixtures/<name>.json`), not inline data. No logic, own commit. Then BE tasks (smoke test *imports* the fixture, asserts against it), then FE tasks (smoke test renders *that import*) — fixture = drift detector. Frozen after task 1; change → Scope Change, re-run both. Counts toward 7. One-sided → skip.
 
 7. Task cap by type — ceiling, applied to the finished list:
 

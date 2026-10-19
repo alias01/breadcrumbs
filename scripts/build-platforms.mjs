@@ -199,8 +199,15 @@ const COMMANDS = [
   ["why", "Quote the logged reason for a past decision", "<decision or file>"],
   ["rule", "Add a standing rule to .breadcrumbs/constitution.md", "<rule>"],
 ];
+// The next command may run in a fresh session, so these three must leave the
+// story on disk — the skill text alone didn't hold in the 2026-10-19 benchmark.
+const WRITES_FILE = new Set(["understand", "plan", "build"]);
 const commandText = (cmd, source, args) =>
-  `Follow ${source}. Run its \`bc ${cmd}\` step command (Step commands table): check its Needs, run that step only, end by naming the next command.\n\nInput: ${args}`;
+  `Follow ${source}. Run its \`bc ${cmd}\` step command (Step commands table): check its Needs, run that step only, end by naming the next command.` +
+  (WRITES_FILE.has(cmd)
+    ? ` Before naming it, write or update the context file (\`.breadcrumbs/context/<slug>.md\`) with everything this step produced — always, lite included: the next command runs in a fresh session and reads only that file.`
+    : "") +
+  `\n\nInput: ${args}`;
 const SKILL_REF = "`skills/breadcrumbs/SKILL.md` (read it now, then the step file it names)";
 for (const [cmd, desc, hint] of COMMANDS) {
   write(

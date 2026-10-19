@@ -144,15 +144,15 @@ Lean is a real trade. A pointer is a soft instruction, and a weaker model may sk
 
 | | v1.6 auto | v2 auto | v2 `bc` commands |
 |---|---|---|---|
-| Cost | $0.58 | $0.72 | $2.03 |
-| Turns | 29 | 34 | 100 |
+| Cost | $0.58 | $0.70 | $1.81 |
+| Turns | 29 | 36 | 90 |
 | Sessions | 1 | 1 | 5 |
-| Test written before code | no | yes, both tasks | yes, both tasks |
-| Contract task + fixture | — | not created | not created |
+| Test written before code | no | yes, every task | yes, every task (`Red:` logged) |
+| Contract fixture, imported by both smoke tests | — | yes | yes |
 
-- **v2 costs ~25% more per story** than v1.6. The extra turns are the red test runs, and in exchange every task is test-first.
-- **Running each `bc` command in a fresh session costs ~3.5× more** on a story this small. Each session re-pays the system prompt and re-reads the code, which outweighs the shorter history. For a short story, run all the steps in one session; fresh sessions only pay off when a story is long enough for history to dominate (not measured).
-- **Contract-first wasn't followed in either v2 run**, even though the story touches both backend and frontend. This is open.
+- **v2 costs ~20% more per story** than v1.6. The extra turns are the red runs and the contract task, which is what you get in exchange.
+- **Running each `bc` command in a fresh session costs ~2.6× v2's auto-flow** on a story this small. Each session re-pays the system prompt and re-reads the code, which outweighs the shorter history. For a short story, run all the steps in one session; fresh sessions only pay off when a story is long enough for history to dominate (not measured).
+- The first runs found three bugs, all fixed since: a fresh `bc plan` had no story because `bc understand` didn't write the file; `bc build` committed on its own approval; and contract-first was skipped when Step 2 folded into Step 1.
 - n=1 per variant, so treat these as direction, not precise numbers. To re-measure, use `session-token-stats.mjs --by-tool` on a real story.
 
 Two files ignore the flag: [`AGENTS.md`](AGENTS.md) is always full (it's the fallback for tools that can't read files on demand), and `.windsurf/rules/breadcrumbs.md` is always lean (Windsurf enforces a 12,000-char cap and truncates past it silently — the build fails rather than ship a half-skill).

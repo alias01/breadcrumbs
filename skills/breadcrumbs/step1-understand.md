@@ -34,5 +34,5 @@
 4. Classify: `Bug fix` / `Copy/config/content change` (**lite**) / `Small feature addition` / `Refactor/tech debt` / `New feature/subsystem` / `New service/integration` / `Performance/optimization` (**full**; depth in Step 2.1). State the mode, one line.
 5. **Tag every open question/assumption:** Cosmetic (naming, location, formatting — wrong guess costs nothing) or Material (data model, contract, business logic, security, user-visible behavior — wrong guess = rework). Tag count, not type or size, decides the gate.
 6. **Gate:** investigation marker; file exists → write Understanding Summary + Assumptions in one pass, trip marker; else same content in chat. Summary always ends with one `Scale target:` line.
-   - **Zero Material unknowns** → fold Step 2 in: do its work silently (`step2-plan.md`), present Summary + Plan together, one confirmation.
+   - **Zero Material unknowns** → fold Step 2 in: **read `step2-plan.md`**, do its work silently, present Summary + Plan, one confirmation.
    - **Any Material unknown** (even `unconfirmed`) → summary alone, stop. No Step 2 until confirmed.
