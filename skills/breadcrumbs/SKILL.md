@@ -41,6 +41,7 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - **Mid-flight break** (test fails, assumption breaks, scope changes, scale regression — Step 3.7) → create if missing, backfill, log the Scope Change. Lite escalates to full.
 - **Topic shift** with no stop signal → ask once: "Moving off this story — checkpoint it first?" Yes → as Stop signal. No → don't ask again.
 - **Long story checkpoint** — full mode, ≥4 tasks → Step 3 point 0 creates it before task 1 and asks for `/compact`.
+- **Step command** — `bc plan` and `bc build` always write it: a command can run in a fresh session, and the next one reads the plan from the file.
 
 No trigger → no file. Expected for lite and short stories.
 
@@ -71,6 +72,25 @@ Read the step file at its gate — don't preload.
 | 2 — Plan | `step2-plan.md` | Plan + tasks confirmed (skipped in lite) |
 | 3 — Implement | `step3-implement.md` | All tasks verified, tests green, task list reviewed *before* any commit |
 | 4 — PR | `step4-pr.md` | PR draft confirmed in chat |
+
+## Step commands
+
+`/breadcrumbs` runs all four steps, gates as above. Each step also has its own command: same rules, one step, never auto-advances — running the next command *is* that gate's confirmation. Spelling: `/bc-plan` (Claude Code, Cursor, Windsurf), `/bc:plan` (Gemini); no command support → the phrase "bc plan" means the same.
+
+| Command | Runs | Needs | Ends naming |
+|---|---|---|---|
+| `bc understand` | Step 1 (lite folds 2) | — | `bc plan`; lite → `bc build` |
+| `bc plan` | Step 2, writes file | confirmed Understanding | `bc build` |
+| `bc build` | Step 3 points 0–7, writes file | Plan + Task Checklist | `bc review`; lite → `bc pr` |
+| `bc review` | Step 3.8 gate, commits on approval | all tasks ticked | `bc pr` |
+| `bc pr` | Step 4 | commits on the story branch — one built without breadcrumbs is fine, draft from commits | — |
+| `bc resume` | `resume.md` | — | next command |
+| `bc status` | one line: story, step, next command. No lookups, no write | — | — |
+| `bc pause` | Stop-signal trigger + suggest `/compact` | — | — |
+| `bc why <x>` | quote the matching Task Log / Scope Change / Assumption entry | file | — |
+| `bc rule <text>` | append to constitution, contradiction check (`context-file-mechanics.md`) | — | — |
+
+**Needs missing → warn, don't refuse:** one line naming what's missing + the command that produces it; proceed only on an explicit "go" — a gate waiver (below). Needs come from the file, else this conversation.
 
 ## What NOT to do
 

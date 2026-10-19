@@ -54,9 +54,15 @@ function validate(path) {
     let heading = null;
     let headingLine = 0;
     let verified = false;
+    let red = false;
     const closeEntry = () => {
       if (heading && !verified) {
         errors.push(`Task Log entry "${heading}" (line ${headingLine}) has no \`- Verified:\` line`);
+      }
+      // Test-first (Step 3.4): every entry records its red run, or `n/a — <why>`.
+      // A user's manual edit wasn't test-first work, so it's exempt.
+      if (heading && !red && !/\(manual edit/.test(heading)) {
+        errors.push(`Task Log entry "${heading}" (line ${headingLine}) has no \`- Red:\` line`);
       }
     };
     for (let i = logStart + 1; i <= lines.length; i++) {
@@ -70,9 +76,11 @@ function validate(path) {
         heading = line.replace(/^###\s*/, "").trim();
         headingLine = i + 1;
         verified = false;
+        red = false;
         continue;
       }
       if (/^\s*-\s*Verified:/.test(line)) verified = true;
+      if (/^\s*-\s*Red:/.test(line)) red = true;
     }
   }
 

@@ -20,7 +20,7 @@ Points 3-5 (anything that adds work) run before the breakdown (6), so tasks are 
 
 2. Approach at that depth, starting *from* the Understanding Summary, never restating it. HLD → components, data flow, integration points. LLD → key functions/classes/schema. No design → the fix, one-two sentences. Same scoped-search rule as Step 1.
    - **Tripwire:** a Material unknown Step 1 missed → stop, ask or log `unconfirmed` (1.3) before continuing. Applies when 1+2 merged.
-   - **Architecture decisions:** 2+ valid approaches → pick one, say why, write it down. Cross-team surface (FE/BE) → agree the contract (shape, request/response, error codes) before either side's tasks.
+   - **Architecture decisions:** 2+ valid approaches → pick one, say why, write it down. Story touches backend *and* frontend (monorepo or not) → **contract-first**, see 6.
    - **Risks/unknowns:** *implementation* risk — unfamiliar code, needs a spike, could break existing behavior. Open → tripwire. Recorded (9).
 
 **Depth gate for 3-5:**
@@ -48,7 +48,17 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
    | Third-party integration | Rate limits/pricing; downtime handling; credentials; webhook vs polling |
    | UI-only/design | Responsive; accessibility (contrast, keyboard, screen reader); design-system components reused |
 
-4. **Testing plan:** unit coverage, manual/integration cases (Step 1 edge cases, domain regression cases), how acceptance criteria get verified. Substantial test work → its own task. Scale target measurable (benchmark, query plan, timing) → one case names it; else say so — 3.4's diff scan is the only check.
+4. **Testing plan — minimal, test-first** (red before green, `step3-implement.md` 4). One smoke case per thing touched, no more:
+
+   | Touched | Smoke case |
+   |---|---|
+   | Backend endpoint | one per endpoint: happy path, status + response shape vs the contract fixture. Error case only if the story names one |
+   | Frontend screen | one per screen: renders with fixture data, key element visible |
+   | Bug fix | regression test, red on the unfixed code |
+   | Refactor | characterization test, green on current code, written first |
+   | Copy/config | one assertion on the new value |
+
+   Plus how acceptance criteria get verified (Step 1 edge cases only where the story names them). Substantial test work → its own task. Scale target measurable (benchmark, query plan, timing) → one case names it; else say so — 3.4's diff scan is the only check.
 
    **Listed to be run, not filed.** Each case: what runs, what passing looks like, which task(s) it covers. Case with no task → missing task; task with no case → 3.4 falls back to repo checks, a weaker verdict — decide now if acceptable.
 
@@ -57,6 +67,7 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
 6. Break into tasks along seams: dependency order, then layer (FE/BE/data/integration — only those touched) or module boundary. Right size = one What + one Why, ≤3 files; else split. Nothing appended after 7.
    - **Flow:** ordered file/module list across all tasks. Fixed here; changed only via Scope Change.
    - **Sequencing:** tasks with no shared dependency; smallest demoable slice. Recorded (9).
+   - **Contract-first** (story touches backend + frontend): task 1 = contract — request/response/error shapes where the repo keeps shared types (workspace package, OpenAPI, zod; none → co-located types file) + **one fixture file**, a canonical example response. No logic. Then backend task(s) — smoke test asserts against the fixture; then frontend task(s) — smoke test renders the *same fixture* as mock data. Shared fixture = drift detector. Contract frozen after task 1: any change → Scope Change, both smoke tests re-run. Counts toward 7's cap. Backend-only / frontend-only → skip.
 
 7. Task cap by type — ceiling, applied to the finished list:
 

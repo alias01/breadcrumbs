@@ -6,11 +6,14 @@
 1. One task at a time. **No text-only turns.** Between the first edit and the gate, every assistant message contains a tool_use block. The only text allowed is one line, shape `✓ Task N — <verdict, ≤8 words>`, written *in the same message* as the next task's first tool call — a `✓` line sent on its own is the violation, not the fix. No "starting N", no "now task N+1", no "server started", no "good —". A message with text and no tool call is a point-7 break, nothing else. Nothing committed (6). Re-read this point before the first edit, not at the gate.
 2. **Don't ask mid-task.** Judgment call → Task Log "Why". Contradicts the plan or needs a scope decision → Scope Changes, flag immediately.
 3. `ponytail`: simplest thing that works, existing deps first, no unrequested abstractions. Never simplify away validation, error handling, security, accessibility, or the scale target — "works" means at that scale.
-4. **Verify before checkoff.** Done = something demonstrates it works. **Every verdict below goes to the Task Log or held note, never chat.**
+4. **Test first, verify before checkoff.** Done = something demonstrates it works. **Every verdict below goes to the Task Log or held note, never chat.**
+   - **Red, before any implementation edit — every task, every type, lite included.** Write the task's smoke test (2.4), run it, confirm it fails *for the expected reason*: missing route/function/element, wrong value — not a syntax, import or setup error. → `Red: <test file> › <name> — <failure, one line>` (repo-relative path first: the freeze hook reads it). Bug fix → regression test red on the unfixed code. Refactor → characterization test *green* on current code, own task first, read-only for the story (`Red: n/a — characterization, pins current behavior`). Nothing executable (types-only contract task, docs) → `Red: n/a — <why>`.
+   - **Frozen after red.** That test's assertions don't change for the rest of the story — needing to is a 7 Scope Change, never a silent edit. Setup/fixture plumbing may change; assertions and the contract fixture (`step2-plan.md` 6) may not. Opt-in enforcement: `hooks/freeze-tests.mjs`.
+   - **Green:** implement until it passes. Judge by exit code + stderr, never a printed summary.
    - Run the 2.4 cases mapped to this task (lite → the named check). None mapped → repo fast checks over what you touched, name which. **Per task: the touched spec only.** Full suite once, at 8.
    - Nothing executable → say so + what was inspected. Silence isn't a verdict.
    - Fails → fix, re-run. Cause is the plan → 7.
-   - **Self-review:** diff vs the task's Why — scaffolding, TODO-as-fix, workaround where root cause was the point, unasked abstraction. Fix now.
+   - **Self-review:** diff vs the task's Why — scaffolding, TODO-as-fix, workaround where root cause was the point, unasked abstraction. A smoke test that would still pass with the feature deleted doesn't count — minimal means fewer tests, not weaker ones. Fix now.
    - **Scale scan:** query/call per item of a growing collection, unbounded load, new query without pagination/index, sync work on a hot path. Trivial → fix, note in `Verified:`. Not trivial or target can't hold → not a checkoff, 7.
    - **Full-suite rule:** per task the touched spec only; gate 8 runs *both* the backend suite and the frontend suite, named, even when only one side changed.
    - **UI change → look at it.** Check the tool list (Claude Browser, `run` skill, simulator) before claiming none; SSR grep is the fallback, said as such.
@@ -20,7 +23,7 @@
    - Outcome → `Verified:` (what ran, what it showed). Step 4's Test section comes only from this.
 5. **Manual-edit review** — before each task and on resume: `git status` / `git diff HEAD` over the story's files. A change you didn't make → one-line `Check:` (correct, or issue: what/where). File off the Flow (2.6) → say so, non-blocking. Review, not veto: the edit stands unless it breaks something.
 
-   After each task: file exists → append Task Log entry with `Verified:`, tick the box, one write, trip marker. Forms (`context-template.md`): judgment call → What/Why block; mechanical → one line; hand-edit → line + `Check:` (+ `Flow:` if off-plan). No file → hold the same as a private note for 8. Nothing sent to the user now.
+   After each task: file exists → append Task Log entry with `Red:` + `Verified:`, tick the box, one write, trip marker. Forms (`context-template.md`): judgment call → What/Why block; mechanical → one line; hand-edit → line + `Check:` (+ `Flow:` if off-plan). No file → hold the same as a private note for 8. Nothing sent to the user now.
 
    **Learning from the edit:** hand-edit or spoken correction that reads repo-wide (always strips X, always adds guard Y, "we never do X here") → ask once: "Save that as a standing project rule?" Yes → append to `.breadcrumbs/constitution.md`, apply from the next task. No → don't ask again for that pattern.
 6. **Don't commit per task.** No `git add`/`commit` until 8's review is approved. No curiosity checks either (`git branch`, `git log`) — only calls that gate the next action.

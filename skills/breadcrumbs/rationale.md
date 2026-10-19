@@ -34,3 +34,9 @@ RBAC-03 (2026-09-07): two review comments ("why deleted", "make tests black-box"
 
 ## SKILL.md — context checkpoint, any phase
 Same RBAC-03 session: Step 3.0's checkpoint fires once, before task 1, gated on task count (≥4). After that single `/compact`, Implement ran 73 real API calls (133 raw transcript lines) with no further checkpoint offered — the task-count trigger only fires once per story, so a long Implement phase, or a long review tail after it, had nothing catching per-turn context growth. A raw call-count trigger, independent of which phase or gate is near, catches what the task-count and fix-round triggers structurally can't: growth that happens *between* gates, not at them.
+
+## Step 3.4 — red before green
+A test written after the code is shaped by the code; it passes whether or not it tests the behavior. Recording the red run's failure reason is the cheapest proof the test can fail at all — and that it fails for the feature's absence, not a broken import.
+
+## Step 2.6 — contract-first via one fixture
+Backend-first alone still lets the frontend assume fields the backend never returns. One fixture file used by both smoke tests turns that mismatch into a red test on whichever side drifted.

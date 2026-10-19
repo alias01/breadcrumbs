@@ -39,6 +39,7 @@ Search outward from the story's own terms (feature, endpoint, table, component, 
 - **Mid-flight break** (test fails, assumption breaks, scope changes, scale regression — Step 3.7) → create if missing, backfill, log the Scope Change. Lite escalates to full.
 - **Topic shift** with no stop signal → ask once: "Moving off this story — checkpoint it first?" Yes → as Stop signal. No → don't ask again.
 - **Long story checkpoint** — full mode, ≥4 tasks → Step 3 point 0 creates it before task 1 and asks for `/compact`.
+- **Step command** — `bc plan` and `bc build` always write it: a command can run in a fresh session, and the next one reads the plan from the file.
 
 No trigger → no file. Expected for lite and short stories.
 
@@ -69,6 +70,25 @@ Read the step file at its gate — don't preload.
 | 2 — Plan | `step2-plan.md` | Plan + tasks confirmed (skipped in lite) |
 | 3 — Implement | `step3-implement.md` | All tasks verified, tests green, task list reviewed *before* any commit |
 | 4 — PR | `step4-pr.md` | PR draft confirmed in chat |
+
+## Step commands
+
+`/breadcrumbs` runs all four steps, gates as above. Each step also has its own command: same rules, one step, never auto-advances — running the next command *is* that gate's confirmation. Spelling: `/bc-plan` (Claude Code, Cursor, Windsurf), `/bc:plan` (Gemini); no command support → the phrase "bc plan" means the same.
+
+| Command | Runs | Needs | Ends naming |
+|---|---|---|---|
+| `bc understand` | Step 1 (lite folds 2) | — | `bc plan`; lite → `bc build` |
+| `bc plan` | Step 2, writes file | confirmed Understanding | `bc build` |
+| `bc build` | Step 3 points 0–7, writes file | Plan + Task Checklist | `bc review`; lite → `bc pr` |
+| `bc review` | Step 3.8 gate, commits on approval | all tasks ticked | `bc pr` |
+| `bc pr` | Step 4 | commits on the story branch — one built without breadcrumbs is fine, draft from commits | — |
+| `bc resume` | `resume.md` | — | next command |
+| `bc status` | one line: story, step, next command. No lookups, no write | — | — |
+| `bc pause` | Stop-signal trigger + suggest `/compact` | — | — |
+| `bc why <x>` | quote the matching Task Log / Scope Change / Assumption entry | file | — |
+| `bc rule <text>` | append to constitution, contradiction check (`context-file-mechanics.md`) | — | — |
+
+**Needs missing → warn, don't refuse:** one line naming what's missing + the command that produces it; proceed only on an explicit "go" — a gate waiver (below). Needs come from the file, else this conversation.
 
 ## What NOT to do
 
@@ -123,7 +143,7 @@ Append-only; only `status:` amended. **Retire** only on explicit user instructio
    - Acceptance criteria: testable "done", happy path, demo scenario
    - Dependencies & context: other stories/APIs/systems, mockups, what this blocks
    - Data model/schema, source of truth, existing data
-   - API/contract boundaries
+   - API/contract boundaries. Story touches backend + frontend → ask what the screen shows (plain words), so the contract comes from the user's view, not the table
    - Auth/permissions
    - Error handling & edge cases: error/loading/empty states, empty input, network failure, denied
    - **Scale target:** volume, rate, latency budget. Stated → record verbatim. Silent → Material only if the change sits on a data- or request-dependent path; else Cosmetic → "none stated — current scale assumed", logged per 3. Not knowing is the failure. Step 2 sizes against it, Step 3.4 judges the diff by it.
@@ -175,7 +195,7 @@ Points 3-5 (anything that adds work) run before the breakdown (6), so tasks are 
 
 2. Approach at that depth, starting *from* the Understanding Summary, never restating it. HLD → components, data flow, integration points. LLD → key functions/classes/schema. No design → the fix, one-two sentences. Same scoped-search rule as Step 1.
    - **Tripwire:** a Material unknown Step 1 missed → stop, ask or log `unconfirmed` (1.3) before continuing. Applies when 1+2 merged.
-   - **Architecture decisions:** 2+ valid approaches → pick one, say why, write it down. Cross-team surface (FE/BE) → agree the contract (shape, request/response, error codes) before either side's tasks.
+   - **Architecture decisions:** 2+ valid approaches → pick one, say why, write it down. Story touches backend *and* frontend (monorepo or not) → **contract-first**, see 6.
    - **Risks/unknowns:** *implementation* risk — unfamiliar code, needs a spike, could break existing behavior. Open → tripwire. Recorded (9).
 
 **Depth gate for 3-5:**
@@ -203,7 +223,17 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
    | Third-party integration | Rate limits/pricing; downtime handling; credentials; webhook vs polling |
    | UI-only/design | Responsive; accessibility (contrast, keyboard, screen reader); design-system components reused |
 
-4. **Testing plan:** unit coverage, manual/integration cases (Step 1 edge cases, domain regression cases), how acceptance criteria get verified. Substantial test work → its own task. Scale target measurable (benchmark, query plan, timing) → one case names it; else say so — 3.4's diff scan is the only check.
+4. **Testing plan — minimal, test-first** (red before green, `step3-implement.md` 4). One smoke case per thing touched, no more:
+
+   | Touched | Smoke case |
+   |---|---|
+   | Backend endpoint | one per endpoint: happy path, status + response shape vs the contract fixture. Error case only if the story names one |
+   | Frontend screen | one per screen: renders with fixture data, key element visible |
+   | Bug fix | regression test, red on the unfixed code |
+   | Refactor | characterization test, green on current code, written first |
+   | Copy/config | one assertion on the new value |
+
+   Plus how acceptance criteria get verified (Step 1 edge cases only where the story names them). Substantial test work → its own task. Scale target measurable (benchmark, query plan, timing) → one case names it; else say so — 3.4's diff scan is the only check.
 
    **Listed to be run, not filed.** Each case: what runs, what passing looks like, which task(s) it covers. Case with no task → missing task; task with no case → 3.4 falls back to repo checks, a weaker verdict — decide now if acceptable.
 
@@ -212,6 +242,7 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
 6. Break into tasks along seams: dependency order, then layer (FE/BE/data/integration — only those touched) or module boundary. Right size = one What + one Why, ≤3 files; else split. Nothing appended after 7.
    - **Flow:** ordered file/module list across all tasks. Fixed here; changed only via Scope Change.
    - **Sequencing:** tasks with no shared dependency; smallest demoable slice. Recorded (9).
+   - **Contract-first** (story touches backend + frontend): task 1 = contract — request/response/error shapes where the repo keeps shared types (workspace package, OpenAPI, zod; none → co-located types file) + **one fixture file**, a canonical example response. No logic. Then backend task(s) — smoke test asserts against the fixture; then frontend task(s) — smoke test renders the *same fixture* as mock data. Shared fixture = drift detector. Contract frozen after task 1: any change → Scope Change, both smoke tests re-run. Counts toward 7's cap. Backend-only / frontend-only → skip.
 
 7. Task cap by type — ceiling, applied to the finished list:
 
@@ -241,11 +272,14 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
 1. One task at a time. **No text-only turns.** Between the first edit and the gate, every assistant message contains a tool_use block. The only text allowed is one line, shape `✓ Task N — <verdict, ≤8 words>`, written *in the same message* as the next task's first tool call — a `✓` line sent on its own is the violation, not the fix. No "starting N", no "now task N+1", no "server started", no "good —". A message with text and no tool call is a point-7 break, nothing else. Nothing committed (6). Re-read this point before the first edit, not at the gate.
 2. **Don't ask mid-task.** Judgment call → Task Log "Why". Contradicts the plan or needs a scope decision → Scope Changes, flag immediately.
 3. `ponytail`: simplest thing that works, existing deps first, no unrequested abstractions. Never simplify away validation, error handling, security, accessibility, or the scale target — "works" means at that scale.
-4. **Verify before checkoff.** Done = something demonstrates it works. **Every verdict below goes to the Task Log or held note, never chat.**
+4. **Test first, verify before checkoff.** Done = something demonstrates it works. **Every verdict below goes to the Task Log or held note, never chat.**
+   - **Red, before any implementation edit — every task, every type, lite included.** Write the task's smoke test (2.4), run it, confirm it fails *for the expected reason*: missing route/function/element, wrong value — not a syntax, import or setup error. → `Red: <test file> › <name> — <failure, one line>` (repo-relative path first: the freeze hook reads it). Bug fix → regression test red on the unfixed code. Refactor → characterization test *green* on current code, own task first, read-only for the story (`Red: n/a — characterization, pins current behavior`). Nothing executable (types-only contract task, docs) → `Red: n/a — <why>`.
+   - **Frozen after red.** That test's assertions don't change for the rest of the story — needing to is a 7 Scope Change, never a silent edit. Setup/fixture plumbing may change; assertions and the contract fixture (`step2-plan.md` 6) may not. Opt-in enforcement: `hooks/freeze-tests.mjs`.
+   - **Green:** implement until it passes. Judge by exit code + stderr, never a printed summary.
    - Run the 2.4 cases mapped to this task (lite → the named check). None mapped → repo fast checks over what you touched, name which. **Per task: the touched spec only.** Full suite once, at 8.
    - Nothing executable → say so + what was inspected. Silence isn't a verdict.
    - Fails → fix, re-run. Cause is the plan → 7.
-   - **Self-review:** diff vs the task's Why — scaffolding, TODO-as-fix, workaround where root cause was the point, unasked abstraction. Fix now.
+   - **Self-review:** diff vs the task's Why — scaffolding, TODO-as-fix, workaround where root cause was the point, unasked abstraction. A smoke test that would still pass with the feature deleted doesn't count — minimal means fewer tests, not weaker ones. Fix now.
    - **Scale scan:** query/call per item of a growing collection, unbounded load, new query without pagination/index, sync work on a hot path. Trivial → fix, note in `Verified:`. Not trivial or target can't hold → not a checkoff, 7.
    - **Full-suite rule:** per task the touched spec only; gate 8 runs *both* the backend suite and the frontend suite, named, even when only one side changed.
    - **UI change → look at it.** Check the tool list (Claude Browser, `run` skill, simulator) before claiming none; SSR grep is the fallback, said as such.
@@ -255,7 +289,7 @@ Lighter label but real risk (a "small feature" writing a migration) → the risk
    - Outcome → `Verified:` (what ran, what it showed). Step 4's Test section comes only from this.
 5. **Manual-edit review** — before each task and on resume: `git status` / `git diff HEAD` over the story's files. A change you didn't make → one-line `Check:` (correct, or issue: what/where). File off the Flow (2.6) → say so, non-blocking. Review, not veto: the edit stands unless it breaks something.
 
-   After each task: file exists → append Task Log entry with `Verified:`, tick the box, one write, trip marker. Forms (`context-template.md`): judgment call → What/Why block; mechanical → one line; hand-edit → line + `Check:` (+ `Flow:` if off-plan). No file → hold the same as a private note for 8. Nothing sent to the user now.
+   After each task: file exists → append Task Log entry with `Red:` + `Verified:`, tick the box, one write, trip marker. Forms (`context-template.md`): judgment call → What/Why block; mechanical → one line; hand-edit → line + `Check:` (+ `Flow:` if off-plan). No file → hold the same as a private note for 8. Nothing sent to the user now.
 
    **Learning from the edit:** hand-edit or spoken correction that reads repo-wide (always strips X, always adds guard Y, "we never do X here") → ask once: "Save that as a standing project rule?" Yes → append to `.breadcrumbs/constitution.md`, apply from the next task. No → don't ask again for that pattern.
 6. **Don't commit per task.** No `git add`/`commit` until 8's review is approved. No curiosity checks either (`git branch`, `git log`) — only calls that gate the next action.
@@ -371,10 +405,12 @@ Story type: <type>
 ### Task 1 — <date>
 - What: ...
 - Why: ...
+- Red: <test file> › <name> — <failure reason> | n/a — <why>
 - Verified: <what ran / "nothing runnable: <inspected>"> — <outcome>
 
 ### Task 2 — <date> (mechanical)
 - [x] Task 2 — <desc> — files: <list>
+- Red: ...
 - Verified: ...
 
 ### Task 3 — <date> (manual edit, by user)
@@ -398,13 +434,13 @@ Story type: <type>
 Last drafted: <date>
 ```
 
-Append, never overwrite — except `Status`, checkboxes, Current Requirements, a Risk's `status:`. `Verified:` on every Task Log form; "nothing runnable" is a value, absence isn't.
+Append, never overwrite — except `Status`, checkboxes, Current Requirements, a Risk's `status:`. `Red:` on every Task Log form except a user's manual edit; `Verified:` on every form; "nothing runnable" is a value, absence isn't.
 
 ## What NOT to do
 
 - No gate skipped without an explicit waiver logged under `Gate Waivers`.
 - No questions during Step 3 except scope-changing issues.
-- No checkoff without `Verified:`; no Step 3 gate with a failing case.
+- No implementation edit before the task's `Red:`; no checkoff without `Verified:`; no frozen test edited without a Scope Change; no Step 3 gate with a failing case.
 - Never rewrite past entries; never commit or reference the file in the PR; never delete without merge confirmation.
 - Lite never absorbs a scope change or failed test silently — escalate to full.
 

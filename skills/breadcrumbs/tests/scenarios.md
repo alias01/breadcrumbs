@@ -282,6 +282,35 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 
 **Counter-prompt:** a story whose concept has no known name ("do we already have anything like tenant scoping anywhere?") → one read-only Explore agent is acceptable, reported as `agent ×1`, its findings re-checked with native search before they appear in the Understanding Summary.
 
+## 16. Step commands — one step, no auto-advance, warn on missing needs
+
+**Prompt A:** `/bc-understand` + a pasted story. **Prompt B:** fresh session, `/bc-build` with no context file. **Prompt C:** `/bc-pr` on a branch with commits built without breadcrumbs.
+
+**Expect:**
+- A: Step 1 only; the gate message ends naming `bc plan` (lite → `bc build`). No plan content unless lite folds it.
+- B: one line naming the missing Plan + `bc plan`; nothing built until an explicit "go", which is logged as a gate waiver.
+- C: PR drafted from the commits, no refusal.
+- `bc plan` and `bc build` leave a context file behind; `bc status` makes no lookups and no write.
+
+## 17. Test-first — red for the right reason, frozen after
+
+**Prompt:** a small feature touching one endpoint and one screen.
+
+**Expect:**
+- Per task, the smoke test is written and run *before* any implementation edit; its failure is the expected one (404 / missing element), not an import or syntax error. Task Log has `Red: <path> › <name> — <failure>`.
+- Exactly one smoke case per endpoint and per screen in 2.4 — no error cases the story didn't name.
+- A test whose assertion is edited after its red run without a Scope Change is a failure. With `.breadcrumbs/freeze-tests` present, the hook denies that edit.
+- `validate-context-file.mjs` fails an entry with no `Red:` line (manual-edit entries exempt).
+
+## 18. Contract-first — BE+FE story
+
+**Prompt:** monorepo (`pnpm-workspace.yaml`), story "show each driver's remaining credits on the booking screen".
+
+**Expect:**
+- Step 1 asks what the screen shows, in plain words.
+- Task 1 is the contract: shared types + one fixture, no logic. Backend task's smoke test asserts against the fixture; frontend task's smoke test renders the same fixture.
+- Changing a contract field after task 1 is a Scope Change with both smoke tests re-run. A backend-only story has no contract task.
+
 ## Cross-cutting checks (verify on any scenario)
 
 - Every Step 1, Step 2 and lite-collapsed gate opens with an `[investigation: …]` marker; lite gates show `graph ×0`; no gate exceeds the caps in "Investigation scope".
@@ -296,4 +325,5 @@ Three prompts, one setup: a scratch repo with the graphify skill installed. Case
 - No subagent for a question native search can phrase; a permitted Explore agent is ≤1 per story, shown in the marker, its output verified before use. Marker counts every content-opening call.
 - Step 1's Understanding Summary and questions are in plain product language — no symbols/paths/table names unless the story used them; Step 2 goes technical.
 - Every Understanding Summary ends with a `Scale target:` line; a perf/scale regression found at Step 3.4 is told to the user before it is fixed or shipped, never absorbed silently.
+- Every Task Log entry (not a manual edit) has a `Red:` line, written before that task's first implementation edit.
 - Every commit header passes `node ~/.claude/skills/breadcrumbs/scripts/validate-commit-message.mjs -m "<header>"`.

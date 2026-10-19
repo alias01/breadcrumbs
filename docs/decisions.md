@@ -219,6 +219,18 @@ behind a rule lives in this file. Measured with a BPE tokenizer (gpt-tokenizer, 
 
 ---
 
+## 2026-10-19 — v2: step commands, test-first, contract-first
+
+**Decision:** each step gets a `bc` command (`/bc-plan`, `/bc:plan` on Gemini, the phrase "bc plan" elsewhere); `/breadcrumbs` stays the auto-flow. Every task is test-first with one minimal smoke test per endpoint/screen/fix, red before green, assertions frozen after red. BE+FE stories start with a contract task (shared types + one fixture both sides test against). Full design: `docs/redesign-v2.md`.
+
+**Why commands:** the gate becomes an explicit act, and a step can be entered mid-story (`bc pr` on a non-breadcrumbs branch). `bc plan`/`bc build` always write the file because the next command may run in a fresh session.
+
+**Why test-first:** 3.4 proved a task *after* the fact, so a test written against finished code could pass without testing anything. A recorded red run, failing for the expected reason, closes that. Freezing assertions stops "fix" by editing the test.
+
+**Why one shared fixture, not a contract-testing tool:** the backend asserts its response against it, the frontend renders it — drift fails one side's smoke test at zero dependency cost.
+
+**Rejected:** separate red/green prompts and a test-writer subagent (turn and token cost; the logged red run gives the same guarantee); splitting `SKILL.md` into a core file (it already is the core — a split only complicated the Windsurf cap and pointer rewriting).
+
 ## Open — the behavioural half is unverified
 
 Everything verified so far is deterministic: validators, build guards, file sizes, TOML

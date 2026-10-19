@@ -184,6 +184,40 @@ write(
   `description = ${JSON.stringify(description)}\n\nprompt = """\n${banner}${body4.replaceAll('"""', '\\"\\"\\"')}\n"""\n`
 );
 
+// Step commands (SKILL.md → Step commands). Each is a thin pointer: the rules,
+// preconditions and next-command table live in SKILL.md, so a command file only
+// says which row to run. One spelling per platform's own command mechanism.
+const COMMANDS = [
+  ["understand", "Step 1 — restate the story, ask what's genuinely vague", "<story or ticket>"],
+  ["plan", "Step 2 — plan + task list, writes the context file", ""],
+  ["build", "Step 3 — implement the planned tasks test-first, nothing committed", ""],
+  ["review", "Step 3.8 gate — full test run, review, commit on approval", ""],
+  ["pr", "Step 4 — draft the PR description", ""],
+  ["resume", "Pick a story back up from its context file", "<story slug>"],
+  ["status", "One line: which story, which step, next command", ""],
+  ["pause", "Checkpoint the story to its context file and suggest /compact", ""],
+  ["why", "Quote the logged reason for a past decision", "<decision or file>"],
+  ["rule", "Add a standing rule to .breadcrumbs/constitution.md", "<rule>"],
+];
+const commandText = (cmd, source, args) =>
+  `Follow ${source}. Run its \`bc ${cmd}\` step command (Step commands table): check its Needs, run that step only, end by naming the next command.\n\nInput: ${args}`;
+const SKILL_REF = "`skills/breadcrumbs/SKILL.md` (read it now, then the step file it names)";
+for (const [cmd, desc, hint] of COMMANDS) {
+  write(
+    `commands/bc-${cmd}.md`,
+    `---\ndescription: ${desc}\n${hint ? `argument-hint: ${hint}\n` : ""}---\n\n${commandText(cmd, "the breadcrumbs skill", "$ARGUMENTS")}\n`
+  );
+  write(
+    `.gemini/commands/bc/${cmd}.toml`,
+    `description = ${JSON.stringify(desc)}\n\nprompt = """\n${commandText(cmd, SKILL_REF, "{{args}}")}\n"""\n`
+  );
+  write(`.cursor/commands/bc-${cmd}.md`, `${commandText(cmd, SKILL_REF, "the text after the command")}\n`);
+  write(
+    `.windsurf/workflows/bc-${cmd}.md`,
+    `---\ndescription: ${desc}\n---\n\n${commandText(cmd, SKILL_REF, "the text after the command")}\n`
+  );
+}
+
 // Claude Code plugin manifest — wraps the existing skill, doesn't duplicate it.
 // The marketplace catalog (.claude-plugin/marketplace.json) is hand-maintained;
 // it only names this plugin and its source, nothing here to regenerate.
@@ -206,6 +240,18 @@ write(
               {
                 type: "command",
                 command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/detect-story.mjs",
+              },
+            ],
+          },
+        ],
+        // Opt-in: no-op unless the repo has .breadcrumbs/freeze-tests.
+        PreToolUse: [
+          {
+            matcher: "Edit|Write|MultiEdit",
+            hooks: [
+              {
+                type: "command",
+                command: "node ${CLAUDE_PLUGIN_ROOT}/hooks/freeze-tests.mjs",
               },
             ],
           },
@@ -242,6 +288,10 @@ if (INSTALL) {
   }
   for (const scriptPath of SCRIPTS) {
     write(join(CLAUDE_SKILL_DIR, "scripts", basename(scriptPath)), readFileSync(scriptPath, "utf8"));
+  }
+  // Step commands for the local install: user-level, so /bc-plan works without the plugin.
+  for (const [cmd] of COMMANDS) {
+    write(join(homedir(), ".claude", "commands", `bc-${cmd}.md`), readFileSync(`commands/bc-${cmd}.md`, "utf8"));
   }
 }
 

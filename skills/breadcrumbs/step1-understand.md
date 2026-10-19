@@ -9,7 +9,7 @@
    - Acceptance criteria: testable "done", happy path, demo scenario
    - Dependencies & context: other stories/APIs/systems, mockups, what this blocks
    - Data model/schema, source of truth, existing data
-   - API/contract boundaries
+   - API/contract boundaries. Story touches backend + frontend → ask what the screen shows (plain words), so the contract comes from the user's view, not the table
    - Auth/permissions
    - Error handling & edge cases: error/loading/empty states, empty input, network failure, denied
    - **Scale target:** volume, rate, latency budget. Stated → record verbatim. Silent → Material only if the change sits on a data- or request-dependent path; else Cosmetic → "none stated — current scale assumed", logged per 3. Not knowing is the failure. Step 2 sizes against it, Step 3.4 judges the diff by it.

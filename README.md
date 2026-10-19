@@ -58,6 +58,22 @@ flowchart TD
     C --> R["Next session, same or different platform:<br/>read file → resume where it left off"]
 ```
 
+### Step commands
+
+`/breadcrumbs` runs all four gates in one flow. Each step also has its own command, so you can run one step at a time or start partway through a story (e.g. `bc pr` on a branch built without breadcrumbs):
+
+| Command | Does |
+|---|---|
+| `bc understand` · `bc plan` · `bc build` · `bc review` · `bc pr` | one step each; running the next command is the gate confirmation |
+| `bc resume` · `bc status` · `bc pause` | pick up, check where a story is, checkpoint it |
+| `bc why <x>` · `bc rule <text>` | quote a logged decision, add a standing project rule |
+
+Spelled `/bc-plan` in Claude Code, Cursor and Windsurf, `/bc:plan` in Gemini; elsewhere just say "bc plan". A missing earlier step gets a warning, not a refusal.
+
+### Test-first, contract-first
+
+Every task starts with one minimal smoke test (per endpoint, per screen, per fix), run red for the expected reason before any code, then frozen — a failing test gets fixed by changing the code, not the test. Stories that touch backend and frontend start with a contract task: shared types plus one fixture that both sides' smoke tests use, so drift fails a test. To enforce frozen tests with a hook in Claude Code, add an empty `.breadcrumbs/freeze-tests` to the repo.
+
 Once a file exists, it also tracks the story's **Flow**, the set of files the plan expects to touch, decided once up front at planning. A hand-edit that lands somewhere the plan didn't expect gets flagged rather than quietly folded in.
 
 ## Install

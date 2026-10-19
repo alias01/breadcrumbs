@@ -5,6 +5,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/). Versions are bu
 ## [Unreleased]
 
 ### Changes
+- **breadcrumbs:** `bc` step commands (`understand`, `plan`, `build`, `review`, `pr`, `resume`, `status`, `pause`, `why`, `rule`) generated for Claude Code, Gemini, Cursor, Windsurf; phrase fallback elsewhere
+- **breadcrumbs:** test-first on every task — minimal smoke test, `Red:` line in the Task Log, assertions frozen after red; validator enforces `Red:`
+- **breadcrumbs:** contract-first for backend+frontend stories — contract task with a shared fixture before either side
+- **hooks:** opt-in `freeze-tests.mjs` (PreToolUse) blocks edits to frozen tests; enable with `.breadcrumbs/freeze-tests`
 - **breadcrumbs:** route investigation by question type — native search for lookups, graphify only for relationship/Flow questions and only when a graph exists; lite mode skips the graph
 - **platforms:** drop Claude-only `Explore` wording from the shared investigation rule
 - **breadcrumbs:** investigation marker before every gate, counted lookup/graph-query caps, never open the graph report

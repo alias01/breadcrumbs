@@ -51,10 +51,12 @@ Story type: <type>
 ### Task 1 — <date>
 - What: ...
 - Why: ...
+- Red: <test file> › <name> — <failure reason> | n/a — <why>
 - Verified: <what ran / "nothing runnable: <inspected>"> — <outcome>
 
 ### Task 2 — <date> (mechanical)
 - [x] Task 2 — <desc> — files: <list>
+- Red: ...
 - Verified: ...
 
 ### Task 3 — <date> (manual edit, by user)
@@ -78,12 +80,12 @@ Story type: <type>
 Last drafted: <date>
 ```
 
-Append, never overwrite — except `Status`, checkboxes, Current Requirements, a Risk's `status:`. `Verified:` on every Task Log form; "nothing runnable" is a value, absence isn't.
+Append, never overwrite — except `Status`, checkboxes, Current Requirements, a Risk's `status:`. `Red:` on every Task Log form except a user's manual edit; `Verified:` on every form; "nothing runnable" is a value, absence isn't.
 
 ## What NOT to do
 
 - No gate skipped without an explicit waiver logged under `Gate Waivers`.
 - No questions during Step 3 except scope-changing issues.
-- No checkoff without `Verified:`; no Step 3 gate with a failing case.
+- No implementation edit before the task's `Red:`; no checkoff without `Verified:`; no frozen test edited without a Scope Change; no Step 3 gate with a failing case.
 - Never rewrite past entries; never commit or reference the file in the PR; never delete without merge confirmation.
 - Lite never absorbs a scope change or failed test silently — escalate to full.
